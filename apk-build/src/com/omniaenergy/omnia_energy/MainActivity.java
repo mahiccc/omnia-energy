@@ -30,13 +30,13 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * OmniaEnergy v0.3.0-analytics MainActivity
+ * OmniaEnergy v0.4.0-live MainActivity
  *
  * Bridges the Homeowner Smart Energy UI with:
  * 1. Real Android SQLite (`omnia_energy_local.db` -> `local_telemetry_buffer`)
- * 2. Real On-Device HMAC-SHA256 Tuya OpenAPI v2.0 Client (`TuyaOpenApiClient`)
- * 3. Direct Client-to-Drive Sync (`OmniaEnergy_Master_Telemetry`)
- * 4. One-Tap Excel/CSV Bill Report Export & Native Android Share Sheet
+ * 2. Real On-Device HMAC-SHA256 Tuya OpenAPI v2.0 Client (`tuyaSignedRequest`)
+ * 3. Real Atomberg Smart Fan Developer Cloud Client (`atombergApiRequest`)
+ * 4. Direct Client-to-Drive Sync (`OmniaEnergy_Master_Telemetry`) & CSV/Share
  */
 public class MainActivity extends Activity {
 
@@ -163,10 +163,6 @@ public class MainActivity extends Activity {
             return db.clearAllBufferRecords();
         }
 
-        /**
-         * Exports a clean Excel-compatible CSV energy report to the phone's Downloads
-         * folder (`/sdcard/Download/OmniaEnergy_Home_Report.csv`) and app storage.
-         */
         @JavascriptInterface
         public String exportEnergyReportCsv(String csvContent) {
             String savedPath = "";
@@ -207,10 +203,6 @@ public class MainActivity extends Activity {
             return savedPath;
         }
 
-        /**
-         * Launches the native Android Share Sheet so homeowners can share their
-         * energy bill report via WhatsApp, Gmail, Google Drive, or Telegram.
-         */
         @JavascriptInterface
         public void shareEnergySummaryText(String summaryText) {
             try {
@@ -225,6 +217,10 @@ public class MainActivity extends Activity {
             }
         }
 
+        /**
+         * Serverless Tuya OpenAPI v2.0 request signed locally on the Android device
+         * using HMAC-SHA256.
+         */
         @JavascriptInterface
         public String tuyaSignedRequest(
                 String endpoint,
@@ -287,6 +283,54 @@ public class MainActivity extends Activity {
                 return sb.toString();
             } catch (Exception e) {
                 return "{\"success\":false,\"msg\":\"" + e.getMessage() + "\"}";
+            }
+        }
+
+        /**
+         * Serverless Atomberg Developer Cloud API client (`https://api.developer.atomberg-iot.com`).
+         * Supports `/v1/get_access_token`, `/v1/get_list_of_devices`, `/v1/get_device_state`,
+         * and `/v1/send_command`.
+         */
+        @JavascriptInterface
+        public String atombergApiRequest(
+                String method,
+                String pathWithQuery,
+                String apiKey,
+                String bearerToken,
+                String body
+        ) {
+            try {
+                URL url = new URL("https://api.developer.atomberg-iot.com" + pathWithQuery);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod(method.toUpperCase());
+                conn.setConnectTimeout(8000);
+                conn.setReadTimeout(8000);
+                conn.setRequestProperty("x-api-key", apiKey == null ? "" : apiKey.trim());
+                if (bearerToken != null && !bearerToken.isEmpty()) {
+                    conn.setRequestProperty("Authorization", "Bearer " + bearerToken.trim());
+                }
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+
+                if ("POST".equalsIgnoreCase(method) && body != null && !body.isEmpty()) {
+                    conn.setDoOutput(true);
+                    OutputStream os = conn.getOutputStream();
+                    os.write(body.getBytes(StandardCharsets.UTF_8));
+                    os.flush();
+                    os.close();
+                }
+
+                int code = conn.getResponseCode();
+                InputStream is = (code >= 200 && code < 400) ? conn.getInputStream() : conn.getErrorStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+                reader.close();
+                return sb.toString();
+            } catch (Exception e) {
+                return "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}";
             }
         }
 
