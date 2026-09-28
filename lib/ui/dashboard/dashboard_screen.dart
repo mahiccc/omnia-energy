@@ -6,11 +6,12 @@ import '../../core/models/device_model.dart';
 import '../widgets/disaggregation_breakdown_chart.dart';
 import '../widgets/live_load_gauge_widget.dart';
 
-/// Main dashboard screen for OmniaEnergy displaying:
-/// 1. Live CT household load gauge (`LiveLoadGaugeWidget`)
-/// 2. Disaggregation breakdown chart (`DisaggregationBreakdownChart`)
-/// 3. Interactive device telemetry controls (CT Clamp, Tuya Native Plugs,
-///    Atomberg BLE & Google Home Virtual Payload devices)
+/// Homeowner-friendly Dashboard Screen for OmniaEnergy (v0.2.0-home).
+///
+/// Presents live household usage in everyday terms (Watts, ₹/hour, estimated
+/// monthly bill, room-by-room appliance controls, and smart savings tips) while
+/// running the disaggregation math and SQLite buffering automatically in the
+/// background.
 class DashboardScreen extends StatefulWidget {
   final TelemetryRepository repository;
 
@@ -24,10 +25,11 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  static const double _defaultTariffInrPerKwh = 8.0;
+
   late final DisaggregationUseCase _disaggregationUseCase;
   List<DeviceModel> _devices = [];
   DisaggregationSnapshot? _snapshot;
-  int _pendingSyncCount = 0;
 
   @override
   void initState() {
@@ -35,98 +37,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _disaggregationUseCase = DisaggregationUseCase(
       repository: widget.repository,
     );
-    _seedDefaultDevicesAndCompute();
+    _seedFriendlyHomeDevices();
   }
 
-  Future<void> _seedDefaultDevicesAndCompute() async {
+  Future<void> _seedFriendlyHomeDevices() async {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    final defaultDevices = <DeviceModel>[
+    _devices = <DeviceModel>[
       DeviceModel(
-        id: 'ct_main_01',
-        name: 'Main Breaker CT Clamp',
+        id: 'd79bffe403697ffc699f5d',
+        name: 'Main Home Smart Meter',
         category: DeviceCategory.ctClamp,
         vendor: DeviceVendor.hardwareCt,
         isOn: true,
         livePowerWatts: 1850.0,
+        metadata: const {'room': 'Main Panel', 'icon': '⚡'},
         updatedAtMs: nowMs,
       ),
       DeviceModel(
-        id: 'tuya_ac_plug_01',
-        name: 'Master Bedroom Inverter AC (Tuya DP)',
+        id: 'native_kitchen_fridge',
+        name: 'Kitchen Double-Door Fridge',
         category: DeviceCategory.nativeMetering,
         vendor: DeviceVendor.tuyaOpenApi,
         isOn: true,
-        livePowerWatts: 1120.0,
+        livePowerWatts: 145.0,
+        metadata: const {'room': 'Kitchen & Dining', 'icon': '🧊'},
         updatedAtMs: nowMs,
       ),
       DeviceModel(
-        id: 'tuya_fridge_plug_02',
-        name: 'Kitchen Refrigerator (Tuya DP)',
-        category: DeviceCategory.nativeMetering,
+        id: 'd76868c21ede5a8a9bq2rc',
+        name: 'Master Bath Water Heater',
+        category: DeviceCategory.virtualPayload,
         vendor: DeviceVendor.tuyaOpenApi,
+        ratedWatts: 2000.0,
+        currentLevelPercent: 50.0,
         isOn: true,
-        livePowerWatts: 165.0,
+        metadata: const {'room': 'Master Bedroom', 'icon': '🚿'},
         updatedAtMs: nowMs,
       ),
       DeviceModel(
-        id: 'atomberg_fan_living',
-        name: 'Atomberg Renesa BLDC Fan (BLE)',
+        id: 'atomberg_ble_living',
+        name: 'Living Room Atomberg Fan',
         category: DeviceCategory.virtualPayload,
         vendor: DeviceVendor.atombergBle,
         ratedWatts: 35.0,
         currentLevelPercent: 60.0,
         isOn: true,
+        metadata: const {'room': 'Living Room', 'icon': '🌀'},
         updatedAtMs: nowMs,
       ),
       DeviceModel(
-        id: 'ghome_living_lights',
-        name: 'Living Room Smart Chandelier (Google Home)',
+        id: 'ghome_smart_dimmer',
+        name: 'Dining Table Chandelier',
         category: DeviceCategory.virtualPayload,
         vendor: DeviceVendor.googleHome,
         ratedWatts: 60.0,
         currentLevelPercent: 80.0,
         isOn: true,
+        metadata: const {'room': 'Kitchen & Dining', 'icon': '💡'},
         updatedAtMs: nowMs,
       ),
     ];
 
-    _devices = defaultDevices;
-    await _recalculate(persistToSqlite: false);
+    await _recalculateAndSaveSilently();
   }
 
-  Future<void> _recalculate({bool persistToSqlite = false}) async {
+  Future<void> _recalculateAndSaveSilently() async {
     final snapshot = await _disaggregationUseCase.execute(
       devices: _devices,
-      persistToBuffer: persistToSqlite,
+      persistToBuffer: true,
     );
-    if (persistToSqlite) {
-      final pending = await widget.repository.fetchPendingSyncBatch();
-      _pendingSyncCount = pending.length;
-    }
     if (!mounted) return;
     setState(() {
       _snapshot = snapshot;
     });
   }
 
-  void _toggleDeviceState(int index, bool isOn) {
+  void _toggleAppliance(int index, bool isOn) {
     setState(() {
       _devices[index] = _devices[index].copyWith(
         isOn: isOn,
         updatedAtMs: DateTime.now().millisecondsSinceEpoch,
       );
     });
-    _recalculate(persistToSqlite: false);
-  }
-
-  void _updateDeviceLevel(int index, double newPercent) {
-    setState(() {
-      _devices[index] = _devices[index].copyWith(
-        currentLevelPercent: newPercent,
-        updatedAtMs: DateTime.now().millisecondsSinceEpoch,
-      );
-    });
-    _recalculate(persistToSqlite: false);
+    _recalculateAndSaveSilently();
   }
 
   @override
@@ -136,22 +129,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final pNative = record?.pNativeSumWatts ?? 0.0;
     final pVirtual = record?.pVirtualSumWatts ?? 0.0;
     final pResidual = record?.pResidualWatts ?? 0.0;
+    final hourlyCostInr = (pCt / 1000.0) * _defaultTariffInrPerKwh;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F17),
+      backgroundColor: const Color(0xFF070B12),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0F17),
+        backgroundColor: const Color(0xFF070B12),
         title: const Text(
-          'OmniaEnergy',
+          '🏡 OmniaEnergy',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: FilledButton.tonalIcon(
-              onPressed: () => _recalculate(persistToSqlite: true),
-              icon: const Icon(Icons.storage_rounded, size: 18),
-              label: Text('Buffer to SQLite ($_pendingSyncCount)'),
+            child: Chip(
+              label: Text(
+                '≈ ₹${hourlyCostInr.toStringAsFixed(1)}/hr',
+                style: const TextStyle(
+                  color: Color(0xFF10B981),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: const Color(0xFF111827),
             ),
           ),
         ],
@@ -174,94 +173,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 20),
           const Text(
-            'ACTIVE INGESTION SOURCES',
+            'My Home Appliances',
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-              color: Colors.white60,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 10),
           ...List.generate(_devices.length, (index) {
             final device = _devices[index];
+            if (device.category == DeviceCategory.ctClamp) {
+              return const SizedBox.shrink();
+            }
+            final room = (device.metadata['room'] as String?) ?? 'Home';
+            final icon = (device.metadata['icon'] as String?) ?? '🔌';
+            final costPerHr =
+                (device.activeWatts / 1000.0) * _defaultTariffInrPerKwh;
+
             return Card(
-              color: const Color(0xFF141A24),
+              color: const Color(0xFF111827),
               margin: const EdgeInsets.only(bottom: 10),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                device.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${device.vendor.dbValue} • ${device.category.dbValue}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          '${device.activeWatts.toStringAsFixed(1)} W',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF00E676),
-                          ),
-                        ),
-                        if (device.category == DeviceCategory.virtualPayload)
-                          Switch(
-                            value: device.isOn,
-                            onChanged: (v) => _toggleDeviceState(index, v),
-                          ),
-                      ],
-                    ),
-                    if (device.category == DeviceCategory.virtualPayload) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Text(
-                            'Level: ${device.currentLevelPercent.toStringAsFixed(0)}% '
-                            '(P_rated: ${device.ratedWatts.toStringAsFixed(0)}W)',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          Expanded(
-                            child: Slider(
-                              value: device.currentLevelPercent,
-                              min: 0,
-                              max: 100,
-                              divisions: 20,
-                              onChanged: device.isOn
-                                  ? (v) => _updateDeviceLevel(index, v)
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
+              child: ListTile(
+                leading: Text(icon, style: const TextStyle(fontSize: 24)),
+                title: Text(
+                  device.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                subtitle: Text(
+                  '$room • ₹${costPerHr.toStringAsFixed(2)}/hr',
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
+                ),
+                trailing: Switch(
+                  value: device.isOn,
+                  onChanged: (v) => _toggleAppliance(index, v),
                 ),
               ),
             );
