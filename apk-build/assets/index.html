@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>OmniaEnergy MVP</title>
+<style>
+  :root {
+    --bg: #080c14;
+    --card: #111826;
+    --card-alt: #162032;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --green: #00e676;
+    --cyan: #29b6f6;
+    --amber: #ffb300;
+    --danger: #ff5252;
+    --purple: #b388ff;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 84px;
+    overflow-x: hidden;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(8, 12, 20, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #00e676, #00b0ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: #041014;
+    font-size: 18px;
+  }
+  .brand-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(0, 230, 118, 0.12);
+    color: var(--green);
+    border: 1px solid rgba(0, 230, 118, 0.3);
+  }
+  main {
+    padding: 14px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .tab-pane {
+    display: none;
+  }
+  .tab-pane.active {
+    display: block;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+    color: var(--muted);
+  }
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 4px 0 6px;
+  }
+  .gauge-svg {
+    width: 230px;
+    height: 145px;
+    overflow: visible;
+  }
+  .gauge-center {
+    position: absolute;
+    bottom: 14px;
+    text-align: center;
+  }
+  .gauge-watts {
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .gauge-kw {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .math-banner {
+    background: #0b101b;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 11px 12px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .math-banner .eq-live {
+    margin-top: 5px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+  }
+  .stack-bar {
+    height: 18px;
+    border-radius: 9px;
+    overflow: hidden;
+    display: flex;
+    background: #1e293b;
+    margin: 12px 0 16px;
+  }
+  .stack-seg {
+    height: 100%;
+    transition: width 0.25s ease;
+  }
+  .breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .breakdown-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+  }
+  .row-left {
+    display: flex;
+    align-items: center;
+  }
+  .row-title {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .row-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .row-right {
+    text-align: right;
+  }
+  .row-val {
+    font-size: 15px;
+    font-weight: 800;
+  }
+  .row-pct {
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  button.btn {
+    border: 1px solid var(--border);
+    background: var(--card-alt);
+    color: var(--text);
+    padding: 11px 12px;
+    border-radius: 13px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  button.btn.primary {
+    background: linear-gradient(135deg, #00e676, #00c853);
+    color: #04120a;
+    border: none;
+  }
+  button.btn.cyan {
+    background: rgba(41, 182, 246, 0.16);
+    color: var(--cyan);
+    border-color: rgba(41, 182, 246, 0.35);
+  }
+  button.btn.danger {
+    background: rgba(255, 82, 82, 0.14);
+    color: var(--danger);
+    border-color: rgba(255, 82, 82, 0.3);
+  }
+  .device-card {
+    background: var(--card-alt);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 13px;
+    margin-bottom: 10px;
+  }
+  .device-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .device-name {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .device-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .badge-role {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-right: 5px;
+  }
+  .role-ct { background: rgba(179,136,255,0.18); color: var(--purple); }
+  .role-native { background: rgba(0,230,118,0.16); color: var(--green); }
+  .role-virtual { background: rgba(41,182,246,0.16); color: var(--cyan); }
+  .slider-wrap {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .slider-wrap input[type="range"] {
+    flex: 1;
+    accent-color: var(--cyan);
+  }
+  .switch-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+  }
+  .switch-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .switch-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #334155;
+    border-radius: 24px;
+    transition: 0.2s;
+  }
+  .switch-slider:before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .switch-toggle input:checked + .switch-slider {
+    background: var(--green);
+  }
+  .switch-toggle input:checked + .switch-slider:before {
+    transform: translateX(20px);
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .kpi-box {
+    background: var(--card-alt);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px;
+    text-align: center;
+  }
+  .kpi-val {
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .kpi-lbl {
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .sql-table-wrap {
+    overflow-x: auto;
+    max-height: 260px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  table.sql-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  table.sql-table th, table.sql-table td {
+    padding: 8px 9px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  table.sql-table th {
+    background: #0b101b;
+    color: var(--muted);
+    position: sticky;
+    top: 0;
+  }
+  .field {
+    margin-bottom: 10px;
+  }
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: #0b101b;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 11px;
+    border-radius: 10px;
+    font-size: 12.5px;
+  }
+  .status-log {
+    margin-top: 10px;
+    background: #0b101b;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+  }
+  nav.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(11, 16, 27, 0.96);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 8px 12px 12px;
+    z-index: 60;
+  }
+  .nav-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 0;
+    border-radius: 12px;
+  }
+  .nav-btn.active {
+    color: var(--green);
+    background: rgba(0, 230, 118, 0.08);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-logo">Ω</div>
+    <div>
+      <div class="brand-title">OmniaEnergy</div>
+      <div class="brand-sub">Serverless Energy Disaggregation • v0.1.0-mvp</div>
+    </div>
+  </div>
+  <div class="pill" id="headerSqlBadge">SQLite: 0 rows</div>
+</header>
+
+<main>
+  <!-- ===================================================================== -->
+  <!-- TAB 1: LIVE DISAGGREGATION DASHBOARD                                  -->
+  <!-- ===================================================================== -->
+  <section id="tab-dashboard" class="tab-pane active">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Main CT Clamp — Live Household Load</span>
+        <span class="pill" id="liveSourceBadge">Zero-Backend Engine</span>
+      </div>
+
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" viewBox="0 0 220 135">
+          <!-- Background Track -->
+          <path d="M 25 115 A 85 85 0 1 1 195 115"
+                fill="none" stroke="#1e293b" stroke-width="18" stroke-linecap="round" />
+          <!-- Native Segment -->
+          <path id="arcNative" d="M 25 115 A 85 85 0 1 1 195 115"
+                fill="none" stroke="#00e676" stroke-width="18"
+                stroke-dasharray="0 300" stroke-dashoffset="0" />
+          <!-- Virtual Segment -->
+          <path id="arcVirtual" d="M 25 115 A 85 85 0 1 1 195 115"
+                fill="none" stroke="#29b6f6" stroke-width="18"
+                stroke-dasharray="0 300" stroke-dashoffset="0" />
+          <!-- Residual Segment -->
+          <path id="arcResidual" d="M 25 115 A 85 85 0 1 1 195 115"
+                fill="none" stroke="#ffb300" stroke-width="18"
+                stroke-dasharray="0 300" stroke-dashoffset="0" />
+        </svg>
+        <div class="gauge-center">
+          <div class="gauge-watts" id="gaugeTotalWatts">0 W</div>
+          <div class="gauge-kw" id="gaugeTotalKw">0.00 kW Total (P_CT)</div>
+        </div>
+      </div>
+
+      <div class="math-banner">
+        <div>P_Residual = P_CT − (∑P_Native + ∑P_Virtual)</div>
+        <div class="eq-live" id="liveMathEquation">0 W = 0 W − (0 W + 0 W)</div>
+      </div>
+
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn primary" onclick="bufferCurrentFrameToSqlite()">
+          💾 Buffer to SQLite
+        </button>
+        <button class="btn cyan" onclick="pollLiveTuyaCloudNow()">
+          ⚡ Poll Live Tuya HMAC
+        </button>
+      </div>
+      <div id="dashboardToast" class="status-log" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Disaggregation Breakdown (Native vs Virtual vs Residual)</span>
+      </div>
+
+      <div class="stack-bar">
+        <div id="barNative" class="stack-seg" style="background:var(--green);width:33%;"></div>
+        <div id="barVirtual" class="stack-seg" style="background:var(--cyan);width:33%;"></div>
+        <div id="barResidual" class="stack-seg" style="background:var(--amber);width:34%;"></div>
+      </div>
+
+      <div class="breakdown-row">
+        <div class="row-left">
+          <span class="dot" style="background:var(--green);"></span>
+          <div>
+            <div class="row-title">Native Metered (∑P_Native)</div>
+            <div class="row-sub">Direct smart plug & appliance DPs</div>
+          </div>
+        </div>
+        <div class="row-right">
+          <div class="row-val" id="txtNativeW">0.0 W</div>
+          <div class="row-pct" style="color:var(--green);" id="txtNativePct">0.0%</div>
+        </div>
+      </div>
+
+      <div class="breakdown-row">
+        <div class="row-left">
+          <span class="dot" style="background:var(--cyan);"></span>
+          <div>
+            <div class="row-title">Virtual Payload Engine (∑P_Virtual)</div>
+            <div class="row-sub">P_rated × (Current Level / 100) × State</div>
+          </div>
+        </div>
+        <div class="row-right">
+          <div class="row-val" id="txtVirtualW">0.0 W</div>
+          <div class="row-pct" style="color:var(--cyan);" id="txtVirtualPct">0.0%</div>
+        </div>
+      </div>
+
+      <div class="breakdown-row">
+        <div class="row-left">
+          <span class="dot" style="background:var(--amber);"></span>
+          <div>
+            <div class="row-title">Unmonitored Residual (P_Residual)</div>
+            <div class="row-sub">Inferred untracked household load</div>
+          </div>
+        </div>
+        <div class="row-right">
+          <div class="row-val" id="txtResidualW">0.0 W</div>
+          <div class="row-pct" style="color:var(--amber);" id="txtResidualPct">0.0%</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- TAB 2: INGESTION SOURCES & VIRTUAL PAYLOAD ENGINE                     -->
+  <!-- ===================================================================== -->
+  <section id="tab-devices" class="tab-pane">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">1. Hardware CT Clamps (Main P_CT Feeders)</span>
+        <span class="badge-role role-ct">P_CT</span>
+      </div>
+      <div id="ctDevicesContainer"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">2. Native Metering Pass-Through (∑P_Native)</span>
+        <span class="badge-role role-native">Direct DPs</span>
+      </div>
+      <div id="nativeDevicesContainer"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">3. Virtual Payload Engine (∑P_Virtual)</span>
+        <span class="badge-role role-virtual">P_rated × Level% × State</span>
+      </div>
+      <div id="virtualDevicesContainer"></div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- TAB 3: LOCAL SQLITE BUFFER & GOOGLE DRIVE SYNC                        -->
+  <!-- ===================================================================== -->
+  <section id="tab-sqlite" class="tab-pane">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">SQLite Offline Buffer (local_telemetry_buffer)</span>
+        <span class="pill" id="sqlDbSizeBadge">0 KB</span>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-box">
+          <div class="kpi-val" id="kpiTotalRows">0</div>
+          <div class="kpi-lbl">Total Buffered</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-val" style="color:var(--amber);" id="kpiPendingRows">0</div>
+          <div class="kpi-lbl">PENDING Sync</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-val" style="color:var(--green);" id="kpiSyncedRows">0</div>
+          <div class="kpi-lbl">SYNCED to Drive</div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-bottom:12px;">
+        <button class="btn primary" onclick="syncPendingBatchToDrive()">
+          ☁️ Sync Batch to Drive
+        </button>
+        <button class="btn danger" onclick="clearLocalSqliteBuffer()">
+          🗑️ Clear Buffer
+        </button>
+      </div>
+
+      <div class="sql-table-wrap">
+        <table class="sql-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Time</th>
+              <th>P_CT</th>
+              <th>∑Native</th>
+              <th>∑Virtual</th>
+              <th>P_Residual</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="sqliteTableBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--muted);">No buffered rows yet — tap "Buffer to SQLite"</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="status-log" id="sqlPathInfoBox">DB: /data/data/com.omniaenergy.omnia_energy/databases/omnia_energy_local.db</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Android Keystore Credentials (Zero-Backend)</span>
+      </div>
+      <div class="field">
+        <label>Tuya OpenAPI Region Endpoint</label>
+        <select id="cfgTuyaEndpoint" onchange="saveCredentials()">
+          <option value="https://openapi.tuyain.com">India (openapi.tuyain.com)</option>
+          <option value="https://openapi.tuyaeu.com">Europe (openapi.tuyaeu.com)</option>
+          <option value="https://openapi.tuyaus.com">America (openapi.tuyaus.com)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tuya Client ID (Access ID)</label>
+        <input type="text" id="cfgTuyaClientId" onchange="saveCredentials()" />
+      </div>
+      <div class="field">
+        <label>Tuya Client Secret (HMAC-SHA256 Key)</label>
+        <input type="password" id="cfgTuyaClientSecret" onchange="saveCredentials()" />
+      </div>
+      <div class="field">
+        <label>Google Drive "OmniaEnergy_Master_Telemetry" Sync URL / Token</label>
+        <input type="text" id="cfgDriveSyncUrl" placeholder="https://script.google.com/macros/s/.../exec (Optional for local test)" onchange="saveCredentials()" />
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-dashboard" onclick="switchTab('dashboard')">
+    <span>⚡</span>
+    <span>Live Gauge</span>
+  </button>
+  <button class="nav-btn" id="nav-devices" onclick="switchTab('devices')">
+    <span>🎛️</span>
+    <span>Devices & Math</span>
+  </button>
+  <button class="nav-btn" id="nav-sqlite" onclick="switchTab('sqlite')">
+    <span>🗄️</span>
+    <span>SQLite & Drive</span>
+  </button>
+</nav>
+
+<script>
+  // ===========================================================================
+  // DEFAULT HOUSEHOLD DEVICES (Pre-seeded with User's Real Tuya & BLE Setup)
+  // ===========================================================================
+  const DEFAULT_DEVICES = [
+    // 1. Hardware CT Clamps (P_CT)
+    {
+      id: "d79bffe403697ffc699f5d",
+      name: "WIFI Dual Meter 2 (Main CT)",
+      category: "CT_CLAMP",
+      vendor: "HARDWARE_CT",
+      ratedWatts: 5000,
+      currentLevelPercent: 100,
+      isOn: true,
+      livePowerWatts: 1822.0
+    },
+    {
+      id: "d7941811a9f6a6f9b38tag",
+      name: "Guest Room + Living Toilet CT",
+      category: "CT_CLAMP",
+      vendor: "HARDWARE_CT",
+      ratedWatts: 3000,
+      currentLevelPercent: 100,
+      isOn: true,
+      livePowerWatts: 63.0
+    },
+    // 2. Native Metering Pass-through (∑P_Native)
+    {
+      id: "d7a5c5a13886b6924bzuj5",
+      name: "Smart Plug (Native Power DP)",
+      category: "NATIVE_METERING",
+      vendor: "TUYA_OPENAPI",
+      ratedWatts: 1500,
+      currentLevelPercent: 100,
+      isOn: true,
+      livePowerWatts: 185.0
+    },
+    {
+      id: "native_kitchen_fridge",
+      name: "Kitchen Inverter Refrigerator (DP)",
+      category: "NATIVE_METERING",
+      vendor: "TUYA_OPENAPI",
+      ratedWatts: 400,
+      currentLevelPercent: 100,
+      isOn: true,
+      livePowerWatts: 140.0
+    },
+    // 3. Virtual Payload Engine (∑P_Virtual = P_rated * (Level/100) * State)
+    {
+      id: "d76868c21ede5a8a9bq2rc",
+      name: "MBR Geyser (Tuya Switch)",
+      category: "VIRTUAL_PAYLOAD",
+      vendor: "TUYA_OPENAPI",
+      ratedWatts: 2000.0,
+      currentLevelPercent: 50.0,
+      isOn: true,
+      livePowerWatts: null
+    },
+    {
+      id: "atomberg_ble_living",
+      name: "Atomberg Renesa BLDC Fan (BLE)",
+      category: "VIRTUAL_PAYLOAD",
+      vendor: "ATOMBERG_BLE",
+      ratedWatts: 35.0,
+      currentLevelPercent: 60.0,
+      isOn: true,
+      livePowerWatts: null
+    },
+    {
+      id: "d7b1df11d0c1328269ulma",
+      name: "Living Room 4-Gang Switch",
+      category: "VIRTUAL_PAYLOAD",
+      vendor: "TUYA_OPENAPI",
+      ratedWatts: 115.0,
+      currentLevelPercent: 80.0,
+      isOn: true,
+      livePowerWatts: null
+    },
+    {
+      id: "d7018a4d62524543f7oevw",
+      name: "Hall 4-Gang Switch",
+      category: "VIRTUAL_PAYLOAD",
+      vendor: "TUYA_OPENAPI",
+      ratedWatts: 95.0,
+      currentLevelPercent: 100.0,
+      isOn: false,
+      livePowerWatts: null
+    },
+    {
+      id: "d7851afb32391d106f8mze",
+      name: "Pooja Room 2-Gang Switch",
+      category: "VIRTUAL_PAYLOAD",
+      vendor: "TUYA_OPENAPI",
+      ratedWatts: 30.0,
+      currentLevelPercent: 100.0,
+      isOn: true,
+      livePowerWatts: null
+    },
+    {
+      id: "ghome_smart_dimmer",
+      name: "Dining Chandelier Dimmer (Google Home)",
+      category: "VIRTUAL_PAYLOAD",
+      vendor: "GOOGLE_HOME",
+      ratedWatts: 60.0,
+      currentLevelPercent: 75.0,
+      isOn: true,
+      livePowerWatts: null
+    }
+  ];
+
+  let devices = [];
+
+  function hasNativeBridge() {
+    return typeof window.OmniaNative !== "undefined";
+  }
+
+  function haptic(ms) {
+    if (hasNativeBridge()) {
+      try { window.OmniaNative.hapticTick(ms || 20); } catch (e) {}
+    }
+  }
+
+  function loadState() {
+    try {
+      const saved = localStorage.getItem("omnia_mvp_devices_v1");
+      devices = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_DEVICES));
+    } catch (e) {
+      devices = JSON.parse(JSON.stringify(DEFAULT_DEVICES));
+    }
+
+    // Load credentials from Android Keystore / SharedPreferences
+    const defCid = "9c53kq9e8nv7r7v9ejqm";
+    const defSec = "1e8a39572ec04fec8cb8bb7e80351951";
+    const defEp = "https://openapi.tuyain.com";
+
+    let cid = defCid, sec = defSec, ep = defEp, driveUrl = "";
+    if (hasNativeBridge()) {
+      cid = window.OmniaNative.getSecurePref("tuya_client_id", defCid);
+      sec = window.OmniaNative.getSecurePref("tuya_client_secret", defSec);
+      ep = window.OmniaNative.getSecurePref("tuya_endpoint", defEp);
+      driveUrl = window.OmniaNative.getSecurePref("drive_sync_url", "");
+    }
+    document.getElementById("cfgTuyaClientId").value = cid;
+    document.getElementById("cfgTuyaClientSecret").value = sec;
+    document.getElementById("cfgTuyaEndpoint").value = ep;
+    document.getElementById("cfgDriveSyncUrl").value = driveUrl;
+  }
+
+  function saveDevicesState() {
+    try {
+      localStorage.setItem("omnia_mvp_devices_v1", JSON.stringify(devices));
+    } catch (e) {}
+  }
+
+  function saveCredentials() {
+    if (!hasNativeBridge()) return;
+    window.OmniaNative.saveSecurePref("tuya_client_id", document.getElementById("cfgTuyaClientId").value.trim());
+    window.OmniaNative.saveSecurePref("tuya_client_secret", document.getElementById("cfgTuyaClientSecret").value.trim());
+    window.OmniaNative.saveSecurePref("tuya_endpoint", document.getElementById("cfgTuyaEndpoint").value.trim());
+    window.OmniaNative.saveSecurePref("drive_sync_url", document.getElementById("cfgDriveSyncUrl").value.trim());
+  }
+
+  // ===========================================================================
+  // SECTION 4: KEY CALCULATION RULES
+  // ===========================================================================
+  function computeDeviceActiveWatts(dev) {
+    if (dev.category === "CT_CLAMP" || dev.category === "NATIVE_METERING") {
+      return dev.isOn ? Math.max(0, parseFloat(dev.livePowerWatts || 0)) : 0.0;
+    }
+    // Virtual Payload Engine: P_t = P_rated * (Current Level / 100) * State
+    const stateMultiplier = dev.isOn ? 1.0 : 0.0;
+    const levelRatio = Math.max(0, Math.min(100, parseFloat(dev.currentLevelPercent || 0))) / 100.0;
+    return parseFloat(dev.ratedWatts || 0) * levelRatio * stateMultiplier;
+  }
+
+  function computeDisaggregation() {
+    let pCt = 0.0;
+    let pNative = 0.0;
+    let pVirtual = 0.0;
+    const breakdown = {};
+
+    devices.forEach(d => {
+      const w = computeDeviceActiveWatts(d);
+      breakdown[d.id] = Math.round(w * 100) / 100;
+      if (d.category === "CT_CLAMP") {
+        pCt += w;
+      } else if (d.category === "NATIVE_METERING") {
+        pNative += w;
+      } else {
+        pVirtual += w;
+      }
+    });
+
+    const rawResidual = pCt - (pNative + pVirtual);
+    const pResidual = Math.max(0.0, rawResidual);
+
+    return {
+      pCt,
+      pNative,
+      pVirtual,
+      pResidual,
+      rawResidual,
+      breakdown
+    };
+  }
+
+  // ===========================================================================
+  // UI RENDERING
+  // ===========================================================================
+  function renderAll() {
+    const snap = computeDisaggregation();
+    const total = Math.max(1.0, snap.pCt);
+
+    // 1. Update Gauge Text
+    document.getElementById("gaugeTotalWatts").textContent = `${Math.round(snap.pCt)} W`;
+    document.getElementById("gaugeTotalKw").textContent = `${(snap.pCt / 1000.0).toFixed(2)} kW Total (P_CT)`;
+
+    // 2. Update Live Equation Banner
+    document.getElementById("liveMathEquation").textContent =
+      `${snap.pResidual.toFixed(1)} W = ${snap.pCt.toFixed(1)} W − (${snap.pNative.toFixed(1)} W + ${snap.pVirtual.toFixed(1)} W)`;
+
+    // 3. Update Radial Gauge SVG Arcs (Total arc length ≈ 267px)
+    const maxLen = 267.0;
+    const gaugeCap = Math.max(3500.0, snap.pCt * 1.15);
+    const activeArcLen = Math.min(maxLen, (snap.pCt / gaugeCap) * maxLen);
+
+    const natShare = snap.pCt > 0 ? Math.min(1, snap.pNative / snap.pCt) : 0;
+    const virtShare = snap.pCt > 0 ? Math.min(1 - natShare, snap.pVirtual / snap.pCt) : 0;
+    const resShare = snap.pCt > 0 ? Math.max(0, 1 - natShare - virtShare) : 0;
+
+    const natLen = activeArcLen * natShare;
+    const virtLen = activeArcLen * virtShare;
+    const resLen = activeArcLen * resShare;
+
+    const arcNat = document.getElementById("arcNative");
+    const arcVirt = document.getElementById("arcVirtual");
+    const arcRes = document.getElementById("arcResidual");
+
+    arcNat.setAttribute("stroke-dasharray", `${natLen} 400`);
+    arcNat.setAttribute("stroke-dashoffset", "0");
+
+    arcVirt.setAttribute("stroke-dasharray", `${virtLen} 400`);
+    arcVirt.setAttribute("stroke-dashoffset", `${-natLen}`);
+
+    arcRes.setAttribute("stroke-dasharray", `${resLen} 400`);
+    arcRes.setAttribute("stroke-dashoffset", `${-(natLen + virtLen)}`);
+
+    // 4. Update Breakdown Bar & Rows
+    const natPct = Math.min(100, (snap.pNative / total) * 100);
+    const virtPct = Math.min(100, (snap.pVirtual / total) * 100);
+    const resPct = Math.min(100, (snap.pResidual / total) * 100);
+
+    document.getElementById("barNative").style.width = `${natPct}%`;
+    document.getElementById("barVirtual").style.width = `${virtPct}%`;
+    document.getElementById("barResidual").style.width = `${resPct}%`;
+
+    document.getElementById("txtNativeW").textContent = `${snap.pNative.toFixed(1)} W`;
+    document.getElementById("txtNativePct").textContent = `${natPct.toFixed(1)}%`;
+
+    document.getElementById("txtVirtualW").textContent = `${snap.pVirtual.toFixed(1)} W`;
+    document.getElementById("txtVirtualPct").textContent = `${virtPct.toFixed(1)}%`;
+
+    document.getElementById("txtResidualW").textContent = `${snap.pResidual.toFixed(1)} W`;
+    document.getElementById("txtResidualPct").textContent = `${resPct.toFixed(1)}%`;
+
+    // 5. Render Device Cards
+    renderDeviceContainers();
+    refreshSqliteView();
+  }
+
+  function renderDeviceContainers() {
+    const ctBox = document.getElementById("ctDevicesContainer");
+    const natBox = document.getElementById("nativeDevicesContainer");
+    const virtBox = document.getElementById("virtualDevicesContainer");
+
+    ctBox.innerHTML = "";
+    natBox.innerHTML = "";
+    virtBox.innerHTML = "";
+
+    devices.forEach((dev, idx) => {
+      const activeW = computeDeviceActiveWatts(dev);
+      const card = document.createElement("div");
+      card.className = "device-card";
+
+      if (dev.category === "CT_CLAMP" || dev.category === "NATIVE_METERING") {
+        const maxRange = dev.category === "CT_CLAMP" ? 4500 : 2000;
+        card.innerHTML = `
+          <div class="device-top">
+            <div>
+              <div class="device-name">${dev.name}</div>
+              <div class="device-meta">${dev.vendor} • ID: ${dev.id.slice(0, 12)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-weight:800;color:var(--green);font-size:15px;">${activeW.toFixed(1)} W</span>
+              <label class="switch-toggle">
+                <input type="checkbox" ${dev.isOn ? "checked" : ""} onchange="toggleDevice(${idx}, this.checked)" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="slider-wrap">
+            <span style="font-size:11px;color:var(--muted);min-width:85px;">Live DP Watts:</span>
+            <input type="range" min="0" max="${maxRange}" step="5" value="${dev.livePowerWatts || 0}"
+                   oninput="updateLiveWatts(${idx}, this.value)" />
+          </div>
+        `;
+        if (dev.category === "CT_CLAMP") ctBox.appendChild(card);
+        else natBox.appendChild(card);
+      } else {
+        card.innerHTML = `
+          <div class="device-top">
+            <div>
+              <div class="device-name">${dev.name}</div>
+              <div class="device-meta">${dev.vendor} • P_rated: ${dev.ratedWatts}W × (${dev.currentLevelPercent}% / 100) × ${dev.isOn ? 1 : 0}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-weight:800;color:var(--cyan);font-size:15px;">${activeW.toFixed(1)} W</span>
+              <label class="switch-toggle">
+                <input type="checkbox" ${dev.isOn ? "checked" : ""} onchange="toggleDevice(${idx}, this.checked)" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="slider-wrap">
+            <span style="font-size:11px;color:var(--muted);min-width:85px;">Level: ${dev.currentLevelPercent}%</span>
+            <input type="range" min="0" max="100" step="5" value="${dev.currentLevelPercent}"
+                   oninput="updateVirtualLevel(${idx}, this.value)" />
+          </div>
+        `;
+        virtBox.appendChild(card);
+      }
+    });
+  }
+
+  function toggleDevice(idx, checked) {
+    haptic(20);
+    devices[idx].isOn = checked;
+    saveDevicesState();
+    renderAll();
+  }
+
+  function updateLiveWatts(idx, val) {
+    devices[idx].livePowerWatts = parseFloat(val) || 0;
+    saveDevicesState();
+    renderAll();
+  }
+
+  function updateVirtualLevel(idx, val) {
+    devices[idx].currentLevelPercent = parseFloat(val) || 0;
+    saveDevicesState();
+    renderAll();
+  }
+
+  // ===========================================================================
+  // NATIVE ANDROID SQLITE BUFFER OPERATIONS
+  // ===========================================================================
+  function bufferCurrentFrameToSqlite() {
+    haptic(35);
+    const snap = computeDisaggregation();
+    if (hasNativeBridge()) {
+      const rowId = window.OmniaNative.insertTelemetryRecord(
+        snap.pCt,
+        snap.pNative,
+        snap.pVirtual,
+        snap.pResidual,
+        JSON.stringify(snap.breakdown)
+      );
+      showToast(`Buffered Frame #${rowId} to SQLite (P_CT=${snap.pCt.toFixed(0)}W, Residual=${snap.pResidual.toFixed(0)}W)`);
+    }
+    refreshSqliteView();
+  }
+
+  function refreshSqliteView() {
+    if (!hasNativeBridge()) return;
+    try {
+      const stats = JSON.parse(window.OmniaNative.getDatabaseStatsJson());
+      document.getElementById("headerSqlBadge").textContent = `SQLite: ${stats.pendingRows} pending`;
+      document.getElementById("sqlDbSizeBadge").textContent = `${(stats.dbSizeBytes / 1024).toFixed(1)} KB`;
+      document.getElementById("kpiTotalRows").textContent = stats.totalRows;
+      document.getElementById("kpiPendingRows").textContent = stats.pendingRows;
+      document.getElementById("kpiSyncedRows").textContent = stats.syncedRows;
+      document.getElementById("sqlPathInfoBox").textContent = `DB Path: ${stats.dbPath}`;
+
+      const rows = JSON.parse(window.OmniaNative.getTelemetryBufferJson(50));
+      const tbody = document.getElementById("sqliteTableBody");
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);">No buffered rows in local_telemetry_buffer</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => {
+        const dt = new Date(r.timestampMs);
+        const timeStr = dt.toTimeString().split(" ")[0];
+        const badgeColor = r.syncStatus === "SYNCED" ? "var(--green)" : "var(--amber)";
+        return `
+          <tr>
+            <td>#${r.id}</td>
+            <td>${timeStr}</td>
+            <td>${r.pCtWatts.toFixed(1)}W</td>
+            <td>${r.pNativeSumWatts.toFixed(1)}W</td>
+            <td>${r.pVirtualSumWatts.toFixed(1)}W</td>
+            <td>${r.pResidualWatts.toFixed(1)}W</td>
+            <td style="color:${badgeColor};font-weight:700;">${r.syncStatus}</td>
+          </tr>
+        `;
+      }).join("");
+    } catch (e) {}
+  }
+
+  function syncPendingBatchToDrive() {
+    haptic(35);
+    if (!hasNativeBridge()) return;
+    const driveUrl = document.getElementById("cfgDriveSyncUrl").value.trim();
+    const rowsJson = window.OmniaNative.getTelemetryBufferJson(250);
+    const resRaw = window.OmniaNative.pushBatchToGoogleDrive(driveUrl, rowsJson, 250);
+    try {
+      const res = JSON.parse(resRaw);
+      if (res.ok) {
+        showToast(`Synced ${res.syncedCount} pending records to OmniaEnergy_Master_Telemetry!`);
+      } else {
+        showToast(`Sync error: ${res.error || res.httpCode}`);
+      }
+    } catch (e) {}
+    refreshSqliteView();
+  }
+
+  function clearLocalSqliteBuffer() {
+    haptic(30);
+    if (!hasNativeBridge()) return;
+    window.OmniaNative.clearTelemetryBuffer();
+    refreshSqliteView();
+  }
+
+  // ===========================================================================
+  // LIVE ON-DEVICE TUYA OPENAPI v2.0 HMAC-SHA256 POLLING
+  // ===========================================================================
+  function pollLiveTuyaCloudNow() {
+    haptic(30);
+    if (!hasNativeBridge()) {
+      showToast("Native HMAC bridge only runs on Android device.");
+      return;
+    }
+    const endpoint = document.getElementById("cfgTuyaEndpoint").value.trim();
+    const clientId = document.getElementById("cfgTuyaClientId").value.trim();
+    const clientSecret = document.getElementById("cfgTuyaClientSecret").value.trim();
+
+    showToast("Signing HMAC-SHA256 token request on-device...");
+    setTimeout(() => {
+      try {
+        const tokRaw = window.OmniaNative.tuyaSignedRequest(
+          endpoint, clientId, clientSecret, "", "GET", "/v1.0/token?grant_type=1", ""
+        );
+        const tokObj = JSON.parse(tokRaw);
+        if (!tokObj.success || !tokObj.result || !tokObj.result.access_token) {
+          showToast(`Tuya HMAC Auth response: ${tokObj.msg || tokRaw}`);
+          return;
+        }
+        const token = tokObj.result.access_token;
+        let updatedCount = 0;
+
+        devices.forEach(dev => {
+          if (dev.id.startsWith("d7")) {
+            const stRaw = window.OmniaNative.tuyaSignedRequest(
+              endpoint, clientId, clientSecret, token, "GET",
+              `/v1.0/iot-03/devices/${dev.id}/status`, ""
+            );
+            const stObj = JSON.parse(stRaw);
+            if (stObj.success && Array.isArray(stObj.result)) {
+              stObj.result.forEach(dp => {
+                if (dp.code === "total_power" || dp.code === "cur_power") {
+                  dev.livePowerWatts = parseFloat(dp.value) || dev.livePowerWatts;
+                  dev.isOn = dev.livePowerWatts > 0;
+                  updatedCount++;
+                } else if (dp.code === "switch_1" || dp.code === "switch") {
+                  dev.isOn = Boolean(dp.value);
+                  updatedCount++;
+                }
+              });
+            }
+          }
+        });
+
+        saveDevicesState();
+        bufferCurrentFrameToSqlite();
+        renderAll();
+        showToast(`Live Tuya HMAC Poll complete (${updatedCount} DPs updated & buffered to SQLite).`);
+      } catch (e) {
+        showToast("Tuya poll error: " + e.message);
+      }
+    }, 60);
+  }
+
+  function showToast(msg) {
+    const box = document.getElementById("dashboardToast");
+    box.style.display = "block";
+    box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  }
+
+  function switchTab(tabId) {
+    haptic(15);
+    ["dashboard", "devices", "sqlite"].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle("active", t === tabId);
+      document.getElementById(`nav-${t}`).classList.toggle("active", t === tabId);
+    });
+    if (tabId === "sqlite") refreshSqliteView();
+  }
+
+  // Initialize MVP and insert initial baseline snapshot into SQLite if empty
+  window.addEventListener("DOMContentLoaded", () => {
+    loadState();
+    renderAll();
+    if (hasNativeBridge()) {
+      try {
+        const stats = JSON.parse(window.OmniaNative.getDatabaseStatsJson());
+        if (stats.totalRows === 0) {
+          bufferCurrentFrameToSqlite();
+        }
+      } catch (e) {}
+    }
+  });
+</script>
+</body>
+</html>

@@ -53,3 +53,6 @@ coverage/
 *.db-wal
 *.env
 secrets.json
+apk-build/out/
+*.idsig
+
