@@ -1,0 +1,37 @@
+name: omnia_energy
+description: "OmniaEnergy - Serverless & Universal Energy Analytics for Android."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Local Database & File Paths
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+
+  # Networking & Client-Side Cryptography (HMAC-SHA256)
+  http: ^1.2.2
+  crypto: ^3.0.5
+
+  # Direct Client-to-Drive Cloud API Integration (drive.file scope)
+  google_sign_in: ^6.2.1
+  googleapis: ^13.2.0
+
+  # Android Keystore Secure Storage
+  flutter_secure_storage: ^9.2.2
+
+  # Periodic Background Sync Tasks
+  workmanager: ^0.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
