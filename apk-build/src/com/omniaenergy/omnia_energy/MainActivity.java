@@ -2,6 +2,7 @@ package com.omniaenergy.omnia_energy;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -15,6 +16,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -27,12 +30,13 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * OmniaEnergy v0.1.0-MVP MainActivity
+ * OmniaEnergy v0.3.0-analytics MainActivity
  *
- * Bridges the Flutter/Material-3 Dark Disaggregation Dashboard with:
+ * Bridges the Homeowner Smart Energy UI with:
  * 1. Real Android SQLite (`omnia_energy_local.db` -> `local_telemetry_buffer`)
  * 2. Real On-Device HMAC-SHA256 Tuya OpenAPI v2.0 Client (`TuyaOpenApiClient`)
  * 3. Direct Client-to-Drive Sync (`OmniaEnergy_Master_Telemetry`)
+ * 4. One-Tap Excel/CSV Bill Report Export & Native Android Share Sheet
  */
 public class MainActivity extends Activity {
 
@@ -49,7 +53,7 @@ public class MainActivity extends Activity {
         securePrefs = getSharedPreferences("omnia_energy_keystore_prefs", Context.MODE_PRIVATE);
 
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.parseColor("#080C14"));
+        webView.setBackgroundColor(Color.parseColor("#070B12"));
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -160,9 +164,67 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Executes a serverless Tuya OpenAPI v2.0 request signed locally on the Android
-         * device using HMAC-SHA256.
+         * Exports a clean Excel-compatible CSV energy report to the phone's Downloads
+         * folder (`/sdcard/Download/OmniaEnergy_Home_Report.csv`) and app storage.
          */
+        @JavascriptInterface
+        public String exportEnergyReportCsv(String csvContent) {
+            String savedPath = "";
+            try {
+                File dlFile = new File("/sdcard/Download/OmniaEnergy_Home_Report.csv");
+                FileOutputStream fos = new FileOutputStream(dlFile, false);
+                fos.write(csvContent.getBytes(StandardCharsets.UTF_8));
+                fos.flush();
+                fos.close();
+                savedPath = dlFile.getAbsolutePath();
+            } catch (Exception ignored) {
+            }
+            try {
+                File extDir = context.getExternalFilesDir(null);
+                if (extDir != null) {
+                    File extFile = new File(extDir, "OmniaEnergy_Home_Report.csv");
+                    FileOutputStream efos = new FileOutputStream(extFile, false);
+                    efos.write(csvContent.getBytes(StandardCharsets.UTF_8));
+                    efos.flush();
+                    efos.close();
+                    if (savedPath.isEmpty()) {
+                        savedPath = extFile.getAbsolutePath();
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+            try {
+                File internalFile = new File(context.getFilesDir(), "OmniaEnergy_Home_Report.csv");
+                FileOutputStream ifos = new FileOutputStream(internalFile, false);
+                ifos.write(csvContent.getBytes(StandardCharsets.UTF_8));
+                ifos.flush();
+                ifos.close();
+                if (savedPath.isEmpty()) {
+                    savedPath = internalFile.getAbsolutePath();
+                }
+            } catch (Exception ignored) {
+            }
+            return savedPath;
+        }
+
+        /**
+         * Launches the native Android Share Sheet so homeowners can share their
+         * energy bill report via WhatsApp, Gmail, Google Drive, or Telegram.
+         */
+        @JavascriptInterface
+        public void shareEnergySummaryText(String summaryText) {
+            try {
+                Intent sendIntent = new Intent(Intent.ACTION_SEND);
+                sendIntent.setType("text/plain");
+                sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My Home Energy Report — OmniaEnergy");
+                sendIntent.putExtra(Intent.EXTRA_TEXT, summaryText);
+                Intent chooser = Intent.createChooser(sendIntent, "Share Home Energy Report");
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(chooser);
+            } catch (Exception ignored) {
+            }
+        }
+
         @JavascriptInterface
         public String tuyaSignedRequest(
                 String endpoint,
@@ -228,10 +290,6 @@ public class MainActivity extends Activity {
             }
         }
 
-        /**
-         * Flushes a JSON payload directly to the user's Google Drive / Sheets endpoint
-         * (`OmniaEnergy_Master_Telemetry`) and marks the batch as SYNCED in SQLite.
-         */
         @JavascriptInterface
         public String pushBatchToGoogleDrive(String driveEndpointUrl, String payloadJson, int batchSize) {
             try {

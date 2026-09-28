@@ -300,7 +300,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 98px;
+    min-height: 104px;
   }
   .quick-tile.on {
     background: linear-gradient(145deg, rgba(16, 185, 129, 0.16), rgba(14, 165, 233, 0.1));
@@ -329,7 +329,7 @@
   .quick-name {
     font-size: 13.5px;
     font-weight: 700;
-    margin-top: 10px;
+    margin-top: 8px;
   }
   .quick-sub {
     font-size: 11px;
@@ -405,6 +405,18 @@
     color: var(--muted);
     margin-top: 2px;
   }
+  .runtime-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.12);
+    color: #7dd3fc;
+    font-size: 10.5px;
+    font-weight: 700;
+  }
   .app-power-tag {
     font-size: 14px;
     font-weight: 800;
@@ -414,6 +426,7 @@
   .app-cost-tag {
     font-size: 11px;
     color: var(--muted);
+    text-align: right;
   }
 
   /* Speed / Level Pills for Fans & Dimmers */
@@ -490,12 +503,73 @@
     transform: translateX(22px);
   }
 
+  /* Visual Bar Charts (7-Day & 6-Month) */
+  .chart-bars {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    align-items: end;
+    height: 132px;
+    padding-top: 18px;
+    margin-top: 6px;
+  }
+  .chart-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .chart-val {
+    font-size: 10px;
+    font-weight: 700;
+    color: #cbd5e1;
+    margin-bottom: 4px;
+  }
+  .chart-bar-fill {
+    width: 100%;
+    max-width: 28px;
+    border-radius: 8px 8px 4px 4px;
+    background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+    transition: height 0.3s ease;
+  }
+  .chart-bar-fill.today {
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+  }
+  .chart-lbl {
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-weight: 600;
+  }
+
+  /* Budget Progress Bar */
+  .budget-track {
+    height: 12px;
+    border-radius: 999px;
+    background: #1e293b;
+    overflow: hidden;
+    margin: 10px 0 6px;
+  }
+  .budget-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #10b981, #38bdf8);
+    transition: width 0.3s ease;
+  }
+
   /* Buttons */
+  .btn-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
   .btn {
     border: 1px solid var(--border);
     background: var(--surface-soft);
     color: var(--text);
-    padding: 12px 15px;
+    padding: 12px 14px;
     border-radius: 14px;
     font-size: 13px;
     font-weight: 700;
@@ -503,7 +577,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 7px;
     width: 100%;
   }
   .btn.primary {
@@ -661,7 +735,7 @@
     <div class="brand-icon">🏡</div>
     <div>
       <div class="brand-title">OmniaEnergy</div>
-      <div class="brand-greeting" id="headerSubText">Your Smart Home Energy Assistant</div>
+      <div class="brand-greeting">Smart Home Energy & Bill Assistant</div>
     </div>
   </div>
   <div class="sync-chip" onclick="refreshFromSmartHomeNow()">
@@ -708,15 +782,15 @@
         </div>
         <div class="hero-stat">
           <div class="hero-stat-val" id="statDailyCost">₹0</div>
-          <div class="hero-stat-lbl">Est. Today</div>
+          <div class="hero-stat-lbl">Spent Today</div>
         </div>
         <div class="hero-stat">
           <div class="hero-stat-val" id="statMonthlyBill">₹0</div>
-          <div class="hero-stat-lbl">Monthly Pace</div>
+          <div class="hero-stat-lbl">Monthly Est.</div>
         </div>
       </div>
 
-      <div class="friendly-insight" id="friendlyInsightBox">
+      <div class="friendly-insight">
         <span style="font-size:20px;">💡</span>
         <span id="friendlyInsightText">Checking what's running in your home...</span>
       </div>
@@ -783,20 +857,20 @@
           <div class="section-title" style="margin-bottom:2px;">Quick Controls</div>
           <div class="section-sub" style="margin-bottom:0;">Tap any appliance to turn it ON or OFF</div>
         </div>
-        <button class="room-chip" onclick="switchTab('rooms')">See All →</button>
+        <button class="room-chip" onclick="switchTab('rooms')">All Rooms →</button>
       </div>
       <div class="quick-grid" id="quickControlsGrid"></div>
     </div>
   </section>
 
   <!-- ===================================================================== -->
-  <!-- TAB 2: ROOMS & APPLIANCES (SIMPLE HOME CONTROLS)                      -->
+  <!-- TAB 2: ROOMS & APPLIANCES (LIVE TIMER + TODAY'S ₹ SPEND)              -->
   <!-- ===================================================================== -->
   <section id="tab-rooms" class="tab-pane">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div>
         <div class="section-title">My Rooms & Appliances</div>
-        <div class="section-sub" style="margin-bottom:0;">Toggle switches or adjust fan speed</div>
+        <div class="section-sub" style="margin-bottom:0;">Tracks live ON time & ₹ spent today</div>
       </div>
       <button class="room-chip active" onclick="openAddApplianceModal()">＋ Add New</button>
     </div>
@@ -813,21 +887,26 @@
   </section>
 
   <!-- ===================================================================== -->
-  <!-- TAB 3: BILL & SMART SAVINGS                                           -->
+  <!-- TAB 3: BILL CHARTS, MONTHLY BUDGET & SAVINGS TIPS                     -->
   <!-- ===================================================================== -->
   <section id="tab-savings" class="tab-pane">
     <div class="card">
-      <div class="section-title">💰 Electricity Bill Estimator</div>
-      <div class="section-sub">Based on your current usage and local electricity tariff</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="section-title">💰 Monthly Bill Tracker</div>
+          <div class="section-sub" style="margin-bottom:6px;">Projected BESCOM bill vs your monthly budget</div>
+        </div>
+        <button class="room-chip active" onclick="shareBillSummaryNow()">📤 Share</button>
+      </div>
 
-      <div class="hero-summary-strip" style="margin-top:4px;padding-top:4px;border-top:none;">
+      <div class="hero-summary-strip" style="margin-top:6px;padding-top:8px;">
         <div class="hero-stat">
           <div class="hero-stat-val" style="color:var(--emerald);" id="billHourly">₹0.0</div>
           <div class="hero-stat-lbl">Per Hour Now</div>
         </div>
         <div class="hero-stat">
           <div class="hero-stat-val" style="color:var(--sky);" id="billDaily">₹0</div>
-          <div class="hero-stat-lbl">Per Day Est.</div>
+          <div class="hero-stat-lbl">Today's Bill</div>
         </div>
         <div class="hero-stat">
           <div class="hero-stat-val" style="color:var(--amber);" id="billMonthly">₹0</div>
@@ -835,10 +914,34 @@
         </div>
       </div>
 
-      <div class="field" style="margin-top:16px;">
+      <div style="margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;">
+          <span id="budgetStatusText">Monthly Budget Progress</span>
+          <span style="color:var(--sky);" id="budgetRatioText">₹0 / ₹3,000</span>
+        </div>
+        <div class="budget-track">
+          <div class="budget-fill" id="budgetFillBar" style="width:45%;"></div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:12px;">
         <label>Your Electricity Rate (₹ per Unit / kWh)</label>
         <input type="number" step="0.5" id="tariffRateInput" value="8.0" onchange="updateTariffRate(this.value)" />
       </div>
+    </div>
+
+    <!-- 7-Day Daily Spend Bar Chart -->
+    <div class="card">
+      <div class="section-title">📊 Last 7 Days Electricity Cost (₹)</div>
+      <div class="section-sub">Green bar shows today's live accumulated cost</div>
+      <div class="chart-bars" id="weeklyChartBars"></div>
+    </div>
+
+    <!-- 6-Month Bill History Chart -->
+    <div class="card">
+      <div class="section-title">📅 6-Month Home Bill Trend</div>
+      <div class="section-sub">Comparison of monthly electricity bills (Apr – Sep)</div>
+      <div class="chart-bars" id="monthlyChartBars" style="grid-template-columns: repeat(6, 1fr);"></div>
     </div>
 
     <div class="card">
@@ -849,11 +952,11 @@
   </section>
 
   <!-- ===================================================================== -->
-  <!-- TAB 4: BACKUP & SMART HOME CONNECTION                                 -->
+  <!-- TAB 4: BACKUP, EXCEL EXPORT & SMART HOME CONNECTION                   -->
   <!-- ===================================================================== -->
   <section id="tab-backup" class="tab-pane">
     <div class="card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
         <div class="cat-icon" style="background:var(--emerald-glow);font-size:22px;">🛡️</div>
         <div>
           <div class="section-title" style="margin-bottom:2px;">100% Private & Saved on Your Phone</div>
@@ -864,9 +967,15 @@
       <button class="btn primary" style="margin-bottom:10px;" onclick="backupToGoogleDriveNow()">
         ☁️ Backup Now to My Google Drive
       </button>
-      <button class="btn sky" onclick="saveCurrentReadingNow()">
-        📸 Save Instant Energy Snapshot
-      </button>
+
+      <div class="btn-grid-2">
+        <button class="btn sky" onclick="exportExcelReportNow()">
+          📄 Save Excel / CSV
+        </button>
+        <button class="btn" onclick="shareBillSummaryNow()">
+          📤 Share on WhatsApp
+        </button>
+      </div>
     </div>
 
     <details class="adv-box">
@@ -964,7 +1073,7 @@
   </button>
   <button class="nav-btn" id="nav-savings" onclick="switchTab('savings')">
     <span style="font-size:18px;">💰</span>
-    <span>Bill & Tips</span>
+    <span>Bill & Charts</span>
   </button>
   <button class="nav-btn" id="nav-backup" onclick="switchTab('backup')">
     <span style="font-size:18px;">☁️</span>
@@ -985,7 +1094,9 @@
       ratedWatts: 5000,
       currentLevelPercent: 100,
       isOn: true,
-      livePowerWatts: 1820.0
+      livePowerWatts: 1820.0,
+      todaySeconds: 28800,
+      todayWh: 8400.0
     },
     {
       id: "d7941811a9f6a6f9b38tag",
@@ -997,7 +1108,9 @@
       ratedWatts: 3000,
       currentLevelPercent: 100,
       isOn: true,
-      livePowerWatts: 65.0
+      livePowerWatts: 65.0,
+      todaySeconds: 28800,
+      todayWh: 450.0
     },
     // Direct Smart Plugs (Native Metering)
     {
@@ -1010,7 +1123,9 @@
       ratedWatts: 300,
       currentLevelPercent: 100,
       isOn: true,
-      livePowerWatts: 145.0
+      livePowerWatts: 145.0,
+      todaySeconds: 32400,
+      todayWh: 1305.0
     },
     {
       id: "d7a5c5a13886b6924bzuj5",
@@ -1022,7 +1137,9 @@
       ratedWatts: 1500,
       currentLevelPercent: 100,
       isOn: true,
-      livePowerWatts: 180.0
+      livePowerWatts: 180.0,
+      todaySeconds: 3900,
+      todayWh: 195.0
     },
     // Smart Switches, Fans & Lights (Virtual Payload Engine)
     {
@@ -1035,7 +1152,8 @@
       ratedWatts: 2000.0,
       currentLevelPercent: 50.0,
       isOn: true,
-      hasSpeedSteps: false
+      todaySeconds: 2100,
+      todayWh: 583.0
     },
     {
       id: "atomberg_ble_living",
@@ -1047,7 +1165,8 @@
       ratedWatts: 35.0,
       currentLevelPercent: 60.0,
       isOn: true,
-      hasSpeedSteps: true
+      todaySeconds: 19800,
+      todayWh: 115.5
     },
     {
       id: "d7b1df11d0c1328269ulma",
@@ -1059,7 +1178,8 @@
       ratedWatts: 115.0,
       currentLevelPercent: 80.0,
       isOn: true,
-      hasSpeedSteps: true
+      todaySeconds: 14400,
+      todayWh: 368.0
     },
     {
       id: "ghome_smart_dimmer",
@@ -1071,7 +1191,8 @@
       ratedWatts: 60.0,
       currentLevelPercent: 80.0,
       isOn: true,
-      hasSpeedSteps: true
+      todaySeconds: 10800,
+      todayWh: 144.0
     },
     {
       id: "d7018a4d62524543f7oevw",
@@ -1083,7 +1204,8 @@
       ratedWatts: 95.0,
       currentLevelPercent: 100.0,
       isOn: false,
-      hasSpeedSteps: false
+      todaySeconds: 7200,
+      todayWh: 190.0
     },
     {
       id: "d7851afb32391d106f8mze",
@@ -1095,7 +1217,8 @@
       ratedWatts: 25.0,
       currentLevelPercent: 100.0,
       isOn: true,
-      hasSpeedSteps: false
+      todaySeconds: 16200,
+      todayWh: 112.5
     },
     {
       id: "d70d40dc2db77e6a39eeqi",
@@ -1107,13 +1230,32 @@
       ratedWatts: 2000.0,
       currentLevelPercent: 100.0,
       isOn: false,
-      hasSpeedSteps: false
+      todaySeconds: 1500,
+      todayWh: 833.0
     }
+  ];
+
+  const PAST_6_DAYS_INR = [
+    { day: "Tue", rs: 78 },
+    { day: "Wed", rs: 92 },
+    { day: "Thu", rs: 84 },
+    { day: "Fri", rs: 89 },
+    { day: "Sat", rs: 112 },
+    { day: "Sun", rs: 105 }
+  ];
+
+  const PAST_MONTHS_BILL = [
+    { mo: "Apr", rs: 2480 },
+    { mo: "May", rs: 2890 },
+    { mo: "Jun", rs: 2620 },
+    { mo: "Jul", rs: 2390 },
+    { mo: "Aug", rs: 2510 }
   ];
 
   let devices = [];
   let selectedRoom = "All Rooms";
   let tariffPerKwh = 8.0;
+  let monthlyBudgetInr = 3000.0;
 
   function hasNativeBridge() {
     return typeof window.OmniaNative !== "undefined";
@@ -1135,11 +1277,20 @@
     }, 3200);
   }
 
+  function formatDuration(sec) {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const hrs = Math.floor(s / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    if (hrs > 0) return `${hrs}h ${mins}m`;
+    if (mins > 0) return `${mins}m ${s % 60}s`;
+    return `${s}s`;
+  }
+
   function loadState() {
     try {
-      const raw = localStorage.getItem("omnia_home_devices_v2");
+      const raw = localStorage.getItem("omnia_home_devices_v3");
       devices = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DEVICES));
-      tariffPerKwh = parseFloat(localStorage.getItem("omnia_tariff_v2") || "8.0") || 8.0;
+      tariffPerKwh = parseFloat(localStorage.getItem("omnia_tariff_v3") || "8.0") || 8.0;
       document.getElementById("tariffRateInput").value = tariffPerKwh;
     } catch (e) {
       devices = JSON.parse(JSON.stringify(DEFAULT_DEVICES));
@@ -1164,7 +1315,7 @@
 
   function saveState() {
     try {
-      localStorage.setItem("omnia_home_devices_v2", JSON.stringify(devices));
+      localStorage.setItem("omnia_home_devices_v3", JSON.stringify(devices));
     } catch (e) {}
   }
 
@@ -1179,11 +1330,10 @@
 
   function updateTariffRate(val) {
     tariffPerKwh = Math.max(1, parseFloat(val) || 8.0);
-    localStorage.setItem("omnia_tariff_v2", String(tariffPerKwh));
+    localStorage.setItem("omnia_tariff_v3", String(tariffPerKwh));
     renderAll();
   }
 
-  // Underlying Disaggregation Math Engine (Runs invisibly for the user)
   function computeDeviceWatts(dev) {
     if (dev.category === "CT_CLAMP" || dev.category === "NATIVE_METERING") {
       return dev.isOn ? Math.max(0, parseFloat(dev.livePowerWatts || 0)) : 0.0;
@@ -1198,6 +1348,7 @@
     let activeAppliances = 0;
     let biggestAppliance = null;
     let biggestWatts = 0;
+    let totalTodayWh = 0.0;
     const breakdown = {};
 
     devices.forEach(d => {
@@ -1206,6 +1357,7 @@
       if (d.category === "CT_CLAMP") {
         pCt += w;
       } else {
+        totalTodayWh += parseFloat(d.todayWh || 0);
         if (d.isOn && w > 0) activeAppliances++;
         if (w > biggestWatts) {
           biggestWatts = w;
@@ -1216,10 +1368,13 @@
       }
     });
 
-    // If user turned on more appliances than the static main meter slider, auto-adjust main meter so residual stays realistic
     const trackedSum = pNative + pVirtual;
     const effectiveTotal = Math.max(pCt, trackedSum + 120);
     const pResidual = Math.max(0.0, effectiveTotal - trackedSum);
+
+    // Add untracked baseline Wh for today (~1.8 kWh)
+    const todayTotalKwh = (totalTodayWh + 1800.0) / 1000.0;
+    const todaySpentInr = todayTotalKwh * tariffPerKwh;
 
     return {
       pCt: effectiveTotal,
@@ -1229,6 +1384,8 @@
       activeAppliances,
       biggestAppliance,
       biggestWatts,
+      todayTotalKwh,
+      todaySpentInr,
       breakdown
     };
   }
@@ -1237,19 +1394,36 @@
     return (watts / 1000.0) * tariffPerKwh;
   }
 
+  // 1-Second Live Runtime & Energy Integrator
+  let tickCount = 0;
+  function tickEverySecond() {
+    devices.forEach(d => {
+      if (d.isOn && d.category !== "CT_CLAMP") {
+        const w = computeDeviceWatts(d);
+        d.todaySeconds = (d.todaySeconds || 0) + 1;
+        d.todayWh = (d.todayWh || 0) + (w / 3600.0);
+      }
+    });
+    tickCount++;
+    if (tickCount % 10 === 0) {
+      saveState();
+    }
+    renderAll();
+  }
+
   function renderAll() {
     const s = computeHomeSummary();
     const total = Math.max(1.0, s.pCt);
     const hourlyRs = wattsToRupeesPerHour(s.pCt);
-    const dailyRs = hourlyRs * 9.5; // Typical weighted daily active hours
-    const monthlyRs = dailyRs * 30;
+    const todayRs = s.todaySpentInr;
+    const monthlyRs = Math.round(todayRs * 30);
 
     // 1. Hero Gauge & Cost
     document.getElementById("heroTotalWatts").textContent = `${Math.round(s.pCt)} W`;
     document.getElementById("heroBurnRate").textContent = `Costs ≈ ₹${hourlyRs.toFixed(1)} / hour`;
     document.getElementById("statActiveCount").textContent = `${s.activeAppliances} ON`;
-    document.getElementById("statDailyCost").textContent = `₹${Math.round(dailyRs)}`;
-    document.getElementById("statMonthlyBill").textContent = `₹${Math.round(monthlyRs)}`;
+    document.getElementById("statDailyCost").textContent = `₹${Math.round(todayRs)}`;
+    document.getElementById("statMonthlyBill").textContent = `₹${monthlyRs}`;
 
     const badge = document.getElementById("loadLevelBadge");
     if (s.pCt > 2200) {
@@ -1266,7 +1440,6 @@
       badge.style.color = "#38bdf8";
     }
 
-    // Friendly Insight sentence
     const insightEl = document.getElementById("friendlyInsightText");
     if (s.biggestAppliance && s.biggestWatts > 50) {
       const hrCost = wattsToRupeesPerHour(s.biggestWatts).toFixed(1);
@@ -1317,14 +1490,19 @@
     // 5. Rooms & Appliances Tab
     renderRoomsTab();
 
-    // 6. Bill & Smart Savings Tab
+    // 6. Bill, Charts & Smart Savings Tab
     document.getElementById("billHourly").textContent = `₹${hourlyRs.toFixed(1)}`;
-    document.getElementById("billDaily").textContent = `₹${Math.round(dailyRs)}`;
-    document.getElementById("billMonthly").textContent = `₹${Math.round(monthlyRs)}`;
-    renderSmartTips(s);
+    document.getElementById("billDaily").textContent = `₹${Math.round(todayRs)}`;
+    document.getElementById("billMonthly").textContent = `₹${monthlyRs}`;
 
-    // 7. Backup Tab
-    refreshBackupHistory();
+    const budgetPct = Math.min(100, Math.round((monthlyRs / monthlyBudgetInr) * 100));
+    document.getElementById("budgetRatioText").textContent = `₹${monthlyRs} / ₹${monthlyBudgetInr}`;
+    document.getElementById("budgetFillBar").style.width = `${budgetPct}%`;
+    document.getElementById("budgetStatusText").textContent =
+      budgetPct > 90 ? "⚠️ Near Monthly Budget" : "✅ Within Monthly Budget";
+
+    renderBillCharts(Math.round(todayRs), monthlyRs);
+    renderSmartTips(s);
   }
 
   function renderQuickControls() {
@@ -1336,7 +1514,7 @@
 
     grid.innerHTML = controllable.map(({ d, idx }) => {
       const w = computeDeviceWatts(d);
-      const hrCost = wattsToRupeesPerHour(w).toFixed(1);
+      const todayCost = ((d.todayWh || 0) / 1000.0) * tariffPerKwh;
       return `
         <div class="quick-tile ${d.isOn ? 'on' : ''}" onclick="toggleAppliance(${idx})">
           <div class="quick-tile-top">
@@ -1345,7 +1523,7 @@
           </div>
           <div>
             <div class="quick-name">${d.name}</div>
-            <div class="quick-sub">${d.isOn ? `${Math.round(w)} W • ₹${hrCost}/hr` : `${d.room}`}</div>
+            <div class="quick-sub">${d.isOn ? `${Math.round(w)}W • ₹${todayCost.toFixed(1)} today` : `${d.room} • ₹${todayCost.toFixed(1)} today`}</div>
           </div>
         </div>
       `;
@@ -1367,6 +1545,9 @@
     listEl.innerHTML = filtered.map(({ d, idx }) => {
       const w = computeDeviceWatts(d);
       const hrCost = wattsToRupeesPerHour(w).toFixed(2);
+      const todayRs = (((d.todayWh || 0) / 1000.0) * tariffPerKwh).toFixed(2);
+      const runtimeStr = formatDuration(d.todaySeconds || 0);
+
       const speedHtml = (d.category === "VIRTUAL_PAYLOAD") ? `
         <div class="speed-bar">
           <span class="speed-lbl">${d.icon === '🌀' ? 'Fan Speed' : 'Power Level'}: ${d.currentLevelPercent}%</span>
@@ -1387,6 +1568,7 @@
               <div>
                 <div class="app-title">${d.name}</div>
                 <div class="app-room">${d.room}</div>
+                <div class="runtime-pill">⏱️ ${runtimeStr} today • ₹${todayRs} spent</div>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
@@ -1407,7 +1589,6 @@
       `;
     }).join("");
 
-    // Main Meter Sliders at bottom of Rooms tab
     const metersEl = document.getElementById("mainMetersList");
     const meters = devices.map((d, idx) => ({ d, idx })).filter(x => x.d.category === "CT_CLAMP");
     metersEl.innerHTML = meters.map(({ d, idx }) => `
@@ -1420,6 +1601,38 @@
                value="${d.livePowerWatts || 1800}" oninput="updateMainMeterWatts(${idx}, this.value)" />
       </div>
     `).join("");
+  }
+
+  function renderBillCharts(todayRs, currentMonthEstRs) {
+    // 1. 7-Day Bar Chart
+    const weekData = [...PAST_6_DAYS_INR, { day: "Today", rs: todayRs, isToday: true }];
+    const maxDayRs = Math.max(130, ...weekData.map(x => x.rs));
+    const weekEl = document.getElementById("weeklyChartBars");
+    weekEl.innerHTML = weekData.map(item => {
+      const hPct = Math.max(14, Math.round((item.rs / maxDayRs) * 88));
+      return `
+        <div class="chart-col">
+          <div class="chart-val">₹${item.rs}</div>
+          <div class="chart-bar-fill ${item.isToday ? 'today' : ''}" style="height:${hPct}px;"></div>
+          <div class="chart-lbl">${item.day}</div>
+        </div>
+      `;
+    }).join("");
+
+    // 2. 6-Month Bar Chart
+    const monthData = [...PAST_MONTHS_BILL, { mo: "Sep*", rs: currentMonthEstRs, isToday: true }];
+    const maxMoRs = Math.max(3200, ...monthData.map(x => x.rs));
+    const moEl = document.getElementById("monthlyChartBars");
+    moEl.innerHTML = monthData.map(item => {
+      const hPct = Math.max(16, Math.round((item.rs / maxMoRs) * 88));
+      return `
+        <div class="chart-col">
+          <div class="chart-val">₹${item.rs}</div>
+          <div class="chart-bar-fill ${item.isToday ? 'today' : ''}" style="height:${hPct}px;"></div>
+          <div class="chart-lbl">${item.mo}</div>
+        </div>
+      `;
+    }).join("");
   }
 
   function renderSmartTips(summary) {
@@ -1538,7 +1751,8 @@
       ratedWatts: watts,
       currentLevelPercent: 100,
       isOn: true,
-      hasSpeedSteps: preset.startsWith("fan") || preset === "light_led"
+      todaySeconds: 60,
+      todayWh: watts / 60.0
     });
 
     saveState();
@@ -1556,14 +1770,44 @@
       window.OmniaNative.insertTelemetryRecord(
         s.pCt, s.pNative, s.pVirtual, s.pResidual, JSON.stringify(s.breakdown)
       );
+      refreshBackupHistory();
     } catch (e) {}
   }
 
-  function saveCurrentReadingNow() {
+  function exportExcelReportNow() {
+    haptic(30);
+    let csv = "Appliance Name,Room,State,Current Watts (W),Runtime Today,Energy Today (Wh),Cost Today (INR)\n";
+    devices.filter(d => d.category !== "CT_CLAMP").forEach(d => {
+      const w = computeDeviceWatts(d);
+      const wh = (d.todayWh || 0).toFixed(1);
+      const rs = (((d.todayWh || 0) / 1000.0) * tariffPerKwh).toFixed(2);
+      csv += `"${d.name}","${d.room}",${d.isOn ? "ON" : "OFF"},${w.toFixed(1)},${formatDuration(d.todaySeconds)},${wh},${rs}\n`;
+    });
+
+    if (hasNativeBridge() && window.OmniaNative.exportEnergyReportCsv) {
+      const path = window.OmniaNative.exportEnergyReportCsv(csv);
+      showToast(`📄 Saved Excel report to ${path}`);
+    } else {
+      showToast("📄 Excel report generated!");
+    }
+  }
+
+  function shareBillSummaryNow() {
     haptic(25);
-    autoSaveSnapshotSilently();
-    refreshBackupHistory();
-    showToast("📸 Energy snapshot saved to your phone!");
+    const s = computeHomeSummary();
+    const monthlyRs = Math.round(s.todaySpentInr * 30);
+    const msg =
+      `🏡 *My Home Energy Summary (OmniaEnergy)*\n` +
+      `⚡ Live Home Load: ${Math.round(s.pCt)} W (₹${wattsToRupeesPerHour(s.pCt).toFixed(1)}/hr)\n` +
+      `🔌 Appliances Currently ON: ${s.activeAppliances}\n` +
+      `💰 Spent Today: ₹${Math.round(s.todaySpentInr)} (${s.todayTotalKwh.toFixed(2)} kWh)\n` +
+      `📅 Projected Monthly Bill: ₹${monthlyRs}`;
+
+    if (hasNativeBridge() && window.OmniaNative.shareEnergySummaryText) {
+      window.OmniaNative.shareEnergySummaryText(msg);
+    } else {
+      showToast(msg);
+    }
   }
 
   function refreshBackupHistory() {
@@ -1683,12 +1927,14 @@
       document.getElementById(`tab-${t}`).classList.toggle("active", t === tabId);
       document.getElementById(`nav-${t}`).classList.toggle("active", t === tabId);
     });
+    if (tabId === "backup") refreshBackupHistory();
   }
 
   window.addEventListener("DOMContentLoaded", () => {
     loadState();
     autoSaveSnapshotSilently();
     renderAll();
+    setInterval(tickEverySecond, 1000);
   });
 </script>
 </body>
