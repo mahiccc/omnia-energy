@@ -2851,8 +2851,8 @@ function doGet(e) {
       devices.forEach(d => {
         if (!d) return;
         if (d.cid === "d76253e070e8452f5flcjy" || (d.id && d.id.startsWith("d76253e070e8452f5flcjy"))) {
-          if (d.dp_code === "switch_1" && (!d.name || d.name.includes("3CH Zigbee") || d.name.includes("Main Light"))) {
-            d.name = "TV";
+          if (d.dp_code === "switch_2" && (d.name !== "TV Power" && d.name !== "TV")) {
+            d.name = "TV Power";
             d.room = "Living Room";
             d.icon = "📺";
             d.ratedWatts = 110;
@@ -2861,7 +2861,7 @@ function doGet(e) {
             d.isNativePower = false;
             d.powerSource = "assumed";
             needsSaveAfterMigration = true;
-          } else if (d.dp_code === "switch_2" && (!d.name || d.name.includes("3CH Zigbee") || d.name.includes("Profile Light"))) {
+          } else if (d.dp_code === "switch_1" && d.name !== "Show Light") {
             d.name = "Show Light";
             d.room = "Living Room";
             d.icon = "💡";
@@ -2871,7 +2871,7 @@ function doGet(e) {
             d.isNativePower = false;
             d.powerSource = "assumed";
             needsSaveAfterMigration = true;
-          } else if (d.dp_code === "switch_3" && (!d.name || d.name.includes("3CH Zigbee") || d.name.includes("Accent Lamp"))) {
+          } else if (d.dp_code === "switch_3" && d.name !== "Showlight 2") {
             d.name = "Showlight 2";
             d.room = "Living Room";
             d.icon = "💡";
@@ -3157,14 +3157,14 @@ function doGet(e) {
 
           // Hardware-level mapping for user's 3CH Zigbee Switch Module
           if (!cust && d.id === "d76253e070e8452f5flcjy") {
-            if (dp.code === "switch_1") {
-              appName = "TV";
+            if (dp.code === "switch_2") {
+              appName = "TV Power";
               appRoom = "Living Room";
               appIcon = "📺";
               rWatts = 110;
               isAt = false;
               isNat = false;
-            } else if (dp.code === "switch_2") {
+            } else if (dp.code === "switch_1") {
               appName = "Show Light";
               appRoom = "Living Room";
               appIcon = "💡";
