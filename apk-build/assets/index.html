@@ -2175,11 +2175,59 @@
       appMode = "live";
       devices = savedLiveDevices;
       discoveredMeters = savedMeters || [];
+      if (discoveredMeters && discoveredMeters.length > 0) {
+        discoveredMeters.forEach(m => {
+          if (!devices.some(d => d.cid === m.id)) {
+            devices.unshift({
+              id: `meter_${m.id}`,
+              cid: m.id,
+              dp_code: "meter",
+              name: m.name || "Smart Energy Meter",
+              room: inferRoomFromName(m.name || ""),
+              icon: "📟",
+              isAtomberg: false,
+              isNativePower: true,
+              isCtMeter: true,
+              powerSource: 'native',
+              liveWatts: 0.0,
+              ratedWatts: 100,
+              currentLevelPercent: 100,
+              isOn: true,
+              todaySeconds: 0,
+              todayWh: 0.0
+            });
+          }
+        });
+      }
       showScreen("app");
     } else if (cid && sec && uid) {
       appMode = "live";
       devices = savedLiveDevices || JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
       discoveredMeters = savedMeters || [];
+      if (discoveredMeters && discoveredMeters.length > 0) {
+        discoveredMeters.forEach(m => {
+          if (!devices.some(d => d.cid === m.id)) {
+            devices.unshift({
+              id: `meter_${m.id}`,
+              cid: m.id,
+              dp_code: "meter",
+              name: m.name || "Smart Energy Meter",
+              room: inferRoomFromName(m.name || ""),
+              icon: "📟",
+              isAtomberg: false,
+              isNativePower: true,
+              isCtMeter: true,
+              powerSource: 'native',
+              liveWatts: 0.0,
+              ratedWatts: 100,
+              currentLevelPercent: 100,
+              isOn: true,
+              todaySeconds: 0,
+              todayWh: 0.0
+            });
+          }
+        });
+      }
       showScreen("app");
     } else {
       showScreen("tuya");
@@ -2344,6 +2392,41 @@
           id: d.id,
           name: dName || `Energy Meter ${newMeters.length + 1}`,
           category: dCat
+        });
+        const roomName = inferRoomFromName(dName);
+        uniqueRoomsSet.add(roomName);
+
+        const statusList = Array.isArray(d.status) ? d.status : [];
+        const totPow = statusList.find(s => s && (s.code === "total_power" || s.code === "cur_power" || s.code === "power"));
+        const fwdEnergy = statusList.find(s => s && s.code === "forward_energy_total");
+
+        let initW = 0.0;
+        if (totPow && totPow.value !== undefined) {
+          const val = parseFloat(totPow.value);
+          initW = val > 500 ? val / 10.0 : val;
+        }
+        let initKwh = 0.0;
+        if (fwdEnergy && fwdEnergy.value !== undefined) {
+          initKwh = parseFloat(fwdEnergy.value) / 100.0;
+        }
+
+        newAppliances.push({
+          id: `meter_${d.id}`,
+          cid: d.id,
+          dp_code: "meter",
+          name: dName || "Smart Energy Meter",
+          room: roomName,
+          icon: "📟",
+          isAtomberg: false,
+          isNativePower: true,
+          isCtMeter: true,
+          powerSource: 'native',
+          liveWatts: initW,
+          ratedWatts: Math.round(initW) || 100,
+          currentLevelPercent: 100,
+          isOn: true,
+          todaySeconds: 0,
+          todayWh: initKwh * 1000
         });
         return;
       }
@@ -2579,51 +2662,86 @@
         let totalPhaseA = 0.0;
         let totalPhaseB = 0.0;
 
-        // 1. Poll each discovered CT Clamp Meter (if any)
+        // 1. Poll all devices first via /v1.0/users/{uid}/devices to build fast lookup map
+        const devsRaw = window.OmniaNative.tuyaSignedRequest(
+          endpoint, clientId, clientSecret, token, "GET",
+          `/v1.0/users/${uid}/devices`, ""
+        );
+        const devsObj = JSON.parse(devsRaw);
+        const mapById = {};
+        if (devsObj.success && Array.isArray(devsObj.result)) {
+          devsObj.result.forEach(d => { mapById[d.id] = d; });
+        }
+
+        // 2. Poll each discovered CT Clamp Meter (with shadow + /v1.0 fallback)
         if (discoveredMeters && discoveredMeters.length > 0) {
           discoveredMeters.forEach(m => {
             try {
+              let pA = 0, pB = 0, pTot = 0, fwdKwh = 0;
+              let fromShadow = false;
+
               const spRaw = window.OmniaNative.tuyaSignedRequest(
                 endpoint, clientId, clientSecret, token, "GET",
                 `/v2.0/cloud/thing/${m.id}/shadow/properties`, ""
               );
               const sp = JSON.parse(spRaw);
               if (sp.success && sp.result && Array.isArray(sp.result.properties)) {
-                let pA = 0, pB = 0;
                 sp.result.properties.forEach(p => {
                   if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
                   if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
                   if (p.code === "cur_power") pA = parseFloat(p.value) / 10.0;
+                  if (p.code === "total_power" || p.dp_id === 115) {
+                    const tv = parseFloat(p.value);
+                    pTot = tv > 500 ? tv / 10.0 : tv;
+                  }
                   if (p.code === "voltage_a" || p.dp_id === 112 || p.code === "voltage") {
                     ctMeterState.voltageVolts = parseFloat(p.value) / 10.0;
                   }
                   if (p.code === "freq") ctMeterState.freqHz = parseFloat(p.value) / 100.0;
-                  if (p.code === "forward_energy_total") ctMeterState.totalForwardKwh = parseFloat(p.value) / 100.0;
+                  if (p.code === "forward_energy_total") fwdKwh = parseFloat(p.value) / 100.0;
                 });
-                totalPhaseA += pA;
-                totalPhaseB += pB;
-                lines.push(`✅ ${m.name}: A = ${pA.toFixed(1)}W, B = ${pB.toFixed(1)}W`);
+                fromShadow = true;
               }
+
+              // Fallback to /v1.0/users/{uid}/devices status if shadow failed (e.g. error 40001900)
+              if ((!fromShadow || (pA === 0 && pB === 0 && pTot === 0)) && mapById[m.id]) {
+                const devStat = mapById[m.id].status || [];
+                const pTotDp = devStat.find(s => s && (s.code === "total_power" || s.code === "cur_power"));
+                const fwdDp = devStat.find(s => s && s.code === "forward_energy_total");
+                if (pTotDp && pTotDp.value !== undefined) {
+                  const tv = parseFloat(pTotDp.value);
+                  pTot = tv > 500 ? tv / 10.0 : tv;
+                }
+                if (fwdDp && fwdDp.value !== undefined) {
+                  fwdKwh = parseFloat(fwdDp.value) / 100.0;
+                }
+              }
+
+              const mWatts = (pA + pB) > 0 ? (pA + pB) : pTot;
+              totalPhaseA += pA;
+              totalPhaseB += pB;
+              if (fwdKwh > 0) ctMeterState.totalForwardKwh = fwdKwh;
+
+              // Also update the device object in devices array
+              const meterApp = devices.find(d => d.cid === m.id);
+              if (meterApp) {
+                meterApp.liveWatts = mWatts;
+                if (fwdKwh > 0) meterApp.todayWh = fwdKwh * 1000;
+              }
+
+              lines.push(`✅ ${m.name}: ${mWatts.toFixed(1)}W (Total: ${fwdKwh.toFixed(1)} kWh)`);
             } catch (mErr) {}
           });
           ctMeterState.mainPhaseAWatts = totalPhaseA;
           ctMeterState.mainPhaseBWatts = totalPhaseB;
         }
 
-        // 2. Poll Switch & Socket States via single call /v1.0/users/{uid}/devices
-        const devsRaw = window.OmniaNative.tuyaSignedRequest(
-          endpoint, clientId, clientSecret, token, "GET",
-          `/v1.0/users/${uid}/devices`, ""
-        );
-        const devsObj = JSON.parse(devsRaw);
+        // 3. Poll Switch & Socket States via lookup map
         if (devsObj.success && Array.isArray(devsObj.result)) {
-          const mapById = {};
-          devsObj.result.forEach(d => { mapById[d.id] = d; });
-
           let syncedCount = 0;
           let activeCount = 0;
           devices.forEach(app => {
-            if (app.isAtomberg) return;
+            if (app.isAtomberg || app.isCtMeter) return;
             const cloudDev = mapById[app.cid];
             if (cloudDev && Array.isArray(cloudDev.status)) {
               const dp = cloudDev.status.find(s => s.code === app.dp_code);
@@ -2631,6 +2749,17 @@
                 app.isOn = dp.value;
                 syncedCount++;
                 if (app.isOn) activeCount++;
+              }
+              // Check if any native power metric is reported by this switch/socket
+              const curPow = cloudDev.status.find(s => s && (
+                s.code === "cur_power" || s.code === "power" || s.code === "cur_power_1" ||
+                s.code === "cur_power_2" || s.code === "total_power" || s.code === "active_power"
+              ));
+              if (curPow && curPow.value !== undefined) {
+                app.isNativePower = true;
+                app.powerSource = 'native';
+                const cpVal = parseFloat(curPow.value);
+                app.liveWatts = cpVal > 500 ? cpVal / 10.0 : cpVal;
               }
             }
           });
@@ -2693,8 +2822,9 @@
   // APPLIANCE CONTROL & SIMULATION
   // ===========================================================================
   function toggleAppliance(idx) {
-    haptic(22);
     const dev = devices[idx];
+    if (!dev || dev.isCtMeter) return;
+    haptic(22);
     dev.isOn = !dev.isOn;
 
     if (appMode === "demo") {
@@ -2754,7 +2884,13 @@
   }
 
   function computeDeviceWatts(dev) {
-    if (!dev.isOn) return 0.0;
+    if (!dev || !dev.isOn) return 0.0;
+    if (dev.isCtMeter) {
+      return parseFloat(dev.liveWatts !== undefined ? dev.liveWatts : (dev.ratedWatts || 0));
+    }
+    if (dev.isNativePower && dev.liveWatts !== undefined && dev.liveWatts > 0) {
+      return parseFloat(dev.liveWatts);
+    }
     if (dev.isAtomberg) {
       const spd = dev.fanSpeed || 4;
       return ATOMBERG_SPEED_WATTS[spd] || 16.0;
@@ -2775,15 +2911,19 @@
     devices.forEach(d => {
       const w = computeDeviceWatts(d);
       breakdown[d.id] = Math.round(w * 10) / 10;
-      totalTodayWh += parseFloat(d.todayWh || 0);
-      if (d.isOn && w > 0) {
+      if (!d.isCtMeter) {
+        totalTodayWh += parseFloat(d.todayWh || 0);
+      }
+      if (d.isOn && w > 0 && !d.isCtMeter) {
         activeCount++;
         if (w > biggestWatts) {
           biggestWatts = w;
           biggestAppliance = d;
         }
       }
-      if (d.isAtomberg) {
+      if (d.isCtMeter) {
+        // Meter is already part of CT feed or sub-panel, don't double count in trackedSum
+      } else if (d.isAtomberg || d.isNativePower) {
         pNativeFans += w;
       } else {
         pVirtualSwitches += w;
@@ -3023,11 +3163,13 @@
       const todayKwh = (d.todayWh || 0) / 1000.0;
       const todayCostOrUnits = isTariffEnabled ? `${currencySymbol}${(todayKwh * tariffPerKwh).toFixed(1)}` : `${todayKwh.toFixed(2)}u`;
       const sourceTag = d.isNativePower ? '⚡' : '📐';
+      const stateLbl = d.isCtMeter ? 'METER' : (d.isOn ? 'ON' : 'OFF');
+      const clickAction = d.isCtMeter ? '' : `toggleAppliance(${idx})`;
       return `
-        <div class="quick-tile ${d.isOn ? 'on' : ''}" onclick="toggleAppliance(${idx})">
+        <div class="quick-tile ${d.isOn ? 'on' : ''}" onclick="${clickAction}">
           <div class="quick-tile-top">
             <span class="quick-emoji">${d.icon || '🔌'}</span>
-            <span class="quick-state">${d.isOn ? 'ON' : 'OFF'}</span>
+            <span class="quick-state">${stateLbl}</span>
           </div>
           <div>
             <div class="quick-name">${sourceTag} ${d.name}</div>
@@ -3072,6 +3214,9 @@
         ? `${currencySymbol}${((w / 1000.0) * tariffPerKwh).toFixed(2)}/hr`
         : `${(w / 1000.0).toFixed(2)} u/hr`;
       const runtimeStr = formatDuration(d.todaySeconds || 0);
+      const runtimePillHtml = d.isCtMeter
+        ? `<div class="runtime-pill">📟 Total Forward: ${todayKwh.toFixed(1)} kWh • ${todayCostOrUnits}</div>`
+        : `<div class="runtime-pill">⏱️ ${runtimeStr} • ${todayCostOrUnits}</div>`;
 
       const sourceBadgeHtml = d.isNativePower
         ? `<span class="source-badge native" title="Direct hardware telemetry / calibrated BLDC profile">⚡ Native Device</span>`
@@ -3096,8 +3241,8 @@
               <div class="app-avatar">${d.icon || '🔌'}</div>
               <div>
                 <div class="app-title">${d.name}</div>
-                <div class="app-room">${d.room} • ${d.isAtomberg ? 'BLDC Fan' : (d.dp_code || 'Smart Load')}</div>
-                <div class="runtime-pill">⏱️ ${runtimeStr} • ${todayCostOrUnits}</div>
+                <div class="app-room">${d.room} • ${d.isAtomberg ? 'BLDC Fan' : (d.isCtMeter ? 'Grid Energy Meter' : (d.dp_code || 'Smart Load'))}</div>
+                ${runtimePillHtml}
                 <div>${sourceBadgeHtml}</div>
               </div>
             </div>
@@ -3108,10 +3253,16 @@
                 </div>
                 <div class="app-cost-tag">${d.isOn ? hrCostOrUnits : `${d.ratedWatts}W rated`}</div>
               </div>
-              <label class="switch-toggle">
-                <input type="checkbox" ${d.isOn ? 'checked' : ''} onchange="toggleAppliance(${idx})" />
-                <span class="switch-slider"></span>
-              </label>
+              ${d.isCtMeter ? `
+                <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:var(--emerald);font-size:11px;font-weight:700;padding:5px 9px;border-radius:12px;white-space:nowrap;letter-spacing:0.3px;">
+                  ⚡ METER
+                </div>
+              ` : `
+                <label class="switch-toggle">
+                  <input type="checkbox" ${d.isOn ? 'checked' : ''} onchange="toggleAppliance(${idx})" />
+                  <span class="switch-slider"></span>
+                </label>
+              `}
             </div>
           </div>
           ${speedHtml}
