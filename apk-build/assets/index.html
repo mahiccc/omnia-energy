@@ -4204,6 +4204,11 @@ function doGet(e) {
     loadState();
     renderAll();
 
+    // Persist shadow profile into persistent device vault on app boot
+    setTimeout(() => {
+      autoBackupToDriveSilently("session_start");
+    }, 1500);
+
     if (appMode === "live") {
       syncLiveMetersAndDevices(true);
     }

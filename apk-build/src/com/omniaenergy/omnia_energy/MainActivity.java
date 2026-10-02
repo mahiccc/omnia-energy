@@ -15,6 +15,14 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -414,23 +422,51 @@ public class MainActivity extends Activity {
                 }
             }
 
-            // 2. Always save persistent local shadow file in Downloads & external files
+            // 2. MediaStore for public Downloads (Android 10+ / API 29+)
             String safeEmail = (email == null ? "default" : email.replaceAll("[^a-zA-Z0-9_.-]", "_"));
             String fileName = "OmniaEnergy_DriveBackup_" + safeEmail + ".json";
             boolean localSaved = false;
 
+            if (Build.VERSION.SDK_INT >= 29) {
+                try {
+                    ContentResolver resolver = context.getContentResolver();
+                    Uri downloadsUri = Uri.parse("content://media/external/downloads");
+                    resolver.delete(downloadsUri, "_display_name=?", new String[]{fileName});
+                    ContentValues cv = new ContentValues();
+                    cv.put("_display_name", fileName);
+                    cv.put("mime_type", "application/json");
+                    cv.put("relative_path", "Download/");
+                    Uri insertedUri = resolver.insert(downloadsUri, cv);
+                    if (insertedUri != null) {
+                        OutputStream os = resolver.openOutputStream(insertedUri, "wt");
+                        if (os != null) {
+                            os.write(profileJson.getBytes(StandardCharsets.UTF_8));
+                            os.flush();
+                            os.close();
+                            localSaved = true;
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // Direct file in public Downloads fallback
             try {
-                File dlFile = new File("/sdcard/Download/" + fileName);
-                FileOutputStream fos = new FileOutputStream(dlFile, false);
-                fos.write(profileJson.getBytes(StandardCharsets.UTF_8));
-                fos.flush();
-                fos.close();
-                localSaved = true;
+                File dlDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                if (dlDir != null) {
+                    if (!dlDir.exists()) dlDir.mkdirs();
+                    File dlFile = new File(dlDir, fileName);
+                    FileOutputStream fos = new FileOutputStream(dlFile, false);
+                    fos.write(profileJson.getBytes(StandardCharsets.UTF_8));
+                    fos.flush();
+                    fos.close();
+                    localSaved = true;
+                }
             } catch (Exception ignored) {}
 
             try {
                 File extDir = context.getExternalFilesDir(null);
                 if (extDir != null) {
+                    if (!extDir.exists()) extDir.mkdirs();
                     File extFile = new File(extDir, fileName);
                     FileOutputStream efos = new FileOutputStream(extFile, false);
                     efos.write(profileJson.getBytes(StandardCharsets.UTF_8));
@@ -491,13 +527,44 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {}
             }
 
-            // 2. Fallback to persistent local backup files
+            // 2. MediaStore check for public Downloads (Android 10+ / API 29+)
             String safeEmail = (email == null ? "default" : email.replaceAll("[^a-zA-Z0-9_.-]", "_"));
             String fileName = "OmniaEnergy_DriveBackup_" + safeEmail + ".json";
+
+            if (Build.VERSION.SDK_INT >= 29) {
+                try {
+                    ContentResolver resolver = context.getContentResolver();
+                    Uri downloadsUri = Uri.parse("content://media/external/downloads");
+                    Cursor cursor = resolver.query(downloadsUri, new String[]{"_id"},
+                            "_display_name=?", new String[]{fileName}, null);
+                    if (cursor != null) {
+                        if (cursor.moveToFirst()) {
+                            long id = cursor.getLong(0);
+                            Uri fileUri = Uri.withAppendedPath(downloadsUri, String.valueOf(id));
+                            InputStream is = resolver.openInputStream(fileUri);
+                            if (is != null) {
+                                BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                                StringBuilder sb = new StringBuilder();
+                                String l;
+                                while ((l = reader.readLine()) != null) sb.append(l);
+                                reader.close();
+                                cursor.close();
+                                return "{\"ok\":true,\"source\":\"mediastore_vault\",\"profile\":" + sb.toString() + "}";
+                            }
+                        }
+                        cursor.close();
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // 3. Direct file checks fallback
+            File dlDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
             File[] candidateFiles = new File[] {
+                (dlDir != null ? new File(dlDir, fileName) : null),
                 new File("/sdcard/Download/" + fileName),
-                new File(context.getExternalFilesDir(null), fileName),
+                (context.getExternalFilesDir(null) != null ? new File(context.getExternalFilesDir(null), fileName) : null),
                 new File(context.getFilesDir(), fileName),
+                (dlDir != null ? new File(dlDir, "OmniaEnergy_DriveBackup_default.json") : null),
                 new File("/sdcard/Download/OmniaEnergy_DriveBackup_default.json"),
                 new File(context.getFilesDir(), "OmniaEnergy_DriveBackup_default.json")
             };
