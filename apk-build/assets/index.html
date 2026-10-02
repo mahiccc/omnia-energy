@@ -909,6 +909,18 @@
       <input type="email" id="loginEmailInput" placeholder="Enter your Gmail address..." autocomplete="email" onkeydown="if(event.key==='Enter')handleGoogleSignIn()" />
     </div>
 
+    <!-- Optional Drive Web App URL for cross-device cloud sync -->
+    <details style="margin-bottom:14px;font-size:12px;color:var(--muted);background:var(--surface-soft);border:1px solid var(--border);border-radius:10px;padding:8px 12px;">
+      <summary style="cursor:pointer;color:var(--sky);font-weight:600;">☁️ Restore from Google Drive Web App (Optional)</summary>
+      <div class="field" style="margin-top:8px;margin-bottom:4px;">
+        <label style="font-size:11px;">Google Drive Web App URL</label>
+        <input type="text" id="loginDriveUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
+        <div style="font-size:10.5px;color:var(--muted);margin-top:4px;">When switching phones, OmniaEnergy will restore all credentials, custom switch wattages, and preferences directly from your Google Drive.</div>
+      </div>
+    </details>
+
+    <div id="loginRestoreStatus" style="display:none;font-size:11.5px;color:var(--sky);margin-bottom:10px;text-align:center;font-weight:600;"></div>
+
     <button class="google-btn" onclick="handleGoogleSignIn()">
       <svg width="20" height="20" viewBox="0 0 48 48">
         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -1136,6 +1148,12 @@
           <span style="font-size:20px;">💡</span>
           <span id="friendlyInsightText">Connecting to your smart home telemetry...</span>
         </div>
+
+        <!-- AI Disaggregation Live Event Callout -->
+        <div id="aiDisaggEventCard" style="display:none;background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);border-radius:12px;padding:9px 12px;margin-top:10px;font-size:11.5px;color:#fde047;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🧠</span>
+          <span id="aiDisaggEventText">AI Disaggregation Active</span>
+        </div>
       </div>
 
       <!-- Where Your Electricity Is Going -->
@@ -1314,6 +1332,33 @@
         </div>
       </div>
 
+      <!-- Cloud Backup & Vault Card in Settings -->
+      <div class="card" style="border-color:rgba(16,185,129,0.35);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div class="cat-icon" style="background:var(--emerald-glow);color:var(--emerald);">☁️</div>
+          <div>
+            <div class="section-title" style="margin-bottom:0;">Google Drive & Persistent Vault</div>
+            <div class="section-sub">Backs up Tuya credentials, switch wattages & preferences</div>
+          </div>
+        </div>
+
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.45;">
+          Your custom switch ratings (e.g. Geysers at 2000W), rooms, currency, and credentials are safe across app data clears and new devices.
+        </div>
+
+        <div class="btn-grid-2">
+          <button class="btn primary" onclick="backupUserProfileToDriveManually()">
+            ☁️ Backup to Drive
+          </button>
+          <button class="btn emerald" onclick="restoreUserProfileFromDriveManually()">
+            🔄 Restore from Drive
+          </button>
+        </div>
+        <div id="settingsBackupStatusLine" style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">
+          Persistent shadow vault active in Downloads (/sdcard/Download)
+        </div>
+      </div>
+
       <div class="card">
         <div class="section-title" id="weeklyChartTitle">📊 Last 7 Days Electricity Cost (₹)</div>
         <div class="section-sub" id="weeklyChartSub">Green bar shows today's live accumulated cost</div>
@@ -1474,25 +1519,38 @@
         <div class="conn-log" id="atombergStatusLogBox">Atomberg BLDC Power Curve: Speed 1: 3.5W • Speed 2: 7W • Speed 3: 11W • Speed 4: 16W • Speed 5: 22W • Boost: 28W.</div>
       </div>
 
-      <!-- Connector 3: Google Drive Backup & Excel Export -->
+      <!-- Connector 3: Google Drive Cloud Sync & Vault -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:10px;">
-            <div class="cat-icon" style="background:var(--amber-glow);">📊</div>
+            <div class="cat-icon" style="background:var(--amber-glow);">☁️</div>
             <div>
-              <div class="section-title" style="margin-bottom:0;">3. Google Drive & Excel Export</div>
+              <div class="section-title" style="margin-bottom:0;">3. Google Drive Cloud Sync & Vault</div>
               <div style="font-size:11px;color:var(--muted);" id="backupSummaryLine">0 readings stored in local SQLite</div>
             </div>
           </div>
         </div>
 
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.45;margin-bottom:8px;">
+          Backs up your Tuya credentials, custom switch wattages (e.g. Geyser 2000W), preferences, and SQLite readings directly to your private Google Drive & persistent vault.
+        </div>
+
         <div class="field">
-          <label>Google Drive Sheet Web App URL (Optional)</label>
+          <label>Google Drive Web App URL (Optional)</label>
           <input type="text" id="cfgDriveSyncUrl" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveAllConnectorCreds()" />
         </div>
 
-        <button class="btn primary" style="margin-top:12px;margin-bottom:10px;" onclick="backupToGoogleDriveNow()">
-          ☁️ Backup SQLite to Google Drive
+        <div class="btn-grid-2" style="margin-top:12px;margin-bottom:10px;">
+          <button class="btn primary" onclick="backupUserProfileToDriveManually()">
+            ☁️ Backup Profile to Drive
+          </button>
+          <button class="btn emerald" onclick="restoreUserProfileFromDriveManually()">
+            🔄 Restore from Drive
+          </button>
+        </div>
+
+        <button class="btn" style="margin-bottom:10px;" onclick="backupToGoogleDriveNow()">
+          📊 Push SQLite Telemetry Buffer to Drive
         </button>
 
         <div class="btn-grid-2">
@@ -1503,6 +1561,54 @@
             📤 Share Report
           </button>
         </div>
+
+        <!-- Collapsible 1-minute Google Apps Script setup guide -->
+        <details style="margin-top:14px;background:var(--surface-soft);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12px;">
+          <summary style="cursor:pointer;color:var(--sky);font-weight:700;">📋 How to set up free Google Drive sync in 1 minute</summary>
+          <div style="margin-top:8px;line-height:1.5;color:var(--muted);font-size:11.5px;">
+            1. Open <strong style="color:#fff;">script.google.com</strong> in your browser.<br>
+            2. Click <em>New project</em>, paste the script below, and save.<br>
+            3. Click <em>Deploy &gt; New deployment</em> &gt; Select type: <strong>Web App</strong>.<br>
+            4. Set <em>Execute as: <strong>Me</strong></em> and <em>Who has access: <strong>Anyone</strong></em>.<br>
+            5. Copy the deployment Web App URL and paste it in the box above!
+            <textarea id="gasScriptTemplate" readonly style="width:100%;height:130px;font-size:10px;font-family:monospace;background:#090d16;color:#a5f3fc;border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:8px;resize:none;">
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var email = data.email || 'default';
+    var fileName = 'OmniaEnergy_Profile_' + email.replace(/[^a-zA-Z0-9_.-]/g, '_') + '.json';
+    var files = DriveApp.getFilesByName(fileName);
+    var file;
+    if (files.hasNext()) {
+      file = files.next();
+      file.setContent(JSON.stringify(data, null, 2));
+    } else {
+      file = DriveApp.createFile(fileName, JSON.stringify(data, null, 2), MimeType.PLAIN_TEXT);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ok: true, fileId: file.getId()})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ok: false, error: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+function doGet(e) {
+  try {
+    var email = (e.parameter && e.parameter.email) || 'default';
+    var fileName = 'OmniaEnergy_Profile_' + email.replace(/[^a-zA-Z0-9_.-]/g, '_') + '.json';
+    var files = DriveApp.getFilesByName(fileName);
+    if (files.hasNext()) {
+      var content = files.next().getBlob().getDataAsString();
+      return ContentService.createTextOutput(JSON.stringify({ok: true, source: 'google_drive', profile: JSON.parse(content)})).setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ok: false, message: 'Profile not found'})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ok: false, error: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}</textarea>
+            <button class="btn sky" style="margin-top:6px;padding:6px 12px;font-size:11px;" onclick="copyGoogleAppsScriptTemplate()">
+              📋 Copy Google Apps Script Code
+            </button>
+          </div>
+        </details>
       </div>
     </section>
   </main>
@@ -1683,12 +1789,53 @@
     document.getElementById("setupUserTag").textContent = `Signed in as ${email}`;
     document.getElementById("userProfileEmail").textContent = email;
 
-    // Check if user already has saved live devices
+    // Optional Drive Web App URL entered on login screen
+    const loginDriveInp = document.getElementById("loginDriveUrlInput");
+    const optDriveUrl = loginDriveInp ? loginDriveInp.value.trim() : "";
+    if (optDriveUrl && hasNativeBridge()) {
+      window.OmniaNative.saveSecurePref("drive_sync_url", optDriveUrl);
+      if (document.getElementById("cfgDriveSyncUrl")) document.getElementById("cfgDriveSyncUrl").value = optDriveUrl;
+    }
+
+    const driveUrl = optDriveUrl || (hasNativeBridge() ? window.OmniaNative.getSecurePref("drive_sync_url", "") : "");
+
+    // 1. First, check if a profile exists in Google Drive or persistent local vault
+    let profileRestored = false;
+    if (hasNativeBridge() && window.OmniaNative.fetchGoogleDriveProfile) {
+      const statusBox = document.getElementById("loginRestoreStatus");
+      if (statusBox) {
+        statusBox.style.display = "block";
+        statusBox.textContent = "🔍 Checking Google Drive & device vault for saved profile...";
+      }
+      try {
+        const rawRes = window.OmniaNative.fetchGoogleDriveProfile(driveUrl, email);
+        const res = JSON.parse(rawRes);
+        if (res && res.ok && (res.profile || res.connectors)) {
+          const profile = res.profile || res;
+          profileRestored = restoreUserProfileFromJson(profile, res.source || "Google Drive");
+          if (profileRestored) {
+            showScreen("app");
+            renderAll();
+            const srcLbl = res.source === "local_vault" ? "persistent device vault" : "Google Drive";
+            showToast(`☁️ Restored all switches, custom wattages & settings from ${srcLbl}!`);
+            if (appMode === "live") {
+              syncLiveMetersAndDevices(false);
+            }
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Profile check error:", e);
+      }
+    }
+
+    // 2. Check if user already has saved live devices in localStorage
     const savedLive = localStorage.getItem("omnia_live_home_devices");
     if (savedLive && appMode === "live") {
       showScreen("app");
       renderAll();
       showToast(`👋 Welcome back, ${email}!`);
+      syncLiveMetersAndDevices(false);
     } else {
       showScreen("tuya");
       showToast(`👋 Welcome, ${email}! Let's connect your home.`);
@@ -2070,15 +2217,24 @@
     const d = devices[idx];
     if (!d) return;
     const curW = d.ratedWatts || 20;
-    const res = window.prompt(
-      `📐 Adjust Assumed Wattage for:\n"${d.name}"\n\nThis device has no direct power meter hardware, so its energy is calculated with an assumed wattage.\n\nCurrent assumed rating: ${curW} W\nEnter new wattage (1 - 5000 W):`,
-      String(curW)
-    );
+    const isThermo = isThermostaticAppliance(d);
+    let promptMsg = `📐 Adjust Assumed Power for:\n"${d.name}"\n\n`;
+    if (isThermo) {
+      promptMsg += `♨️ Thermostatic Appliance (Geyser / Water Heater)\n` +
+                   `• Active Heating Power: ${curW} W\n` +
+                   `• AI Feature: Automatically recalculates to 0W when CT load drops (water is hot) while switch remains ON.\n\n` +
+                   `Enter active heating wattage (1 - 5000 W):`;
+    } else {
+      promptMsg += `This device has no direct power meter hardware, so its energy is calculated with an assumed wattage.\n\n` +
+                   `Current assumed rating: ${curW} W\nEnter new wattage (1 - 5000 W):`;
+    }
+    const res = window.prompt(promptMsg, String(curW));
     if (res === null) return;
     const parsed = parseFloat(res);
     if (!isNaN(parsed) && parsed > 0 && parsed <= 10000) {
       d.ratedWatts = Math.round(parsed * 10) / 10;
       saveState();
+      autoBackupToDriveSilently("wattage_edited");
       renderAll();
       showToast(`✅ "${d.name}" assumed load updated to ${d.ratedWatts}W`);
     } else {
@@ -2087,8 +2243,237 @@
   }
 
   // ===========================================================================
-  // STATE MANAGEMENT & PERSISTENCE
+  // STATE MANAGEMENT, GOOGLE DRIVE PROFILE BACKUP & PERSISTENCE
   // ===========================================================================
+  function buildUserProfileBackupJson() {
+    let cid = "", sec = "", ep = "https://openapi.tuyain.com", uid = "", driveUrl = "", atKey = "", atRef = "";
+    if (hasNativeBridge()) {
+      cid = window.OmniaNative.getSecurePref("tuya_client_id", "");
+      sec = window.OmniaNative.getSecurePref("tuya_client_secret", "");
+      ep = window.OmniaNative.getSecurePref("tuya_endpoint", "https://openapi.tuyain.com");
+      uid = window.OmniaNative.getSecurePref("tuya_uid", "");
+      driveUrl = window.OmniaNative.getSecurePref("drive_sync_url", "");
+      atKey = window.OmniaNative.getSecurePref("atomberg_api_key", "");
+      atRef = window.OmniaNative.getSecurePref("atomberg_refresh_token", "");
+    }
+    if (!cid && document.getElementById("cfgTuyaClientId")) cid = document.getElementById("cfgTuyaClientId").value.trim();
+    if (!sec && document.getElementById("cfgTuyaClientSecret")) sec = document.getElementById("cfgTuyaClientSecret").value.trim();
+    if (!ep && document.getElementById("cfgTuyaEndpoint")) ep = document.getElementById("cfgTuyaEndpoint").value.trim();
+    if (!uid && document.getElementById("cfgTuyaUid")) uid = document.getElementById("cfgTuyaUid").value.trim();
+    if (!driveUrl && document.getElementById("cfgDriveSyncUrl")) driveUrl = document.getElementById("cfgDriveSyncUrl").value.trim();
+    if (!atKey && document.getElementById("cfgAtombergApiKey")) atKey = document.getElementById("cfgAtombergApiKey").value.trim();
+    if (!atRef && document.getElementById("cfgAtombergRefreshToken")) atRef = document.getElementById("cfgAtombergRefreshToken").value.trim();
+
+    const customizations = {};
+    if (Array.isArray(devices)) {
+      devices.forEach(d => {
+        if (d && (d.id || d.cid)) {
+          const key = d.id || `${d.cid}_${d.dp_code}`;
+          customizations[key] = {
+            ratedWatts: d.ratedWatts,
+            name: d.name,
+            room: d.room,
+            icon: d.icon,
+            isNativePower: d.isNativePower,
+            powerSource: d.powerSource
+          };
+        }
+      });
+    }
+
+    const profileObj = {
+      app: "OmniaEnergy",
+      version: "1.0",
+      email: currentUserEmail,
+      updatedAt: Date.now(),
+      updatedAtIso: new Date().toISOString(),
+      appMode: appMode,
+      connectors: {
+        tuya_client_id: cid,
+        tuya_client_secret: sec,
+        tuya_endpoint: ep,
+        tuya_uid: uid,
+        drive_sync_url: driveUrl,
+        atomberg_api_key: atKey,
+        atomberg_refresh_token: atRef
+      },
+      preferences: {
+        country_code: selectedCountryCode,
+        currency_symbol: currencySymbol,
+        currency_code: currencyCode,
+        tariff_rate: tariffPerKwh,
+        tariff_enabled: isTariffEnabled,
+        monthly_budget: monthlyBudgetInr
+      },
+      deviceCustomizations: customizations,
+      devices: Array.isArray(devices) ? devices : [],
+      discoveredMeters: Array.isArray(discoveredMeters) ? discoveredMeters : []
+    };
+
+    return JSON.stringify(profileObj, null, 2);
+  }
+
+  function autoBackupToDriveSilently(reason = "") {
+    if (!hasNativeBridge() || !currentUserEmail) return;
+    try {
+      const driveUrl = window.OmniaNative.getSecurePref("drive_sync_url", "") ||
+        (document.getElementById("cfgDriveSyncUrl") ? document.getElementById("cfgDriveSyncUrl").value.trim() : "");
+      const profileJson = buildUserProfileBackupJson();
+      const resRaw = window.OmniaNative.saveGoogleDriveProfile(driveUrl, profileJson, currentUserEmail);
+      console.log("Drive profile backup (" + reason + "):", resRaw);
+    } catch (e) {
+      console.error("Auto backup error:", e);
+    }
+  }
+
+  function restoreUserProfileFromJson(profile, sourceName = "Google Drive") {
+    if (!profile) return false;
+    try {
+      const conn = profile.connectors || {};
+      if (hasNativeBridge()) {
+        if (conn.tuya_client_id) window.OmniaNative.saveSecurePref("tuya_client_id", conn.tuya_client_id);
+        if (conn.tuya_client_secret) window.OmniaNative.saveSecurePref("tuya_client_secret", conn.tuya_client_secret);
+        if (conn.tuya_endpoint) window.OmniaNative.saveSecurePref("tuya_endpoint", conn.tuya_endpoint);
+        if (conn.tuya_uid) window.OmniaNative.saveSecurePref("tuya_uid", conn.tuya_uid);
+        if (conn.drive_sync_url) window.OmniaNative.saveSecurePref("drive_sync_url", conn.drive_sync_url);
+        if (conn.atomberg_api_key) window.OmniaNative.saveSecurePref("atomberg_api_key", conn.atomberg_api_key);
+        if (conn.atomberg_refresh_token) window.OmniaNative.saveSecurePref("atomberg_refresh_token", conn.atomberg_refresh_token);
+        if (profile.email) window.OmniaNative.saveSecurePref("user_email", profile.email);
+      }
+
+      if (document.getElementById("cfgTuyaClientId")) document.getElementById("cfgTuyaClientId").value = conn.tuya_client_id || "";
+      if (document.getElementById("cfgTuyaClientSecret")) document.getElementById("cfgTuyaClientSecret").value = conn.tuya_client_secret || "";
+      if (document.getElementById("cfgTuyaEndpoint")) document.getElementById("cfgTuyaEndpoint").value = conn.tuya_endpoint || "https://openapi.tuyain.com";
+      if (document.getElementById("cfgTuyaUid")) document.getElementById("cfgTuyaUid").value = conn.tuya_uid || "";
+      if (document.getElementById("onboardTuyaClientId")) document.getElementById("onboardTuyaClientId").value = conn.tuya_client_id || "";
+      if (document.getElementById("onboardTuyaClientSecret")) document.getElementById("onboardTuyaClientSecret").value = conn.tuya_client_secret || "";
+      if (document.getElementById("onboardTuyaEndpoint")) document.getElementById("onboardTuyaEndpoint").value = conn.tuya_endpoint || "https://openapi.tuyain.com";
+      if (document.getElementById("onboardTuyaUid")) document.getElementById("onboardTuyaUid").value = conn.tuya_uid || "";
+      if (document.getElementById("cfgDriveSyncUrl")) document.getElementById("cfgDriveSyncUrl").value = conn.drive_sync_url || "";
+      if (document.getElementById("cfgAtombergApiKey")) document.getElementById("cfgAtombergApiKey").value = conn.atomberg_api_key || "";
+      if (document.getElementById("cfgAtombergRefreshToken")) document.getElementById("cfgAtombergRefreshToken").value = conn.atomberg_refresh_token || "";
+
+      const prefs = profile.preferences || {};
+      const cCode = prefs.country_code || "IN";
+      const sym = prefs.currency_symbol || "₹";
+      const rate = typeof prefs.tariff_rate === "number" ? prefs.tariff_rate : 8.0;
+      const enabled = prefs.tariff_enabled !== false;
+      const currCode = prefs.currency_code || "INR";
+      applyCurrencyAndTariffConfig(cCode, sym, rate, enabled, currCode);
+      if (prefs.monthly_budget) {
+        monthlyBudgetInr = parseFloat(prefs.monthly_budget) || 2500;
+        localStorage.setItem("omnia_budget_v4", String(monthlyBudgetInr));
+        if (hasNativeBridge()) window.OmniaNative.saveSecurePref("budget", String(monthlyBudgetInr));
+      }
+      syncCurrencyUiControls();
+
+      if (profile.email) {
+        currentUserEmail = profile.email;
+        localStorage.setItem("omnia_user_email", currentUserEmail);
+        document.getElementById("userProfileEmail").textContent = currentUserEmail;
+        document.getElementById("setupUserTag").textContent = `Signed in as ${currentUserEmail}`;
+      }
+      appMode = "live";
+
+      if (Array.isArray(profile.devices) && profile.devices.length > 0) {
+        devices = profile.devices;
+      }
+      if (Array.isArray(profile.discoveredMeters)) {
+        discoveredMeters = profile.discoveredMeters;
+      }
+
+      const cust = profile.deviceCustomizations || {};
+      if (Array.isArray(devices)) {
+        devices.forEach(d => {
+          const key = d.id || `${d.cid}_${d.dp_code}`;
+          if (cust[key]) {
+            if (cust[key].ratedWatts !== undefined) d.ratedWatts = cust[key].ratedWatts;
+            if (cust[key].name !== undefined) d.name = cust[key].name;
+            if (cust[key].room !== undefined) d.room = cust[key].room;
+          }
+        });
+      }
+
+      saveState();
+      return true;
+    } catch (e) {
+      console.error("Failed to restore profile:", e);
+      return false;
+    }
+  }
+
+  function backupUserProfileToDriveManually() {
+    haptic(30);
+    if (!hasNativeBridge()) {
+      showToast("⚠️ Available on Android device");
+      return;
+    }
+    const email = currentUserEmail || "default";
+    const driveUrl = window.OmniaNative.getSecurePref("drive_sync_url", "") ||
+      (document.getElementById("cfgDriveSyncUrl") ? document.getElementById("cfgDriveSyncUrl").value.trim() : "");
+    const profileJson = buildUserProfileBackupJson();
+    const resRaw = window.OmniaNative.saveGoogleDriveProfile(driveUrl, profileJson, email);
+    try {
+      const res = JSON.parse(resRaw);
+      if (res.cloudSuccess) {
+        showToast("☁️ Profile & switch wattages backed up to Google Drive & persistent vault!");
+      } else if (res.localSaved) {
+        showToast("💾 Profile & switch wattages saved to persistent vault (/sdcard/Download)!");
+      } else {
+        showToast("💾 Profile saved locally");
+      }
+      const stEl = document.getElementById("settingsBackupStatusLine");
+      if (stEl) {
+        const timeStr = new Date().toLocaleTimeString();
+        stEl.textContent = `Last backed up at ${timeStr} (${res.cloudSuccess ? 'Google Drive & Vault' : 'Persistent Vault'})`;
+      }
+    } catch (e) {
+      showToast("Backed up profile successfully");
+    }
+  }
+
+  function restoreUserProfileFromDriveManually() {
+    haptic(30);
+    if (!hasNativeBridge()) {
+      showToast("⚠️ Available on Android device");
+      return;
+    }
+    const email = currentUserEmail || "default";
+    const driveUrl = window.OmniaNative.getSecurePref("drive_sync_url", "") ||
+      (document.getElementById("cfgDriveSyncUrl") ? document.getElementById("cfgDriveSyncUrl").value.trim() : "");
+    const resRaw = window.OmniaNative.fetchGoogleDriveProfile(driveUrl, email);
+    try {
+      const res = JSON.parse(resRaw);
+      if (res.ok && (res.profile || res.connectors)) {
+        const profile = res.profile || res;
+        restoreUserProfileFromJson(profile, res.source || "Google Drive");
+        renderAll();
+        const srcLbl = res.source === "local_vault" ? "persistent vault" : "Google Drive";
+        showToast(`🎉 Restored ${devices.length} devices & credentials from ${srcLbl}!`);
+        if (appMode === "live") syncLiveMetersAndDevices(false);
+      } else {
+        showToast(`⚠️ No backup found for ${email}`);
+      }
+    } catch (e) {
+      showToast("Restore failed: " + e.message);
+    }
+  }
+
+  function copyGoogleAppsScriptTemplate() {
+    haptic(15);
+    const txt = document.getElementById("gasScriptTemplate");
+    if (txt) {
+      txt.select();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt.value);
+        showToast("📋 Copied Google Apps Script to clipboard!");
+      } else {
+        document.execCommand("copy");
+        showToast("📋 Copied to clipboard!");
+      }
+    }
+  }
+
   function loadState() {
     currentUserEmail = localStorage.getItem("omnia_user_email") || "";
     if (hasNativeBridge() && !currentUserEmail) {
@@ -2165,6 +2550,20 @@
       document.getElementById("setupUserTag").textContent = `Signed in as ${currentUserEmail}`;
     }
 
+    // If storage was wiped but user email was known, check if persistent profile exists:
+    if (currentUserEmail && (!savedLiveDevices || savedLiveDevices.length === 0) && hasNativeBridge()) {
+      try {
+        const rawRes = window.OmniaNative.fetchGoogleDriveProfile(driveUrl, currentUserEmail);
+        const res = JSON.parse(rawRes);
+        if (res && res.ok && (res.profile || res.connectors)) {
+          restoreUserProfileFromJson(res.profile || res, res.source || "Google Drive");
+          savedLiveDevices = devices;
+          savedMeters = discoveredMeters;
+          savedMode = "live";
+        }
+      } catch (e) {}
+    }
+
     // Determine initial view:
     if (!currentUserEmail) {
       showScreen("login");
@@ -2204,30 +2603,6 @@
       appMode = "live";
       devices = savedLiveDevices || JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
       discoveredMeters = savedMeters || [];
-      if (discoveredMeters && discoveredMeters.length > 0) {
-        discoveredMeters.forEach(m => {
-          if (!devices.some(d => d.cid === m.id)) {
-            devices.unshift({
-              id: `meter_${m.id}`,
-              cid: m.id,
-              dp_code: "meter",
-              name: m.name || "Smart Energy Meter",
-              room: inferRoomFromName(m.name || ""),
-              icon: "📟",
-              isAtomberg: false,
-              isNativePower: true,
-              isCtMeter: true,
-              powerSource: 'native',
-              liveWatts: 0.0,
-              ratedWatts: 100,
-              currentLevelPercent: 100,
-              isOn: true,
-              todaySeconds: 0,
-              todayWh: 0.0
-            });
-          }
-        });
-      }
       showScreen("app");
     } else {
       showScreen("tuya");
@@ -2262,6 +2637,7 @@
     window.OmniaNative.saveSecurePref("drive_sync_url", document.getElementById("cfgDriveSyncUrl").value.trim());
     window.OmniaNative.saveSecurePref("atomberg_api_key", document.getElementById("cfgAtombergApiKey").value.trim());
     window.OmniaNative.saveSecurePref("atomberg_refresh_token", document.getElementById("cfgAtombergRefreshToken").value.trim());
+    autoBackupToDriveSilently("connectors_saved");
   }
 
   function prefillUserHomeShortcut() {
@@ -2382,6 +2758,15 @@
       const pName = (d.product_name || "").toLowerCase();
       const nameLower = dName.toLowerCase();
 
+      // Skip non-mains devices (battery robot arm pushers, sensors, cameras, locks, wireless scene buttons, gateways)
+      const nonMainsCategories = ["szjqr", "wsdcg", "pir", "mcs", "sj", "wg2", "sp", "jtmspro", "wxkg", "hps"];
+      if (nonMainsCategories.includes(dCat)) return;
+      if (nameLower.includes("cubetouch") || nameLower.includes("fingerbot") || nameLower.includes("doorbell") ||
+          nameLower.includes("camera") || nameLower.includes("sensor") || nameLower.includes("lock") ||
+          nameLower.includes("remote")) return;
+
+      const isDevOnline = (d.online !== false);
+
       // Check if device is a CT Meter / Energy Meter
       const isMeter = dCat === "zndb" || dCat === "jl" ||
         nameLower.includes("meter") || nameLower.includes("clamp") || nameLower.includes("dual") ||
@@ -2424,7 +2809,8 @@
           liveWatts: initW,
           ratedWatts: Math.round(initW) || 100,
           currentLevelPercent: 100,
-          isOn: true,
+          isOnline: isDevOnline,
+          isOn: isDevOnline,
           todaySeconds: 0,
           todayWh: initKwh * 1000
         });
@@ -2461,7 +2847,8 @@
             fanSpeed: meta.isAtomberg ? 4 : undefined,
             ratedWatts: meta.ratedWatts,
             currentLevelPercent: 100,
-            isOn: Boolean(dp.value),
+            isOnline: isDevOnline,
+            isOn: isDevOnline && Boolean(dp.value),
             todaySeconds: 0,
             todayWh: 0.0
           });
@@ -2516,11 +2903,29 @@
       } catch (atErr) {}
     }
 
+    // Re-apply any existing custom switch ratings if present
+    const existingCustom = {};
+    if (Array.isArray(devices)) {
+      devices.forEach(d => {
+        if (d && (d.id || d.cid)) {
+          const key = d.id || `${d.cid}_${d.dp_code}`;
+          existingCustom[key] = { ratedWatts: d.ratedWatts, name: d.name, room: d.room };
+        }
+      });
+    }
+    newAppliances.forEach(d => {
+      const key = d.id || `${d.cid}_${d.dp_code}`;
+      if (existingCustom[key] && existingCustom[key].ratedWatts !== undefined) {
+        d.ratedWatts = existingCustom[key].ratedWatts;
+      }
+    });
+
     discoveredMeters = newMeters;
     devices = newAppliances;
     appMode = "live";
 
     saveState();
+    autoBackupToDriveSilently("discovery_success");
 
     const roomsArr = Array.from(uniqueRoomsSet);
     const ctInfo = newMeters.length > 0 ? `Discovered ${newMeters.length} CT Meter(s)` : `No CT Meter (using switch sum)`;
@@ -2718,8 +3123,12 @@
               }
 
               const mWatts = (pA + pB) > 0 ? (pA + pB) : pTot;
-              totalPhaseA += pA;
-              totalPhaseB += pB;
+              if ((pA + pB) > 0) {
+                totalPhaseA += pA;
+                totalPhaseB += pB;
+              } else if (pTot > 0) {
+                totalPhaseA += pTot;
+              }
               if (fwdKwh > 0) ctMeterState.totalForwardKwh = fwdKwh;
 
               // Also update the device object in devices array
@@ -2738,28 +3147,44 @@
 
         // 3. Poll Switch & Socket States via lookup map
         if (devsObj.success && Array.isArray(devsObj.result)) {
+          // Remove non-mains accessories (e.g. battery fingerbot cubetouch)
+          devices = devices.filter(d => !d.name.toLowerCase().includes("cubetouch") && d.cid !== "d70c63cacc14033c3emzlo");
+
           let syncedCount = 0;
           let activeCount = 0;
           devices.forEach(app => {
             if (app.isAtomberg || app.isCtMeter) return;
             const cloudDev = mapById[app.cid];
-            if (cloudDev && Array.isArray(cloudDev.status)) {
-              const dp = cloudDev.status.find(s => s.code === app.dp_code);
-              if (dp !== undefined && typeof dp.value === "boolean") {
-                app.isOn = dp.value;
+            if (cloudDev) {
+              const isDevOnline = (cloudDev.online !== false);
+              app.isOnline = isDevOnline;
+
+              if (!isDevOnline) {
+                // Device is physically unplugged or disconnected from network
+                app.isOn = false;
+                app.effectiveWatts = 0.0;
                 syncedCount++;
-                if (app.isOn) activeCount++;
+                return;
               }
-              // Check if any native power metric is reported by this switch/socket
-              const curPow = cloudDev.status.find(s => s && (
-                s.code === "cur_power" || s.code === "power" || s.code === "cur_power_1" ||
-                s.code === "cur_power_2" || s.code === "total_power" || s.code === "active_power"
-              ));
-              if (curPow && curPow.value !== undefined) {
-                app.isNativePower = true;
-                app.powerSource = 'native';
-                const cpVal = parseFloat(curPow.value);
-                app.liveWatts = cpVal > 500 ? cpVal / 10.0 : cpVal;
+
+              if (Array.isArray(cloudDev.status)) {
+                const dp = cloudDev.status.find(s => s.code === app.dp_code);
+                if (dp !== undefined && typeof dp.value === "boolean") {
+                  app.isOn = dp.value;
+                  syncedCount++;
+                  if (app.isOn) activeCount++;
+                }
+                // Check if any native power metric is reported by this switch/socket
+                const curPow = cloudDev.status.find(s => s && (
+                  s.code === "cur_power" || s.code === "power" || s.code === "cur_power_1" ||
+                  s.code === "cur_power_2" || s.code === "total_power" || s.code === "active_power"
+                ));
+                if (curPow && curPow.value !== undefined) {
+                  app.isNativePower = true;
+                  app.powerSource = 'native';
+                  const cpVal = parseFloat(curPow.value);
+                  app.liveWatts = cpVal > 500 ? cpVal / 10.0 : cpVal;
+                }
               }
             }
           });
@@ -2871,6 +3296,158 @@
     renderAll();
   }
 
+  // ===========================================================================
+  // AI NON-INTRUSIVE THERMOSTAT CUTOFF & LOAD DISAGGREGATION ENGINE
+  // ===========================================================================
+  let ctHistory = [];
+  let aiDisaggLastEvent = "";
+  let demoSimulatedThermostatDrop = false;
+
+  function isThermostaticAppliance(d) {
+    if (!d) return false;
+    const n = (d.name || "").toLowerCase();
+    return n.includes("geyser") || n.includes("water heater") || n.includes("boiler") ||
+           n.includes("immersion") || n.includes("iron") || (d.icon === "🚿" || d.icon === "♨️");
+  }
+
+  function recordAiDisaggregationEvent(msg) {
+    aiDisaggLastEvent = msg;
+    const eventCard = document.getElementById("aiDisaggEventCard");
+    const eventText = document.getElementById("aiDisaggEventText");
+    if (eventCard && eventText) {
+      eventText.textContent = msg;
+      eventCard.style.display = "flex";
+    }
+  }
+
+  function toggleDemoThermostatSimulation(idx) {
+    haptic(20);
+    demoSimulatedThermostatDrop = !demoSimulatedThermostatDrop;
+    recomputeDemoCtMeter();
+    renderAll();
+    showToast(demoSimulatedThermostatDrop
+      ? "🧠 AI: Simulated Geyser Thermostat Cutoff (CT dropped by 2000W)!"
+      : "♨️ AI: Geyser Reheating (CT increased by 2000W)!");
+  }
+
+  function runAiDisaggregationAndCutoff(totalCtWatts) {
+    const now = Date.now();
+    if (totalCtWatts > 0) {
+      ctHistory.push({ t: now, w: totalCtWatts });
+      if (ctHistory.length > 30) ctHistory.shift();
+    }
+
+    // 1. Separate native loads vs assumed switches
+    let nativeWattsSum = 0.0;
+    const activeAssumed = [];
+    const thermostaticAssumed = [];
+    const baseloadAssumed = [];
+
+    devices.forEach(d => {
+      if (d.isCtMeter) return;
+      if (!d.isOn) {
+        d.effectiveWatts = 0.0;
+        d.thermostatState = "none";
+        d.onSince = null;
+        return;
+      }
+      if (!d.onSince) {
+        d.onSince = now;
+      }
+
+      if (d.isNativePower && d.liveWatts !== undefined && d.liveWatts > 0) {
+        d.effectiveWatts = parseFloat(d.liveWatts);
+        nativeWattsSum += d.effectiveWatts;
+      } else if (d.isAtomberg) {
+        const spd = d.fanSpeed || 4;
+        d.effectiveWatts = ATOMBERG_SPEED_WATTS[spd] || 16.0;
+        nativeWattsSum += d.effectiveWatts;
+      } else {
+        activeAssumed.push(d);
+        if (isThermostaticAppliance(d)) {
+          thermostaticAssumed.push(d);
+        } else {
+          baseloadAssumed.push(d);
+        }
+      }
+    });
+
+    const hasCt = (appMode === "demo") || (discoveredMeters && discoveredMeters.length > 0);
+    if (!hasCt || totalCtWatts <= 0) {
+      // Standard nominal model without CT
+      thermostaticAssumed.forEach(d => {
+        d.effectiveWatts = parseFloat(d.ratedWatts || 2000);
+        d.thermostatState = "heating";
+      });
+      baseloadAssumed.forEach(d => {
+        const lvl = Math.max(0, Math.min(100, parseFloat(d.currentLevelPercent || 100))) / 100.0;
+        d.effectiveWatts = parseFloat(d.ratedWatts || 0) * lvl;
+      });
+      return;
+    }
+
+    // Available power for non-metered / assumed switches:
+    const availableForAssumed = Math.max(0.0, totalCtWatts - nativeWattsSum);
+
+    // Sum of nominally ON baseload appliances (lights, sockets, etc.)
+    let baseloadNominal = 0.0;
+    baseloadAssumed.forEach(d => {
+      const lvl = Math.max(0, Math.min(100, parseFloat(d.currentLevelPercent || 100))) / 100.0;
+      baseloadNominal += parseFloat(d.ratedWatts || 0) * lvl;
+    });
+
+    // Detect CT drops and thermostatic cutoff:
+    if (thermostaticAssumed.length > 0) {
+      // Sort thermostatic appliances by on-duration descending (longest on first)
+      thermostaticAssumed.sort((a, b) => (b.onSince || 0) - (a.onSince || 0));
+
+      // Available power for heaters after allocating baseload
+      let powerForHeaters = Math.max(0.0, availableForAssumed - (baseloadNominal * 0.7));
+
+      let anyCutoffDetected = false;
+      thermostaticAssumed.forEach(d => {
+        const nominalW = parseFloat(d.ratedWatts || 2000);
+        const minHeatingThreshold = nominalW * 0.65; // ~1300W for 2000W geyser
+
+        if (powerForHeaters >= minHeatingThreshold) {
+          // CT confirms high physical power: Geyser heating element is ACTIVE
+          d.effectiveWatts = Math.min(nominalW, Math.round(powerForHeaters));
+          d.thermostatState = "heating";
+          powerForHeaters = Math.max(0, powerForHeaters - d.effectiveWatts);
+        } else {
+          // CT load is too low for a 2000W heating element: Geyser has reached full heat & thermostat tripped!
+          const prevWatts = d.effectiveWatts || nominalW;
+          d.effectiveWatts = 0.0;
+          d.thermostatState = "idle_hot";
+          anyCutoffDetected = true;
+          recordAiDisaggregationEvent(
+            `🧠 AI: CT dropped to ${Math.round(totalCtWatts)}W • "${d.name}" water hot & thermostat idle. Auto-recalculated to 0W.`
+          );
+        }
+      });
+
+      if (!anyCutoffDetected && aiDisaggLastEvent.includes("idle")) {
+        const eventCard = document.getElementById("aiDisaggEventCard");
+        if (eventCard) eventCard.style.display = "none";
+      }
+    }
+
+    // Allocate remaining power to baseload appliances
+    const sumThermostaticEffective = thermostaticAssumed.reduce((acc, d) => acc + (d.effectiveWatts || 0), 0);
+    const remainingForBaseload = Math.max(0.0, availableForAssumed - sumThermostaticEffective);
+
+    baseloadAssumed.forEach(d => {
+      const lvl = Math.max(0, Math.min(100, parseFloat(d.currentLevelPercent || 100))) / 100.0;
+      const nominal = parseFloat(d.ratedWatts || 0) * lvl;
+      if (baseloadNominal > 0 && remainingForBaseload < baseloadNominal) {
+        const scale = remainingForBaseload / baseloadNominal;
+        d.effectiveWatts = Math.round(nominal * scale * 10) / 10;
+      } else {
+        d.effectiveWatts = nominal;
+      }
+    });
+  }
+
   function recomputeDemoCtMeter() {
     let activeW = 0.0;
     devices.forEach(d => {
@@ -2878,13 +3455,16 @@
     });
     // Base unmonitored home load (Fridge, Wi-Fi 6 router, smart standby)
     const baseLoad = 145.0;
-    const total = activeW + baseLoad;
+    let total = activeW + baseLoad;
+    if (demoSimulatedThermostatDrop) {
+      total = Math.max(145.0, total - 2000.0);
+    }
     ctMeterState.mainPhaseAWatts = Math.round(total * 0.58 * 10) / 10;
     ctMeterState.mainPhaseBWatts = Math.round(total * 0.42 * 10) / 10;
   }
 
   function computeDeviceWatts(dev) {
-    if (!dev || !dev.isOn) return 0.0;
+    if (!dev || !dev.isOn || dev.isOnline === false) return 0.0;
     if (dev.isCtMeter) {
       return parseFloat(dev.liveWatts !== undefined ? dev.liveWatts : (dev.ratedWatts || 0));
     }
@@ -2895,11 +3475,22 @@
       const spd = dev.fanSpeed || 4;
       return ATOMBERG_SPEED_WATTS[spd] || 16.0;
     }
+    if (dev.effectiveWatts !== undefined) {
+      return dev.effectiveWatts;
+    }
     const lvl = Math.max(0, Math.min(100, parseFloat(dev.currentLevelPercent || 100))) / 100.0;
     return parseFloat(dev.ratedWatts || 0) * lvl;
   }
 
   function computeHomeSummary() {
+    const hasCt = appMode === "demo" ? true : (discoveredMeters && discoveredMeters.length > 0);
+    const pCtRaw =
+      (parseFloat(ctMeterState.mainPhaseAWatts) || 0) +
+      (parseFloat(ctMeterState.mainPhaseBWatts) || 0);
+
+    // Run AI dynamic load disaggregation & thermostat drop detector
+    runAiDisaggregationAndCutoff(pCtRaw);
+
     let pNativeFans = 0.0;
     let pVirtualSwitches = 0.0;
     let activeCount = 0;
@@ -2922,7 +3513,7 @@
         }
       }
       if (d.isCtMeter) {
-        // Meter is already part of CT feed or sub-panel, don't double count in trackedSum
+        // Meter is already part of CT feed
       } else if (d.isAtomberg || d.isNativePower) {
         pNativeFans += w;
       } else {
@@ -2931,21 +3522,16 @@
     });
 
     const trackedSum = pNativeFans + pVirtualSwitches;
-    // Check if CT meter is discovered
-    const hasCt = appMode === "demo" ? true : (discoveredMeters && discoveredMeters.length > 0);
 
     let pCt = 0.0;
     let pResidual = 0.0;
 
-    if (hasCt) {
-      // 1. CT Clamp Discovered: Use real measured grid power
-      const pCtRaw =
-        (parseFloat(ctMeterState.mainPhaseAWatts) || 0) +
-        (parseFloat(ctMeterState.mainPhaseBWatts) || 0);
-      pCt = Math.max(pCtRaw, trackedSum);
+    if (hasCt && pCtRaw > 0) {
+      // CT Clamp reading is the real physical whole home power
+      pCt = pCtRaw;
       pResidual = Math.max(0.0, pCt - trackedSum);
     } else {
-      // 2. NO CT Clamp Discovered: Sum up all active switches & fans
+      // Sum up all active switches & fans
       pCt = trackedSum;
       pResidual = 0.0;
     }
@@ -3165,6 +3751,11 @@
       const sourceTag = d.isNativePower ? '⚡' : '📐';
       const stateLbl = d.isCtMeter ? 'METER' : (d.isOn ? 'ON' : 'OFF');
       const clickAction = d.isCtMeter ? '' : `toggleAppliance(${idx})`;
+      const isHotIdle = d.isOn && d.thermostatState === 'idle_hot';
+      let quickSub = `${d.room} • ${todayCostOrUnits} today`;
+      if (d.isOn) {
+        quickSub = isHotIdle ? `0W (Hot) • ${d.room}` : `${w.toFixed(0)}W • ${d.room}`;
+      }
       return `
         <div class="quick-tile ${d.isOn ? 'on' : ''}" onclick="${clickAction}">
           <div class="quick-tile-top">
@@ -3173,7 +3764,7 @@
           </div>
           <div>
             <div class="quick-name">${sourceTag} ${d.name}</div>
-            <div class="quick-sub">${d.isOn ? `${w.toFixed(0)}W • ${d.room}` : `${d.room} • ${todayCostOrUnits} today`}</div>
+            <div class="quick-sub">${quickSub}</div>
           </div>
         </div>
       `;
@@ -3218,9 +3809,31 @@
         ? `<div class="runtime-pill">📟 Total Forward: ${todayKwh.toFixed(1)} kWh • ${todayCostOrUnits}</div>`
         : `<div class="runtime-pill">⏱️ ${runtimeStr} • ${todayCostOrUnits}</div>`;
 
-      const sourceBadgeHtml = d.isNativePower
-        ? `<span class="source-badge native" title="Direct hardware telemetry / calibrated BLDC profile">⚡ Native Device</span>`
-        : `<span class="source-badge assumed" title="Calculated assumption. Tap to adjust wattage" onclick="promptEditDeviceAssumption(${idx}, event)">📐 Calculated (${d.ratedWatts}W assumed) ✎</span>`;
+      let sourceBadgeHtml = '';
+      if (d.isNativePower) {
+        sourceBadgeHtml = `<span class="source-badge native" title="Direct hardware telemetry / calibrated BLDC profile">⚡ Native Device</span>`;
+      } else if (d.isOn && d.thermostatState === 'idle_hot') {
+        sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(234,179,8,0.18);color:#facc15;border:1px solid rgba(234,179,8,0.4);" title="AI CT Disaggregation: Water is fully heated. Internal thermostat is idle (0W draw) while switch relay is ON. Tap to adjust." onclick="promptEditDeviceAssumption(${idx}, event)">🔥 Water Hot • Thermostat Idle (0W) [AI] ✎</span>`;
+      } else if (d.isOn && d.thermostatState === 'heating') {
+        sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(244,63,94,0.18);color:#fb7185;border:1px solid rgba(244,63,94,0.4);" title="AI CT Disaggregation: Heating element active. CT load confirms full ~2000W draw. Tap to adjust." onclick="promptEditDeviceAssumption(${idx}, event)">♨️ Heating Active (~${w.toFixed(0)}W) [AI Verified] ✎</span>`;
+      } else {
+        sourceBadgeHtml = `<span class="source-badge assumed" title="Calculated assumption. Tap to adjust wattage" onclick="promptEditDeviceAssumption(${idx}, event)">📐 Calculated (${d.ratedWatts}W assumed) ✎</span>`;
+      }
+
+      let powerTagHtml = '';
+      let costTagHtml = '';
+      if (d.isOn) {
+        if (d.thermostatState === 'idle_hot') {
+          powerTagHtml = `<div class="app-power-tag" style="color:#facc15;">0.0 W (Hot)</div>`;
+          costTagHtml = `<div class="app-cost-tag">Thermostat open (0 cost)</div>`;
+        } else {
+          powerTagHtml = `<div class="app-power-tag" style="color:var(--emerald);">${w.toFixed(1)} W</div>`;
+          costTagHtml = `<div class="app-cost-tag">${hrCostOrUnits}</div>`;
+        }
+      } else {
+        powerTagHtml = `<div class="app-power-tag" style="color:var(--muted);">Off</div>`;
+        costTagHtml = `<div class="app-cost-tag">${d.ratedWatts}W rated</div>`;
+      }
 
       const speedHtml = d.isAtomberg ? `
         <div class="speed-bar">
@@ -3231,6 +3844,15 @@
                       onclick="setFanSpeed(${idx}, ${spd})">${spd === 6 ? 'B' : spd}</button>
             `).join("")}
           </div>
+        </div>
+      ` : "";
+
+      const demoSimulateBtnHtml = (appMode === "demo" && d.isOn && isThermostaticAppliance(d)) ? `
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--muted);">🧠 AI CT Drop Simulation:</span>
+          <button class="step-btn" style="width:auto;padding:3px 10px;font-size:10.5px;background:rgba(56,189,248,0.18);color:#38bdf8;" onclick="toggleDemoThermostatSimulation(${idx})">
+            ${d.thermostatState === 'idle_hot' ? 'Reheat (CT +2000W)' : 'Simulate Hot Cutoff (CT -2000W)'}
+          </button>
         </div>
       ` : "";
 
@@ -3248,10 +3870,8 @@
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
               <div>
-                <div class="app-power-tag" style="color:${d.isOn ? 'var(--emerald)' : 'var(--muted)'};">
-                  ${d.isOn ? `${w.toFixed(1)} W` : 'Off'}
-                </div>
-                <div class="app-cost-tag">${d.isOn ? hrCostOrUnits : `${d.ratedWatts}W rated`}</div>
+                ${powerTagHtml}
+                ${costTagHtml}
               </div>
               ${d.isCtMeter ? `
                 <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:var(--emerald);font-size:11px;font-weight:700;padding:5px 9px;border-radius:12px;white-space:nowrap;letter-spacing:0.3px;">
@@ -3266,6 +3886,7 @@
             </div>
           </div>
           ${speedHtml}
+          ${demoSimulateBtnHtml}
         </div>
       `;
     }).join("");

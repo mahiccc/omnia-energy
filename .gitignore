@@ -55,4 +55,7 @@ coverage/
 secrets.json
 apk-build/out/
 *.idsig
+*.png
+tuya_devices_dump.json
+releases/
 

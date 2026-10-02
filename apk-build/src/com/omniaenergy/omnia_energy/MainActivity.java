@@ -374,6 +374,150 @@ public class MainActivity extends Activity {
             }
         }
 
+        @JavascriptInterface
+        public String saveGoogleDriveProfile(String driveUrl, String profileJson, String email) {
+            boolean cloudSuccess = false;
+            String cloudMsg = "";
+            // 1. Try sending to Google Drive Web App URL if provided
+            if (driveUrl != null && !driveUrl.trim().isEmpty()) {
+                try {
+                    String targetUrl = driveUrl.trim();
+                    HttpURLConnection conn = (HttpURLConnection) new URL(targetUrl).openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setConnectTimeout(10000);
+                    conn.setReadTimeout(10000);
+                    conn.setInstanceFollowRedirects(true);
+                    conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                    conn.setDoOutput(true);
+                    OutputStream os = conn.getOutputStream();
+                    os.write(profileJson.getBytes(StandardCharsets.UTF_8));
+                    os.flush();
+                    os.close();
+
+                    int code = conn.getResponseCode();
+                    if (code == 302 || code == 301) {
+                        String redirectUrl = conn.getHeaderField("Location");
+                        if (redirectUrl != null && !redirectUrl.isEmpty()) {
+                            HttpURLConnection redConn = (HttpURLConnection) new URL(redirectUrl).openConnection();
+                            redConn.setRequestMethod("GET");
+                            redConn.setConnectTimeout(10000);
+                            redConn.setReadTimeout(10000);
+                            code = redConn.getResponseCode();
+                        }
+                    }
+                    if (code >= 200 && code < 400) {
+                        cloudSuccess = true;
+                        cloudMsg = "Saved to Google Drive cloud";
+                    }
+                } catch (Exception e) {
+                    cloudMsg = "Drive upload error: " + e.getMessage();
+                }
+            }
+
+            // 2. Always save persistent local shadow file in Downloads & external files
+            String safeEmail = (email == null ? "default" : email.replaceAll("[^a-zA-Z0-9_.-]", "_"));
+            String fileName = "OmniaEnergy_DriveBackup_" + safeEmail + ".json";
+            boolean localSaved = false;
+
+            try {
+                File dlFile = new File("/sdcard/Download/" + fileName);
+                FileOutputStream fos = new FileOutputStream(dlFile, false);
+                fos.write(profileJson.getBytes(StandardCharsets.UTF_8));
+                fos.flush();
+                fos.close();
+                localSaved = true;
+            } catch (Exception ignored) {}
+
+            try {
+                File extDir = context.getExternalFilesDir(null);
+                if (extDir != null) {
+                    File extFile = new File(extDir, fileName);
+                    FileOutputStream efos = new FileOutputStream(extFile, false);
+                    efos.write(profileJson.getBytes(StandardCharsets.UTF_8));
+                    efos.flush();
+                    efos.close();
+                    localSaved = true;
+                }
+            } catch (Exception ignored) {}
+
+            try {
+                File internalFile = new File(context.getFilesDir(), fileName);
+                FileOutputStream ifos = new FileOutputStream(internalFile, false);
+                ifos.write(profileJson.getBytes(StandardCharsets.UTF_8));
+                ifos.flush();
+                ifos.close();
+                localSaved = true;
+            } catch (Exception ignored) {}
+
+            return "{\"ok\":true,\"cloudSuccess\":" + cloudSuccess + ",\"localSaved\":" + localSaved + ",\"cloudMsg\":\"" + cloudMsg + "\"}";
+        }
+
+        @JavascriptInterface
+        public String fetchGoogleDriveProfile(String driveUrl, String email) {
+            // 1. If driveUrl is provided, query Google Drive Web App
+            if (driveUrl != null && !driveUrl.trim().isEmpty() && email != null && !email.trim().isEmpty()) {
+                try {
+                    String encEmail = java.net.URLEncoder.encode(email.trim(), "UTF-8");
+                    String queryUrl = driveUrl.trim() + (driveUrl.contains("?") ? "&" : "?") + "action=get_profile&email=" + encEmail;
+                    HttpURLConnection conn = (HttpURLConnection) new URL(queryUrl).openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(10000);
+                    conn.setReadTimeout(10000);
+                    conn.setInstanceFollowRedirects(true);
+
+                    int code = conn.getResponseCode();
+                    if (code == 302 || code == 301) {
+                        String redirectUrl = conn.getHeaderField("Location");
+                        if (redirectUrl != null && !redirectUrl.isEmpty()) {
+                            conn = (HttpURLConnection) new URL(redirectUrl).openConnection();
+                            conn.setRequestMethod("GET");
+                            conn.setConnectTimeout(10000);
+                            conn.setReadTimeout(10000);
+                            code = conn.getResponseCode();
+                        }
+                    }
+
+                    if (code >= 200 && code < 400) {
+                        BufferedReader r = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        while ((line = r.readLine()) != null) sb.append(line);
+                        r.close();
+                        String resStr = sb.toString();
+                        if (resStr.contains("\"profile\"") || resStr.contains("\"connectors\"")) {
+                            return resStr;
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // 2. Fallback to persistent local backup files
+            String safeEmail = (email == null ? "default" : email.replaceAll("[^a-zA-Z0-9_.-]", "_"));
+            String fileName = "OmniaEnergy_DriveBackup_" + safeEmail + ".json";
+            File[] candidateFiles = new File[] {
+                new File("/sdcard/Download/" + fileName),
+                new File(context.getExternalFilesDir(null), fileName),
+                new File(context.getFilesDir(), fileName),
+                new File("/sdcard/Download/OmniaEnergy_DriveBackup_default.json"),
+                new File(context.getFilesDir(), "OmniaEnergy_DriveBackup_default.json")
+            };
+
+            for (File f : candidateFiles) {
+                if (f != null && f.exists() && f.length() > 20) {
+                    try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(new java.io.FileInputStream(f), StandardCharsets.UTF_8));
+                        StringBuilder sb = new StringBuilder();
+                        String l;
+                        while ((l = reader.readLine()) != null) sb.append(l);
+                        reader.close();
+                        return "{\"ok\":true,\"source\":\"local_vault\",\"profile\":" + sb.toString() + "}";
+                    } catch (Exception ignored) {}
+                }
+            }
+
+            return "{\"ok\":false,\"message\":\"No cloud or persistent profile found\"}";
+        }
+
         private static String canonicalizePath(String pathWithQuery) {
             if (pathWithQuery == null || !pathWithQuery.contains("?")) {
                 return pathWithQuery == null ? "" : pathWithQuery;
