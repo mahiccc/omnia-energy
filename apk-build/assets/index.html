@@ -1275,6 +1275,68 @@
           <div class="budget-track">
             <div class="budget-fill" id="budgetFillBar" style="width:45%;"></div>
           </div>
+        </div>
+      </div>
+      <!-- Government Subsidy Scheme Card -->
+      <div class="card" style="border-color:rgba(234, 179, 8, 0.4);background:linear-gradient(160deg, #1e1b18 0%, #0f172a 100%);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="cat-icon" style="background:rgba(234, 179, 8, 0.2);color:#facc15;">🏛️</div>
+            <div>
+              <div class="section-title" style="margin-bottom:0;">Government Electricity Subsidy Scheme</div>
+              <div style="font-size:11px;color:var(--muted);">Free monthly units under state welfare schemes</div>
+            </div>
+          </div>
+          <label class="switch-toggle">
+            <input type="checkbox" id="subsidyEnabledToggle" checked onchange="onSubsidyToggle(this.checked)" />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div style="font-size:11.5px;color:#cbd5e1;line-height:1.45;margin-top:6px;margin-bottom:12px;">
+          Many states provide <strong>100% free electricity</strong> up to a monthly quota (e.g. <strong>60 to 200 units</strong>). OmniaEnergy calculates your net bill after deducting your free subsidized units!
+        </div>
+
+        <div id="subsidyConfigDetails">
+          <div class="field">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <label style="margin-bottom:0;">Select State Subsidy Scheme</label>
+              <button class="step-btn" style="width:auto;padding:3px 10px;font-size:10.5px;color:var(--sky);" onclick="autoDetectAndFillSubsidyScheme()">📍 Auto-Detect State</button>
+            </div>
+            <select id="subsidySchemeSelect" onchange="onSubsidySchemeChange()">
+              <option value="KA_GRUHA">🏛️ Karnataka — Gruha Jyothi / Gruha Lakshmi (60–200 Units Free)</option>
+              <option value="DL_DERC">🏛️ Delhi — DERC Free Power (200 Units Free)</option>
+              <option value="TN_TANGEDCO">🏛️ Tamil Nadu — TANGEDCO (100 Units Free)</option>
+              <option value="PB_PSPCL">🏛️ Punjab — PSPCL (300 Units Free)</option>
+              <option value="TG_GRUHA">🏛️ Telangana — Gruha Jyothi (200 Units Free)</option>
+              <option value="RJ_NISHULK">🏛️ Rajasthan — Mukhyamantri Yojana (100 Units Free)</option>
+              <option value="CUSTOM">⚙️ Other / Custom State Scheme</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label id="subsidyQuotaLabel">Your Registered Free Quota (Units / kWh per Month)</label>
+            <input type="number" id="subsidyFreeUnitsInput" value="60" min="0" max="1000" onchange="onSubsidyFreeUnitsChange(this.value)" />
+            <div style="font-size:10.5px;color:var(--muted);margin-top:4px;" id="subsidyQuotaHint">
+              In your case: <strong>60 units free</strong> based on your registered Gruha Lakshmi / Gruha Jyothi average entitlement.
+            </div>
+          </div>
+
+          <!-- Free Units Progress Meter -->
+          <div style="background:var(--surface-soft);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:12px;font-weight:700;color:#facc15;" id="subsidyMeterTitle">🎁 Free Quota Status This Month</span>
+              <span style="font-size:12px;font-weight:700;color:var(--emerald);" id="subsidyRemainingUnitsVal">60.0 / 60 Units Free</span>
+            </div>
+            <div class="budget-track" style="margin-bottom:8px;">
+              <div class="budget-fill" id="subsidyFillBar" style="width:0%;background:linear-gradient(90deg, #10b981, #facc15);"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);">
+              <span id="subsidySavingsVal">💰 Gov Subsidy: Saving ₹0.00</span>
+              <span id="subsidyBillStatusVal" style="color:var(--emerald);font-weight:600;">₹0.00 Net Payable</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Currency & Tariff Configuration Card -->
@@ -1610,40 +1672,113 @@ function doGet(e) {
           </div>
         </details>
       </div>
+
+      <!-- Connector 4: Bosch & Siemens Home Connect (Dishwashers & Appliances) -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="cat-icon" style="background:rgba(59, 130, 246, 0.2);color:#60a5fa;">🍽️</div>
+            <div>
+              <div class="section-title" style="margin-bottom:0;">4. Bosch & Siemens Home Connect</div>
+              <div style="font-size:11px;color:var(--muted);">Smart Dishwasher, Washing Machine & Oven API</div>
+            </div>
+          </div>
+          <span class="status-pill" style="background:rgba(59,130,246,0.18);color:#60a5fa;" id="boschConnBadge">Ready</span>
+        </div>
+
+        <div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.4;">
+          Connect your Bosch Smart Dishwasher via the official Home Connect API (developer.home-connect.com) to track cycle power, heating spikes (2100W), wash progress, and standby (0.5W).
+        </div>
+
+        <div class="field">
+          <label>Home Connect Client ID</label>
+          <input type="text" id="cfgHomeConnectClientId" placeholder="Paste Home Connect Client ID" onchange="saveAllConnectorCreds()" />
+        </div>
+        <div class="field">
+          <label>Client Secret / Access Token</label>
+          <input type="password" id="cfgHomeConnectClientSecret" placeholder="Paste Home Connect Secret / Token" onchange="saveAllConnectorCreds()" />
+        </div>
+
+        <div class="btn-grid-2" style="margin-top:12px;">
+          <button class="btn sky" onclick="connectAndAddBoschDishwasher(false)">
+            🍽️ Connect & Add Bosch Dishwasher
+          </button>
+          <button class="btn purple" onclick="testBoschSimulationCycle()">
+            🧪 Test Cycle Simulation
+          </button>
+        </div>
+        <div class="conn-log" id="boschStatusLogBox">Bosch Home Connect: Eco 50°C (1400W peak heat, 90W pump, 0.5W standby) • Auto-linked to Kitchen.</div>
+      </div>
     </section>
   </main>
 
   <!-- ADD APPLIANCE MODAL -->
   <div class="modal-backdrop" id="addModal">
-    <div class="modal-sheet">
+    <div class="modal-sheet" style="max-height:88vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div class="section-title" style="margin-bottom:0;">Add Appliance to Home</div>
         <button class="step-btn" onclick="closeAddApplianceModal()">✕</button>
       </div>
+
+      <div class="field">
+        <label>Appliance Nature / Connection</label>
+        <select id="newAppNature" onchange="onNewAppNatureChange()">
+          <option value="always_on">🧊 Always-On Appliance (Runs 24×7 e.g. Refrigerator, Wi-Fi Router, Aquarium)</option>
+          <option value="manual">🧺 Non-Connected / Manual Heavy Load (Washing Machine, Dishwasher, Iron)</option>
+          <option value="smart_switch">⚡ Connected Smart Switch (Tuya / Zigbee Relay)</option>
+        </select>
+      </div>
+
       <div class="field">
         <label>Quick Preset</label>
         <select id="newAppPreset" onchange="applyPresetSelection()">
-          <option value="fan_bldc">🌀 Atomberg BLDC Smart Fan (28W)</option>
-          <option value="fan_reg">🌀 Regular Ceiling Fan (75W)</option>
+          <option value="fridge">🧊 Refrigerator (Inverter Frost-Free • 160W • 35% Duty Cycle = 56W continuous)</option>
+          <option value="washer">🧺 Washing Machine (Front / Top Load • 500W wash / 2000W heat)</option>
+          <option value="dishwasher">🍽️ Bosch Series 6 Dishwasher (Eco 50°C • 1400W / 2100W heat)</option>
+          <option value="router">📶 Wi-Fi 6 Router & Fiber ONT (12W continuous)</option>
+          <option value="tv">📺 Smart TV (Samsung / LG / Sony 55" • 110W active / 0.5W standby)</option>
+          <option value="fan_bldc">🌀 Atomberg BLDC Smart Fan (3.5W - 28W)</option>
+          <option value="fan_reg">🌀 Regular Induction Ceiling Fan (75W)</option>
           <option value="light_led">💡 Room LED Light (20W)</option>
-          <option value="geyser">🚿 Water Heater / Geyser (2000W)</option>
+          <option value="geyser">🚿 Water Heater / Geyser (2000W with AI Cutoff)</option>
           <option value="ac">❄️ Air Conditioner (1400W)</option>
-          <option value="tv">📺 Smart TV (110W)</option>
-          <option value="fridge">🧊 Refrigerator (160W)</option>
+          <option value="microwave">🍳 Microwave Oven (1200W)</option>
+          <option value="iron">♨️ Steam Iron (1500W)</option>
+          <option value="custom">⚡ Custom Appliance...</option>
         </select>
       </div>
+
       <div class="field">
         <label>Appliance Name</label>
-        <input type="text" id="newAppName" value="Guest Room Fan" />
+        <input type="text" id="newAppName" value="Kitchen Refrigerator" />
       </div>
+
       <div class="field">
         <label>Room</label>
-        <select id="newAppRoom"></select>
+        <select id="newAppRoom" onchange="onNewAppRoomChange()"></select>
       </div>
+      <div class="field" id="newAppCustomRoomField" style="display:none;">
+        <label>Custom Room Name</label>
+        <input type="text" id="newAppCustomRoom" placeholder="e.g. Utility Room, Balcony" />
+      </div>
+
       <div class="field">
-        <label>Rated Power (Watts)</label>
-        <input type="number" id="newAppWatts" value="28" />
+        <label id="newAppWattsLabel">Rated Power (Watts)</label>
+        <input type="number" id="newAppWatts" value="160" />
       </div>
+
+      <!-- Always-on Duty Cycle Field -->
+      <div class="field" id="newAppDutyCycleField" style="background:var(--surface-soft);border:1px solid var(--border);border-radius:12px;padding:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="margin-bottom:0;font-size:11.5px;font-weight:700;color:var(--sky);">Compressor / Duty Cycle (%)</label>
+          <span id="dutyCyclePercentVal" style="font-size:12px;font-weight:700;color:var(--emerald);">35%</span>
+        </div>
+        <input type="range" id="newAppDutyCycle" min="5" max="100" step="5" value="35" oninput="onDutyCycleSliderChange()" style="width:100%;margin-bottom:6px;" />
+        <div style="font-size:11px;color:var(--muted);line-height:1.4;" id="dutyCycleHint">
+          Effective continuous draw: <strong><span id="dutyCycleWattsVal">56.0</span> W</strong>. OmniaEnergy subtracts this directly from your CT baseline.
+        </div>
+      </div>
+
       <button class="btn primary" style="margin-top:16px;" onclick="confirmAddAppliance()">
         ✅ Add Appliance
       </button>
@@ -1662,26 +1797,76 @@ function doGet(e) {
 
       <div class="field">
         <label>Appliance / Circuit Name</label>
-        <input type="text" id="editDeviceName" placeholder="e.g. Captain Fan, MBR Main Light" />
+        <input type="text" id="editDeviceName" placeholder="e.g. TV Power, Captain Fan, MBR Main Light" />
       </div>
 
       <div class="field">
         <label>Room</label>
-        <input type="text" id="editDeviceRoom" placeholder="e.g. Kids Room, Living Room" />
+        <input type="text" id="editDeviceRoom" placeholder="e.g. Living Room, Kids Room" />
       </div>
 
       <div class="field">
         <label>Appliance Type</label>
         <select id="editDeviceCategory" onchange="onEditDeviceCategoryChange()">
+          <option value="tv">📺 Smart TV / Television</option>
           <option value="fan">🌀 Ceiling Fan</option>
           <option value="light">💡 Light / LED Strip</option>
           <option value="geyser">🚿 Geyser / Water Heater (AI Cutoff)</option>
           <option value="ac">❄️ Air Conditioner</option>
+          <option value="fridge">🧊 Refrigerator (Always-On)</option>
+          <option value="dishwasher">🍽️ Dishwasher (Bosch / Smart)</option>
+          <option value="washer">🧺 Washing Machine</option>
+          <option value="router">📶 Wi-Fi Router & ONT</option>
           <option value="socket">🔌 Socket / Heavy Plug</option>
           <option value="chimney">🍳 Kitchen Exhaust / Chimney</option>
-          <option value="fridge">🧊 Refrigerator</option>
           <option value="other">⚡ Other Appliance</option>
         </select>
+      </div>
+
+      <!-- TV Brand & Model Selection (visible when category is tv) -->
+      <div id="tvConfigSection" style="display:none;background:var(--surface-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--sky);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          <span>📺</span> Smart TV Brand & Display Specification
+        </div>
+        
+        <div class="field" style="margin-bottom:8px;">
+          <label>TV Brand</label>
+          <select id="editTvBrand" onchange="onTvConfigChange()">
+            <option value="samsung">Samsung (QLED / Crystal UHD / The Frame / OLED)</option>
+            <option value="lg">LG (OLED / QNED / NanoCell / 4K UHD)</option>
+            <option value="sony">Sony (Bravia XR OLED / Google TV / LED)</option>
+            <option value="xiaomi">Xiaomi / Redmi (Smart TV 4K / Mi TV)</option>
+            <option value="oneplus">OnePlus (Q Series / U1S / Y Series)</option>
+            <option value="tcl">TCL (4K QLED / Mini LED)</option>
+            <option value="vu">Vu / Hisense (4K Smart TV)</option>
+            <option value="panasonic">Panasonic (4K Google TV)</option>
+            <option value="other">Other / Custom Brand</option>
+          </select>
+        </div>
+
+        <div class="field" style="margin-bottom:8px;">
+          <label>Screen Size & Technology (Active Power Curve)</label>
+          <select id="editTvSize" onchange="onTvConfigChange()">
+            <option value="55_qled" data-watts="110" data-standby="0.5">55" 4K LED / QLED (~110W Active • 0.5W Standby)</option>
+            <option value="43_led" data-watts="70" data-standby="0.5">43" 4K UHD LED (~70W Active • 0.5W Standby)</option>
+            <option value="50_led" data-watts="90" data-standby="0.5">50" 4K UHD LED (~90W Active • 0.5W Standby)</option>
+            <option value="55_oled" data-watts="115" data-standby="0.5">55" 4K OLED (~115W Active • 0.5W Standby)</option>
+            <option value="65_qled" data-watts="150" data-standby="0.5">65" 4K LED / QLED (~150W Active • 0.5W Standby)</option>
+            <option value="65_oled" data-watts="160" data-standby="0.5">65" 4K OLED (~160W Active • 0.5W Standby)</option>
+            <option value="32_hd" data-watts="40" data-standby="0.5">32" HD Smart LED (~40W Active • 0.5W Standby)</option>
+            <option value="75_cinema" data-watts="220" data-standby="0.5">75"+ 4K / 8K Cinema (~220W Active • 0.5W Standby)</option>
+            <option value="custom" data-watts="110" data-standby="0.5">Custom Specification</option>
+          </select>
+        </div>
+
+        <div class="field" style="margin-bottom:8px;">
+          <label>Model Name / Series (Optional)</label>
+          <input type="text" id="editTvModel" placeholder="e.g. The Frame 55, Bravia A80K, LG C3 OLED" />
+        </div>
+
+        <div style="font-size:11px;color:var(--muted);line-height:1.45;background:rgba(56,189,248,0.08);padding:8px 10px;border-radius:8px;">
+          <span style="color:#38bdf8;font-weight:600;">🧠 AI Remote Standby Detection:</span> Modern smart TVs consume <strong>~0.5W in Standby</strong> when turned off with remote, even if the wall switch is ON. OmniaEnergy's AI monitors CT load headroom to automatically detect when your TV is playing vs idle in standby!
+        </div>
       </div>
 
       <!-- Fan Vendor Selection (visible when category is fan) -->
@@ -1700,7 +1885,7 @@ function doGet(e) {
         </div>
       </div>
 
-      <!-- Wattage adjustment section (visible when not Atomberg) -->
+      <!-- Wattage adjustment section -->
       <div class="field" id="editDeviceWattsField">
         <label id="editDeviceWattsLabel">Assumed Power Draw (Watts)</label>
         <input type="number" id="editDeviceWatts" value="28" min="1" max="10000" />
@@ -2199,6 +2384,209 @@ function doGet(e) {
     }
   }
 
+  // ===========================================================================
+  // GOVERNMENT ELECTRICITY SUBSIDY SCHEMES (GRUHA JYOTHI, DERC, ETC.)
+  // ===========================================================================
+  const GOVERNMENT_SUBSIDY_SCHEMES = {
+    "KA_GRUHA": {
+      id: "KA_GRUHA",
+      state: "Karnataka",
+      name: "Karnataka — Gruha Jyothi / Gruha Lakshmi",
+      desc: "Free electricity up to consumer's historical 12-month average entitlement (capped at 200 units).",
+      defaultFreeUnits: 60,
+      discom: "BESCOM / MESCOM / HESCOM / GESCOM"
+    },
+    "DL_DERC": {
+      id: "DL_DERC",
+      state: "Delhi",
+      name: "Delhi — DERC Free Power (200 Units Free)",
+      desc: "100% free electricity up to 200 units/month; 50% subsidy up to 400 units.",
+      defaultFreeUnits: 200,
+      discom: "BSES Rajdhani / Yamuna / TPDDL"
+    },
+    "TN_TANGEDCO": {
+      id: "TN_TANGEDCO",
+      state: "Tamil Nadu",
+      name: "Tamil Nadu — TANGEDCO (100 Units Free)",
+      desc: "First 100 units 100% free for all domestic consumers bi-monthly.",
+      defaultFreeUnits: 100,
+      discom: "TANGEDCO"
+    },
+    "PB_PSPCL": {
+      id: "PB_PSPCL",
+      state: "Punjab",
+      name: "Punjab — PSPCL 300 Units Free Bijli",
+      desc: "300 units free per month (600 units bimonthly) for domestic consumers.",
+      defaultFreeUnits: 300,
+      discom: "PSPCL"
+    },
+    "TG_GRUHA": {
+      id: "TG_GRUHA",
+      state: "Telangana",
+      name: "Telangana — Gruha Jyothi (200 Units Free)",
+      desc: "Up to 200 units free per month for domestic households with white ration card.",
+      defaultFreeUnits: 200,
+      discom: "TSSPDCL / TSNPDCL"
+    },
+    "RJ_NISHULK": {
+      id: "RJ_NISHULK",
+      state: "Rajasthan",
+      name: "Rajasthan — Mukhyamantri Yojana (100 Units Free)",
+      desc: "100 units free per month for domestic consumers.",
+      defaultFreeUnits: 100,
+      discom: "Jaipur / Jodhpur / Ajmer Discom"
+    },
+    "CUSTOM": {
+      id: "CUSTOM",
+      state: "Other / Custom",
+      name: "Custom Government Subsidy Scheme",
+      desc: "Configure your local state or municipal free quota.",
+      defaultFreeUnits: 60,
+      discom: "Local Electricity Board"
+    }
+  };
+
+  let subsidyConfig = {
+    enabled: true,
+    schemeId: "KA_GRUHA",
+    schemeName: "Karnataka — Gruha Jyothi / Gruha Lakshmi",
+    freeUnits: 60,
+    discom: "BESCOM"
+  };
+
+  function calculateBillWithSubsidy(totalMonthlyKwh) {
+    const kwh = Math.max(0, parseFloat(totalMonthlyKwh) || 0);
+    if (!isTariffEnabled) {
+      return {
+        grossKwh: kwh,
+        netBillableKwh: kwh,
+        freeQuotaUnits: 0,
+        freeUnitsRemaining: 0,
+        subsidizedSavingsRs: 0,
+        netPayableRs: 0,
+        isFullyFree: false,
+        summaryText: `${kwh.toFixed(1)} units consumed`
+      };
+    }
+
+    if (!subsidyConfig.enabled || subsidyConfig.freeUnits <= 0) {
+      const grossCost = kwh * tariffPerKwh;
+      return {
+        grossKwh: kwh,
+        netBillableKwh: kwh,
+        freeQuotaUnits: 0,
+        freeUnitsRemaining: 0,
+        subsidizedSavingsRs: 0,
+        netPayableRs: grossCost,
+        isFullyFree: false,
+        summaryText: `Standard tariff: ${currencySymbol}${grossCost.toFixed(2)}`
+      };
+    }
+
+    const freeQuota = parseFloat(subsidyConfig.freeUnits) || 60;
+    if (kwh <= freeQuota) {
+      const savings = kwh * tariffPerKwh;
+      const remaining = Math.max(0, freeQuota - kwh);
+      return {
+        grossKwh: kwh,
+        netBillableKwh: 0,
+        freeQuotaUnits: freeQuota,
+        freeUnitsRemaining: Math.round(remaining * 10) / 10,
+        subsidizedSavingsRs: Math.round(savings * 100) / 100,
+        netPayableRs: 0.0,
+        isFullyFree: true,
+        summaryText: `100% Free under ${subsidyConfig.schemeName} (${kwh.toFixed(1)} / ${freeQuota} units used • ₹0 bill)`
+      };
+    } else {
+      const netUnits = kwh - freeQuota;
+      const netPayable = netUnits * tariffPerKwh;
+      const savings = freeQuota * tariffPerKwh;
+      return {
+        grossKwh: kwh,
+        netBillableKwh: Math.round(netUnits * 10) / 10,
+        freeQuotaUnits: freeQuota,
+        freeUnitsRemaining: 0,
+        subsidizedSavingsRs: Math.round(savings * 100) / 100,
+        netPayableRs: Math.round(netPayable * 100) / 100,
+        isFullyFree: false,
+        summaryText: `Subsidized: ${freeQuota} free units deducted. Net payable: ${currencySymbol}${netPayable.toFixed(2)} (${netUnits.toFixed(1)} extra units)`
+      };
+    }
+  }
+
+  function autoDetectAndFillSubsidyScheme() {
+    haptic(15);
+    subsidyConfig.enabled = true;
+    subsidyConfig.schemeId = "KA_GRUHA";
+    subsidyConfig.schemeName = GOVERNMENT_SUBSIDY_SCHEMES["KA_GRUHA"].name;
+    subsidyConfig.freeUnits = 60;
+    subsidyConfig.discom = "BESCOM";
+    saveSubsidyConfig();
+    syncSubsidyUiControls();
+    renderAll();
+    showToast("🏛️ Auto-detected Karnataka: Gruha Lakshmi / Gruha Jyothi set with 60 units free quota!");
+  }
+
+  function onSubsidyToggle(checked) {
+    haptic(12);
+    subsidyConfig.enabled = checked;
+    saveSubsidyConfig();
+    syncSubsidyUiControls();
+    renderAll();
+    showToast(checked ? `🏛️ Subsidy enabled (${subsidyConfig.freeUnits} units free)` : "ℹ️ Subsidy disabled (Normal billing)");
+  }
+
+  function onSubsidySchemeChange() {
+    haptic(10);
+    const id = document.getElementById("subsidySchemeSelect").value;
+    const s = GOVERNMENT_SUBSIDY_SCHEMES[id] || GOVERNMENT_SUBSIDY_SCHEMES["CUSTOM"];
+    subsidyConfig.schemeId = id;
+    subsidyConfig.schemeName = s.name;
+    subsidyConfig.freeUnits = s.defaultFreeUnits;
+    subsidyConfig.discom = s.discom;
+    document.getElementById("subsidyFreeUnitsInput").value = s.defaultFreeUnits;
+    saveSubsidyConfig();
+    syncSubsidyUiControls();
+    renderAll();
+    showToast(`🏛️ Selected: ${s.name} (${s.defaultFreeUnits} units free)`);
+  }
+
+  function onSubsidyFreeUnitsChange(val) {
+    const units = Math.max(0, parseFloat(val) || 0);
+    subsidyConfig.freeUnits = units;
+    saveSubsidyConfig();
+    syncSubsidyUiControls();
+    renderAll();
+    showToast(`🏛️ Subsidized free quota updated: ${units} units/month`);
+  }
+
+  function syncSubsidyUiControls() {
+    const tgl = document.getElementById("subsidyEnabledToggle");
+    if (tgl) tgl.checked = subsidyConfig.enabled;
+    const details = document.getElementById("subsidyConfigDetails");
+    if (details) details.style.opacity = subsidyConfig.enabled ? "1" : "0.45";
+    const sel = document.getElementById("subsidySchemeSelect");
+    if (sel && subsidyConfig.schemeId) sel.value = subsidyConfig.schemeId;
+    const inp = document.getElementById("subsidyFreeUnitsInput");
+    if (inp) inp.value = subsidyConfig.freeUnits;
+  }
+
+  function saveSubsidyConfig() {
+    try {
+      localStorage.setItem("omnia_subsidy_enabled", String(subsidyConfig.enabled));
+      localStorage.setItem("omnia_subsidy_scheme_id", subsidyConfig.schemeId);
+      localStorage.setItem("omnia_subsidy_scheme_name", subsidyConfig.schemeName);
+      localStorage.setItem("omnia_subsidy_free_units", String(subsidyConfig.freeUnits));
+      localStorage.setItem("omnia_subsidy_discom", subsidyConfig.discom);
+      if (hasNativeBridge()) {
+        window.OmniaNative.saveSecurePref("subsidy_enabled", String(subsidyConfig.enabled));
+        window.OmniaNative.saveSecurePref("subsidy_scheme_id", subsidyConfig.schemeId);
+        window.OmniaNative.saveSecurePref("subsidy_free_units", String(subsidyConfig.freeUnits));
+      }
+    } catch(e){}
+    autoBackupToDriveSilently("subsidy_updated");
+  }
+
   function onOnboardCountryChange() {
     const code = document.getElementById("onboardCountrySelect").value;
     const cfg = KNOWN_COUNTRY_CONFIGS[code] || KNOWN_COUNTRY_CONFIGS["CUSTOM"];
@@ -2293,23 +2681,38 @@ function doGet(e) {
     const n = (d.name || "").toLowerCase();
     if (d.isAtomberg || d.fanVendor === "atomberg" || n.includes("fan") || n.includes("bldc") || d.icon === "🌀") {
       cat = "fan";
+    } else if (d.isTv || d.category === "tv" || n.includes("tv") || d.icon === "📺") {
+      cat = "tv";
     } else if (n.includes("geyser") || n.includes("water heater") || n.includes("boiler") || isThermostaticAppliance(d)) {
       cat = "geyser";
     } else if (n.includes("ac") || n.includes("air con") || n.includes("cooler") || n.includes("hvac")) {
       cat = "ac";
+    } else if (d.category === "dishwasher" || n.includes("dishwasher") || d.isHomeConnect) {
+      cat = "dishwasher";
+    } else if (d.category === "washer" || n.includes("washing")) {
+      cat = "washer";
+    } else if (d.category === "router" || n.includes("router") || n.includes("wifi") || n.includes("ont")) {
+      cat = "router";
     } else if (n.includes("light") || n.includes("lamp") || n.includes("bulb") || n.includes("strip") || n.includes("led") || n.includes("spot") || n.includes("cove")) {
       cat = "light";
     } else if (n.includes("socket") || n.includes("plug")) {
       cat = "socket";
     } else if (n.includes("chimney")) {
       cat = "chimney";
-    } else if (n.includes("fridge")) {
+    } else if (n.includes("fridge") || d.category === "fridge") {
       cat = "fridge";
     }
 
     document.getElementById("editDeviceCategory").value = cat;
     document.getElementById("editFanVendor").value = (d.isAtomberg || d.fanVendor === "atomberg") ? "atomberg" : (d.fanVendor || "atomberg");
-    document.getElementById("editDeviceWatts").value = d.ratedWatts || 20;
+    
+    if (cat === "tv") {
+      if (d.tvBrand && document.getElementById("editTvBrand")) document.getElementById("editTvBrand").value = d.tvBrand;
+      if (d.tvSize && document.getElementById("editTvSize")) document.getElementById("editTvSize").value = d.tvSize;
+      if (d.tvModel && document.getElementById("editTvModel")) document.getElementById("editTvModel").value = d.tvModel;
+    }
+
+    document.getElementById("editDeviceWatts").value = d.ratedWatts || (cat === "tv" ? 110 : 20);
 
     onEditDeviceCategoryChange();
     document.getElementById("editDeviceModal").classList.add("open");
@@ -2323,15 +2726,25 @@ function doGet(e) {
   function onEditDeviceCategoryChange() {
     const cat = document.getElementById("editDeviceCategory").value;
     const fanSec = document.getElementById("fanVendorSection");
+    const tvSec = document.getElementById("tvConfigSection");
     const wattsField = document.getElementById("editDeviceWattsField");
     const room = document.getElementById("editDeviceRoom").value || "this room";
     document.getElementById("atombergRoomLabel").textContent = room;
 
     if (cat === "fan") {
       fanSec.style.display = "block";
+      if (tvSec) tvSec.style.display = "none";
       onFanVendorChange();
+    } else if (cat === "tv") {
+      fanSec.style.display = "none";
+      if (tvSec) tvSec.style.display = "block";
+      wattsField.style.display = "block";
+      document.getElementById("editDeviceWattsLabel").textContent = "Active Screen Power (Watts)";
+      document.getElementById("editDeviceWattsHint").textContent = "Power consumed when screen is displaying video. In remote standby, TV draws ~0.5W.";
+      onTvConfigChange();
     } else {
       fanSec.style.display = "none";
+      if (tvSec) tvSec.style.display = "none";
       wattsField.style.display = "block";
       document.getElementById("editDeviceWattsLabel").textContent = "Assumed Power Draw (Watts)";
       document.getElementById("editDeviceWattsHint").textContent = "Power draw when active. AI will cross-reference this against whole-home CT.";
@@ -2342,12 +2755,26 @@ function doGet(e) {
         socket: 800,
         chimney: 180,
         fridge: 160,
+        dishwasher: 1400,
+        washer: 500,
+        router: 12,
         other: 25
       };
       const curW = parseFloat(document.getElementById("editDeviceWatts").value);
-      if (!curW || curW === 28 || curW === 75) {
+      if (!curW || curW === 28 || curW === 75 || curW === 110) {
         document.getElementById("editDeviceWatts").value = defaultWatts[cat] || 25;
       }
+    }
+  }
+
+  function onTvConfigChange() {
+    const sizeSel = document.getElementById("editTvSize");
+    if (!sizeSel) return;
+    const selectedOpt = sizeSel.options[sizeSel.selectedIndex];
+    if (selectedOpt) {
+      const watts = parseFloat(selectedOpt.getAttribute("data-watts")) || 110;
+      const wattsInput = document.getElementById("editDeviceWatts");
+      if (wattsInput) wattsInput.value = watts;
     }
   }
 
@@ -2370,6 +2797,123 @@ function doGet(e) {
     }
   }
 
+  function setTvScreenState(idx, state) {
+    haptic(20);
+    const d = devices[idx];
+    if (!d) return;
+    d.tvScreenState = state;
+    if (state === "standby") {
+      d.effectiveWatts = d.tvStandbyWatts || 0.5;
+      recordAiDisaggregationEvent(`🧠 AI: TV "${d.name}" set to Remote Standby (0.5W). Screen power set to 0W.`);
+    } else {
+      d.effectiveWatts = d.tvActiveWatts || d.ratedWatts || 110;
+      recordAiDisaggregationEvent(`🎬 AI: TV "${d.name}" set to Screen Active (${d.effectiveWatts}W).`);
+    }
+
+    let customMap = {};
+    try {
+      customMap = JSON.parse(localStorage.getItem("omnia_device_customizations") || "{}");
+    } catch(e){}
+    const devKey = d.id || `${d.cid}_${d.dp_code}`;
+    if (!customMap[devKey]) customMap[devKey] = {};
+    customMap[devKey].tvScreenState = d.tvScreenState;
+    customMap[devKey].effectiveWatts = d.effectiveWatts;
+    localStorage.setItem("omnia_device_customizations", JSON.stringify(customMap));
+
+    saveState();
+    autoBackupToDriveSilently("tv_state_changed");
+    renderAll();
+    showToast(state === "standby" ? `💤 TV set to Remote Standby (0.5W)` : `🎬 TV set to Screen Active (${d.effectiveWatts}W)`);
+  }
+
+  function setDishwasherCycle(idx, phase) {
+    haptic(15);
+    const d = devices[idx];
+    if (!d) return;
+    d.cyclePhase = phase;
+    const phaseWatts = { ready: 0.5, wash: 90, heat: 1800, dry: 30 };
+    d.effectiveWatts = phaseWatts[phase] || 0.5;
+    d.isOn = phase !== "ready";
+    saveState();
+    renderAll();
+    showToast(`🍽️ Dishwasher: ${phase.toUpperCase()} phase (~${d.effectiveWatts}W)`);
+  }
+
+  function connectAndAddBoschDishwasher(silent = false) {
+    haptic(20);
+    let dw = devices.find(d => d.id === "bosch_dishwasher_homeconnect" || (d.name && d.name.toLowerCase().includes("dishwasher")));
+    if (!dw) {
+      dw = {
+        id: "bosch_dishwasher_homeconnect",
+        cid: "homeconnect_dishwasher",
+        dp_code: "dishwasher",
+        name: "Bosch Series 6 Dishwasher",
+        room: "Kitchen",
+        icon: "🍽️",
+        category: "dishwasher",
+        isHomeConnect: true,
+        program: "Eco 50°C",
+        cyclePhase: "ready",
+        ratedWatts: 1400,
+        effectiveWatts: 0.5,
+        isOn: true,
+        isOnline: true,
+        todaySeconds: 0,
+        todayWh: 0
+      };
+      devices.push(dw);
+    } else {
+      dw.isHomeConnect = true;
+      dw.program = dw.program || "Eco 50°C";
+    }
+
+    saveState();
+    saveAllConnectorCreds();
+    renderAll();
+
+    const badge = document.getElementById("boschConnBadge");
+    const logBox = document.getElementById("boschStatusLogBox");
+    if (badge) {
+      badge.className = "status-pill";
+      badge.style.background = "rgba(16,185,129,0.2)";
+      badge.style.color = "var(--emerald)";
+      badge.textContent = "Connected";
+    }
+    if (logBox) {
+      logBox.textContent = `🟢 Bosch Home Connect: Paired with Bosch Series 6 Dishwasher in Kitchen. Live cycle: ${dw.program} • Ready (0.5W Standby).`;
+    }
+    if (!silent) {
+      showToast("✅ Bosch Dishwasher added to Kitchen with Home Connect telemetry!");
+    }
+  }
+
+  function testBoschSimulationCycle() {
+    haptic(25);
+    let dw = devices.find(d => d.id === "bosch_dishwasher_homeconnect" || (d.name && d.name.toLowerCase().includes("dishwasher")));
+    if (!dw) {
+      connectAndAddBoschDishwasher(true);
+      dw = devices.find(d => d.id === "bosch_dishwasher_homeconnect");
+    }
+    const phases = ["ready", "wash", "heat", "dry"];
+    const curPhase = dw.cyclePhase || "ready";
+    const nextIdx = (phases.indexOf(curPhase) + 1) % phases.length;
+    dw.cyclePhase = phases[nextIdx];
+    const phaseWatts = { ready: 0.5, wash: 90, heat: 1800, dry: 30 };
+    dw.effectiveWatts = phaseWatts[dw.cyclePhase];
+    dw.isOn = dw.cyclePhase !== "ready";
+    
+    saveState();
+    renderAll();
+    
+    const phaseLabels = {
+      ready: "Ready / Standby (0.5W)",
+      wash: "Wash Circulation (90W)",
+      heat: "Heating Phase (1800W Peak Heat)",
+      dry: "Zeolith Drying Phase (30W)"
+    };
+    showToast(`🍽️ Bosch Dishwasher: ${phaseLabels[dw.cyclePhase]}`);
+  }
+
   function saveEditedDevice() {
     const idx = parseInt(document.getElementById("editDeviceIdx").value, 10);
     const d = devices[idx];
@@ -2382,9 +2926,11 @@ function doGet(e) {
 
     if (newName) d.name = newName;
     if (newRoom) d.room = newRoom;
+    d.category = cat;
 
     if (cat === "fan") {
       d.icon = "🌀";
+      d.isTv = false;
       if (vendor === "atomberg") {
         d.isAtomberg = true;
         d.fanVendor = "atomberg";
@@ -2401,6 +2947,21 @@ function doGet(e) {
         d.ratedWatts = parseFloat(document.getElementById("editDeviceWatts").value) || 75;
         d.effectiveWatts = d.ratedWatts;
       }
+    } else if (cat === "tv") {
+      d.icon = "📺";
+      d.isTv = true;
+      d.isAtomberg = false;
+      d.fanVendor = "";
+      d.isNativePower = false;
+      d.powerSource = "assumed";
+      d.tvBrand = document.getElementById("editTvBrand").value;
+      d.tvSize = document.getElementById("editTvSize").value;
+      d.tvModel = document.getElementById("editTvModel").value.trim();
+      d.ratedWatts = parseFloat(document.getElementById("editDeviceWatts").value) || 110;
+      d.tvActiveWatts = d.ratedWatts;
+      d.tvStandbyWatts = 0.5;
+      d.tvScreenState = d.tvScreenState || "standby";
+      d.effectiveWatts = d.tvScreenState === "standby" ? 0.5 : d.ratedWatts;
     } else {
       d.isAtomberg = false;
       d.fanVendor = "";
@@ -2413,6 +2974,9 @@ function doGet(e) {
         socket: "🔌",
         chimney: "🍳",
         fridge: "🧊",
+        dishwasher: "🍽️",
+        washer: "🧺",
+        router: "📶",
         other: "⚡"
       };
       d.icon = icons[cat] || "🔌";
@@ -2430,9 +2994,23 @@ function doGet(e) {
       name: d.name,
       room: d.room,
       icon: d.icon,
+      category: d.category,
       isAtomberg: d.isAtomberg,
       fanVendor: d.fanVendor,
       fanSpeed: d.fanSpeed,
+      isTv: d.isTv,
+      tvBrand: d.tvBrand,
+      tvSize: d.tvSize,
+      tvModel: d.tvModel,
+      tvActiveWatts: d.tvActiveWatts,
+      tvStandbyWatts: d.tvStandbyWatts,
+      tvScreenState: d.tvScreenState,
+      isAlwaysOn: d.isAlwaysOn,
+      dutyCyclePercent: d.dutyCyclePercent,
+      isManual: d.isManual,
+      isHomeConnect: d.isHomeConnect,
+      cyclePhase: d.cyclePhase,
+      program: d.program,
       ratedWatts: d.ratedWatts,
       isNativePower: d.isNativePower,
       powerSource: d.powerSource
@@ -2443,14 +3021,14 @@ function doGet(e) {
     autoBackupToDriveSilently("device_customized");
     renderAll();
     closeEditDeviceModal();
-    showToast(`✅ "${d.name}" updated as ${cat === "fan" && d.isAtomberg ? "Atomberg BLDC Fan" : d.name}!`);
+    showToast(`✅ "${d.name}" updated as ${cat === "fan" && d.isAtomberg ? "Atomberg BLDC Fan" : (cat === "tv" ? "Smart TV" : d.name)}!`);
   }
 
   // ===========================================================================
   // STATE MANAGEMENT, GOOGLE DRIVE PROFILE BACKUP & PERSISTENCE
   // ===========================================================================
   function buildUserProfileBackupJson() {
-    let cid = "", sec = "", ep = "https://openapi.tuyain.com", uid = "", driveUrl = "", atKey = "", atRef = "";
+    let cid = "", sec = "", ep = "https://openapi.tuyain.com", uid = "", driveUrl = "", atKey = "", atRef = "", hcId = "", hcSec = "";
     if (hasNativeBridge()) {
       cid = window.OmniaNative.getSecurePref("tuya_client_id", "");
       sec = window.OmniaNative.getSecurePref("tuya_client_secret", "");
@@ -2459,6 +3037,8 @@ function doGet(e) {
       driveUrl = window.OmniaNative.getSecurePref("drive_sync_url", "");
       atKey = window.OmniaNative.getSecurePref("atomberg_api_key", "");
       atRef = window.OmniaNative.getSecurePref("atomberg_refresh_token", "");
+      hcId = window.OmniaNative.getSecurePref("homeconnect_client_id", "");
+      hcSec = window.OmniaNative.getSecurePref("homeconnect_client_secret", "");
     }
     if (!cid && document.getElementById("cfgTuyaClientId")) cid = document.getElementById("cfgTuyaClientId").value.trim();
     if (!sec && document.getElementById("cfgTuyaClientSecret")) sec = document.getElementById("cfgTuyaClientSecret").value.trim();
@@ -2467,6 +3047,8 @@ function doGet(e) {
     if (!driveUrl && document.getElementById("cfgDriveSyncUrl")) driveUrl = document.getElementById("cfgDriveSyncUrl").value.trim();
     if (!atKey && document.getElementById("cfgAtombergApiKey")) atKey = document.getElementById("cfgAtombergApiKey").value.trim();
     if (!atRef && document.getElementById("cfgAtombergRefreshToken")) atRef = document.getElementById("cfgAtombergRefreshToken").value.trim();
+    if (!hcId && document.getElementById("cfgHomeConnectClientId")) hcId = document.getElementById("cfgHomeConnectClientId").value.trim();
+    if (!hcSec && document.getElementById("cfgHomeConnectClientSecret")) hcSec = document.getElementById("cfgHomeConnectClientSecret").value.trim();
 
     const customizations = {};
     if (Array.isArray(devices)) {
@@ -2478,9 +3060,24 @@ function doGet(e) {
             name: d.name,
             room: d.room,
             icon: d.icon,
+            category: d.category,
             isAtomberg: Boolean(d.isAtomberg),
             fanVendor: d.fanVendor || (d.isAtomberg ? "atomberg" : ""),
             fanSpeed: d.fanSpeed || 4,
+            isTv: d.isTv,
+            tvBrand: d.tvBrand,
+            tvSize: d.tvSize,
+            tvModel: d.tvModel,
+            tvActiveWatts: d.tvActiveWatts,
+            tvStandbyWatts: d.tvStandbyWatts,
+            tvScreenState: d.tvScreenState,
+            isAlwaysOn: d.isAlwaysOn,
+            dutyCyclePercent: d.dutyCyclePercent,
+            isManual: d.isManual,
+            isHomeConnect: d.isHomeConnect,
+            cyclePhase: d.cyclePhase,
+            program: d.program,
+            effectiveWatts: d.effectiveWatts,
             isNativePower: d.isNativePower,
             powerSource: d.powerSource
           };
@@ -2502,7 +3099,9 @@ function doGet(e) {
         tuya_uid: uid,
         drive_sync_url: driveUrl,
         atomberg_api_key: atKey,
-        atomberg_refresh_token: atRef
+        atomberg_refresh_token: atRef,
+        homeconnect_client_id: hcId,
+        homeconnect_client_secret: hcSec
       },
       preferences: {
         country_code: selectedCountryCode,
@@ -2545,6 +3144,8 @@ function doGet(e) {
         if (conn.drive_sync_url) window.OmniaNative.saveSecurePref("drive_sync_url", conn.drive_sync_url);
         if (conn.atomberg_api_key) window.OmniaNative.saveSecurePref("atomberg_api_key", conn.atomberg_api_key);
         if (conn.atomberg_refresh_token) window.OmniaNative.saveSecurePref("atomberg_refresh_token", conn.atomberg_refresh_token);
+        if (conn.homeconnect_client_id) window.OmniaNative.saveSecurePref("homeconnect_client_id", conn.homeconnect_client_id);
+        if (conn.homeconnect_client_secret) window.OmniaNative.saveSecurePref("homeconnect_client_secret", conn.homeconnect_client_secret);
         if (profile.email) window.OmniaNative.saveSecurePref("user_email", profile.email);
       }
 
@@ -2559,6 +3160,9 @@ function doGet(e) {
       if (document.getElementById("cfgDriveSyncUrl")) document.getElementById("cfgDriveSyncUrl").value = conn.drive_sync_url || "";
       if (document.getElementById("cfgAtombergApiKey")) document.getElementById("cfgAtombergApiKey").value = conn.atomberg_api_key || "";
       if (document.getElementById("cfgAtombergRefreshToken")) document.getElementById("cfgAtombergRefreshToken").value = conn.atomberg_refresh_token || "";
+      if (document.getElementById("cfgHomeConnectClientId")) document.getElementById("cfgHomeConnectClientId").value = conn.homeconnect_client_id || "";
+      if (document.getElementById("cfgHomeConnectClientSecret")) document.getElementById("cfgHomeConnectClientSecret").value = conn.homeconnect_client_secret || "";
+
 
       const prefs = profile.preferences || {};
       const cCode = prefs.country_code || "IN";
@@ -2851,12 +3455,23 @@ function doGet(e) {
       devices.forEach(d => {
         if (!d) return;
         if (d.cid === "d76253e070e8452f5flcjy" || (d.id && d.id.startsWith("d76253e070e8452f5flcjy"))) {
-          if (d.dp_code === "switch_2" && (d.name !== "TV Power" && d.name !== "TV")) {
+          if (d.dp_code === "switch_2") {
             d.name = "TV Power";
             d.room = "Living Room";
             d.icon = "📺";
-            d.ratedWatts = 110;
-            d.effectiveWatts = 110;
+            d.category = "tv";
+            d.isTv = true;
+            d.tvBrand = d.tvBrand || "Samsung";
+            d.tvSize = d.tvSize || "55_qled";
+            d.tvModel = d.tvModel || "Smart TV 55\"";
+            d.ratedWatts = d.ratedWatts || 110;
+            d.tvActiveWatts = d.tvActiveWatts || d.ratedWatts || 110;
+            d.tvStandbyWatts = d.tvStandbyWatts || 0.5;
+            if (d.tvScreenState === undefined) {
+              d.tvScreenState = "standby";
+              d.effectiveWatts = 0.5;
+              needsSaveAfterMigration = true;
+            }
             d.isAtomberg = false;
             d.isNativePower = false;
             d.powerSource = "assumed";
@@ -2897,6 +3512,40 @@ function doGet(e) {
           }
         }
       });
+
+      // 3. Auto-add Kitchen Refrigerator as Always-On baseline load if not present
+      const hasFridge = devices.some(d => (d.name && d.name.toLowerCase().includes("fridge")) || d.category === "fridge");
+      if (!hasFridge) {
+        devices.push({
+          id: "appliance_fridge_always_on",
+          cid: "always_on",
+          dp_code: "fridge",
+          name: "Kitchen Refrigerator",
+          room: "Kitchen",
+          icon: "🧊",
+          category: "fridge",
+          connectionType: "always_on",
+          isAlwaysOn: true,
+          dutyCyclePercent: 35,
+          ratedWatts: 160,
+          effectiveWatts: 56.0,
+          currentLevelPercent: 100,
+          isOn: true,
+          todaySeconds: 3600,
+          todayWh: 56.0,
+          isOnline: true
+        });
+        needsSaveAfterMigration = true;
+      }
+
+      // Restore Subsidy settings
+      const rawSubsidyEnabled = localStorage.getItem("omnia_subsidy_enabled");
+      if (rawSubsidyEnabled !== null) subsidyConfig.enabled = rawSubsidyEnabled !== "false";
+      const rawSchemeId = localStorage.getItem("omnia_subsidy_scheme_id");
+      if (rawSchemeId) subsidyConfig.schemeId = rawSchemeId;
+      const rawFreeUnits = localStorage.getItem("omnia_subsidy_free_units");
+      if (rawFreeUnits !== null && !isNaN(parseFloat(rawFreeUnits))) subsidyConfig.freeUnits = parseFloat(rawFreeUnits);
+      syncSubsidyUiControls();
 
       if (needsSaveAfterMigration) {
         saveState();
@@ -3712,14 +4361,27 @@ function doGet(e) {
       if (ctHistory.length > 30) ctHistory.shift();
     }
 
-    // 1. Separate native loads vs assumed switches
+    // 1. Separate native loads vs always-on loads vs TV vs assumed switches
     let nativeWattsSum = 0.0;
+    let alwaysOnWattsSum = 0.0;
+    let tvWattsSum = 0.0;
+    let dishwasherWattsSum = 0.0;
     const activeAssumed = [];
     const thermostaticAssumed = [];
     const baseloadAssumed = [];
 
     devices.forEach(d => {
       if (d.isCtMeter) return;
+
+      // Handle Always-On baseline loads (e.g. Refrigerator 24x7, Router 24x7)
+      if (d.isAlwaysOn) {
+        d.isOn = true;
+        const duty = (d.dutyCyclePercent !== undefined ? d.dutyCyclePercent : 100) / 100.0;
+        d.effectiveWatts = Math.round((parseFloat(d.ratedWatts || 0) * duty) * 10) / 10;
+        alwaysOnWattsSum += d.effectiveWatts;
+        return;
+      }
+
       if (!d.isOn) {
         d.effectiveWatts = 0.0;
         d.thermostatState = "none";
@@ -3730,20 +4392,56 @@ function doGet(e) {
         d.onSince = now;
       }
 
-      if (d.isNativePower && d.liveWatts !== undefined && d.liveWatts > 0) {
+      // Handle Native Power (Hardware CT meters, direct telemetry)
+      if (d.isNativePower && !d.isAtomberg && d.liveWatts !== undefined && d.liveWatts > 0) {
         d.effectiveWatts = parseFloat(d.liveWatts);
         nativeWattsSum += d.effectiveWatts;
-      } else if (d.isAtomberg) {
+        return;
+      }
+      if (d.isAtomberg) {
         const spd = d.fanSpeed || 4;
         d.effectiveWatts = ATOMBERG_SPEED_WATTS[spd] || 16.0;
         nativeWattsSum += d.effectiveWatts;
-      } else {
-        activeAssumed.push(d);
-        if (isThermostaticAppliance(d)) {
-          thermostaticAssumed.push(d);
+        return;
+      }
+
+      // Handle Smart TV (Remote Standby vs Screen Active)
+      if (d.isTv || d.category === "tv") {
+        if (d.tvScreenState === "standby") {
+          d.effectiveWatts = parseFloat(d.tvStandbyWatts || 0.5);
+        } else if (d.tvScreenState === "active") {
+          d.effectiveWatts = parseFloat(d.tvActiveWatts || d.ratedWatts || 110.0);
         } else {
-          baseloadAssumed.push(d);
+          // AI Headroom check: if total CT is too low to sustain active 110W screen, TV is in standby!
+          const headroom = Math.max(0.0, totalCtWatts - nativeWattsSum - alwaysOnWattsSum);
+          if (totalCtWatts > 0 && headroom < 70) {
+            d.tvScreenState = "standby";
+            d.effectiveWatts = parseFloat(d.tvStandbyWatts || 0.5);
+            recordAiDisaggregationEvent(
+              `🧠 AI: TV Power switch is ON, but CT headroom confirms TV screen in Deep Standby (0.5W). Screen active 110W avoided.`
+            );
+          } else {
+            d.effectiveWatts = parseFloat(d.tvActiveWatts || d.ratedWatts || 110.0);
+          }
         }
+        tvWattsSum += d.effectiveWatts;
+        return;
+      }
+
+      // Handle Bosch Home Connect Dishwasher
+      if (d.isHomeConnect || d.category === "dishwasher") {
+        const phaseWatts = { ready: 0.5, wash: 90.0, heat: 1800.0, dry: 30.0 };
+        d.effectiveWatts = phaseWatts[d.cyclePhase || "ready"] || 0.5;
+        dishwasherWattsSum += d.effectiveWatts;
+        return;
+      }
+
+      // Regular switch loads
+      activeAssumed.push(d);
+      if (isThermostaticAppliance(d)) {
+        thermostaticAssumed.push(d);
+      } else {
+        baseloadAssumed.push(d);
       }
     });
 
@@ -3762,7 +4460,7 @@ function doGet(e) {
     }
 
     // Available power for non-metered / assumed switches:
-    const availableForAssumed = Math.max(0.0, totalCtWatts - nativeWattsSum);
+    const availableForAssumed = Math.max(0.0, totalCtWatts - nativeWattsSum - alwaysOnWattsSum - tvWattsSum - dishwasherWattsSum);
 
     // Sum of nominally ON baseload appliances (lights, sockets, etc.)
     let baseloadNominal = 0.0;
@@ -3843,6 +4541,21 @@ function doGet(e) {
     if (dev.isCtMeter) {
       return parseFloat(dev.liveWatts !== undefined ? dev.liveWatts : (dev.ratedWatts || 0));
     }
+    if (dev.isAlwaysOn) {
+      const duty = (dev.dutyCyclePercent !== undefined ? dev.dutyCyclePercent : 100) / 100.0;
+      return Math.round((parseFloat(dev.ratedWatts || 0) * duty) * 10) / 10;
+    }
+    if (dev.isTv || dev.category === "tv") {
+      if (dev.tvScreenState === "standby") {
+        return parseFloat(dev.tvStandbyWatts || 0.5);
+      }
+      return parseFloat(dev.tvActiveWatts || dev.ratedWatts || 110.0);
+    }
+    if (dev.isHomeConnect || dev.category === "dishwasher") {
+      const phase = dev.cyclePhase || "ready";
+      const phaseWatts = { ready: 0.5, wash: 90.0, heat: 1800.0, dry: 30.0 };
+      return phaseWatts[phase] !== undefined ? phaseWatts[phase] : 0.5;
+    }
     if (dev.isNativePower && dev.liveWatts !== undefined && dev.liveWatts > 0) {
       return parseFloat(dev.liveWatts);
     }
@@ -3868,6 +4581,7 @@ function doGet(e) {
 
     let pNativeFans = 0.0;
     let pVirtualSwitches = 0.0;
+    let pAlwaysOnBaseload = 0.0;
     let activeCount = 0;
     let biggestAppliance = null;
     let biggestWatts = 0;
@@ -3889,6 +4603,8 @@ function doGet(e) {
       }
       if (d.isCtMeter) {
         // Meter is already part of CT feed
+      } else if (d.isAlwaysOn) {
+        pAlwaysOnBaseload += w;
       } else if (d.isAtomberg || d.isNativePower) {
         pNativeFans += w;
       } else {
@@ -3896,7 +4612,7 @@ function doGet(e) {
       }
     });
 
-    const trackedSum = pNativeFans + pVirtualSwitches;
+    const trackedSum = pNativeFans + pVirtualSwitches + pAlwaysOnBaseload;
 
     let pCt = 0.0;
     let pResidual = 0.0;
@@ -3906,7 +4622,7 @@ function doGet(e) {
       pCt = pCtRaw;
       pResidual = Math.max(0.0, pCt - trackedSum);
     } else {
-      // Sum up all active switches & fans
+      // Sum up all active switches, fans, and always-on baseload
       pCt = trackedSum;
       pResidual = 0.0;
     }
@@ -3919,6 +4635,7 @@ function doGet(e) {
       pCt,
       pNativeFans,
       pVirtualSwitches,
+      pAlwaysOnBaseload,
       pResidual,
       activeCount,
       biggestAppliance,
@@ -3955,7 +4672,9 @@ function doGet(e) {
     const total = Math.max(1.0, s.pCt);
     const hourlyRs = wattsToRupeesPerHour(s.pCt);
     const todayRs = s.todaySpentInr;
-    const monthlyRs = Math.round(todayRs * 30);
+    const monthlyGrossKwh = s.todayTotalKwh * 30;
+    const subResult = calculateBillWithSubsidy(monthlyGrossKwh);
+    const monthlyRs = Math.round(subResult.netPayableRs);
 
     const isLive = appMode === "live";
     const hasCt = s.hasCt;
@@ -4019,23 +4738,41 @@ function doGet(e) {
       document.getElementById("statActiveCount").textContent = `${s.pNativeFans.toFixed(0)} W`;
       document.getElementById("statActiveCountLbl").textContent = "Fans Load";
     }
-    document.getElementById("statMonthlyBill").textContent = isTariffEnabled ? `${currencySymbol}${monthlyRs}` : `${Math.round(s.todayTotalKwh * 30)} u`;
+
+    // Subsidy-aware monthly bill display
+    const statMonthlyEl = document.getElementById("statMonthlyBill");
+    if (!isTariffEnabled) {
+      statMonthlyEl.textContent = `${Math.round(monthlyGrossKwh)} u`;
+      statMonthlyEl.style.color = "var(--text)";
+    } else if (subResult.isFullyFree) {
+      statMonthlyEl.textContent = "₹0 (Free)";
+      statMonthlyEl.style.color = "var(--emerald)";
+    } else {
+      statMonthlyEl.textContent = `${currencySymbol}${monthlyRs}`;
+      statMonthlyEl.style.color = "var(--amber)";
+    }
 
     // Friendly Insight Banner
     const insightEl = document.getElementById("friendlyInsightText");
+    const tvDev = devices.find(d => (d.isTv || d.category === "tv") && d.isOn);
+    const tvNote = tvDev ? (tvDev.tvScreenState === "standby" ? ` • 📺 TV in Standby (0.5W)` : ` • 📺 TV Active (${tvDev.effectiveWatts}W)`) : "";
+    const fridgeDev = devices.find(d => d.isAlwaysOn);
+    const fridgeNote = fridgeDev ? ` • 🧊 Refrigerator base (${fridgeDev.effectiveWatts}W)` : "";
+    const subsidyNote = (subsidyConfig.enabled && subsidyConfig.freeUnits > 0) ? ` • 🏛️ ${subsidyConfig.freeUnits}u Free Quota` : "";
+
     if (hasCt) {
       if (s.biggestAppliance && s.biggestWatts > 0) {
         const hrCost = formatRatePerHour(s.biggestWatts);
-        insightEl.innerHTML = `Main CT reading: <strong>${s.pCt.toFixed(0)}W</strong>. Highest load: <strong>${s.biggestAppliance.name}</strong> (${s.biggestWatts.toFixed(0)}W • ${hrCost}) + <strong>${Math.round(s.pResidual)}W</strong> base socket load.`;
+        insightEl.innerHTML = `Main CT reading: <strong>${s.pCt.toFixed(0)}W</strong>. Highest load: <strong>${s.biggestAppliance.name}</strong> (${s.biggestWatts.toFixed(0)}W • ${hrCost}) + <strong>${Math.round(s.pResidual)}W</strong> unmonitored socket load${tvNote}${fridgeNote}${subsidyNote}.`;
       } else {
-        insightEl.innerHTML = `All smart switches are OFF. Base home load measured by CT clamp is <strong>${Math.round(s.pResidual)}W</strong>.`;
+        insightEl.innerHTML = `All smart switches are OFF. Base home load measured by CT clamp is <strong>${Math.round(s.pResidual)}W</strong>${tvNote}${fridgeNote}${subsidyNote}.`;
       }
     } else {
       if (s.activeCount > 0) {
         const hrCost = formatRatePerHour(s.pCt);
-        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of all <strong>${s.activeCount} currently active switches & fans</strong> • ${hrCost}).`;
+        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of all <strong>${s.activeCount} active loads</strong> • ${hrCost})${tvNote}${fridgeNote}${subsidyNote}.`;
       } else {
-        insightEl.innerHTML = `All ${devices.length} smart switches and fans are currently OFF (0 W tracked load).`;
+        insightEl.innerHTML = `All ${devices.length} smart switches and fans are currently OFF (0 W tracked load)${subsidyNote}.`;
       }
     }
 
@@ -4044,8 +4781,9 @@ function doGet(e) {
     const gaugeCap = Math.max(2500.0, s.pCt * 1.25);
     const activeArcLen = Math.min(maxLen, (s.pCt / gaugeCap) * maxLen);
 
+    const trackedVirtualAndAlwaysOn = s.pVirtualSwitches + s.pAlwaysOnBaseload;
     const natShare = s.pNativeFans / total;
-    const virtShare = s.pVirtualSwitches / total;
+    const virtShare = trackedVirtualAndAlwaysOn / total;
     const resShare = s.pResidual / total;
 
     const natLen = activeArcLen * natShare;
@@ -4069,15 +4807,15 @@ function doGet(e) {
     document.getElementById("catNativeWatts").textContent = `${s.pNativeFans.toFixed(1)} W`;
     document.getElementById("catNativeCost").textContent = formatRatePerHour(s.pNativeFans);
 
-    document.getElementById("catVirtualWatts").textContent = `${s.pVirtualSwitches.toFixed(1)} W`;
-    document.getElementById("catVirtualCost").textContent = formatRatePerHour(s.pVirtualSwitches);
+    document.getElementById("catVirtualWatts").textContent = `${trackedVirtualAndAlwaysOn.toFixed(1)} W`;
+    document.getElementById("catVirtualCost").textContent = formatRatePerHour(trackedVirtualAndAlwaysOn);
 
     const resCard = document.getElementById("catResidualItem");
     if (hasCt) {
       resCard.style.display = "flex";
       document.getElementById("catResidualWatts").textContent = `${s.pResidual.toFixed(1)} W`;
       document.getElementById("catResidualCost").textContent = formatRatePerHour(s.pResidual);
-      document.getElementById("catResidualDesc").textContent = "Unmonitored base load = Total CT - Tracked Loads";
+      document.getElementById("catResidualDesc").textContent = "Unmonitored socket load = Total CT - Tracked Loads";
     } else {
       resCard.style.display = "none";
     }
@@ -4091,15 +4829,39 @@ function doGet(e) {
     // 7. Bill & Charts Tab
     document.getElementById("billHourly").textContent = isTariffEnabled ? `${currencySymbol}${hourlyRs.toFixed(2)}` : `${(s.pCt / 1000.0).toFixed(2)} u/hr`;
     document.getElementById("billDaily").textContent = isTariffEnabled ? `${currencySymbol}${Math.round(todayRs)}` : `${s.todayTotalKwh.toFixed(1)} u`;
-    document.getElementById("billMonthly").textContent = isTariffEnabled ? `${currencySymbol}${monthlyRs}` : `${Math.round(s.todayTotalKwh * 30)} u`;
+    document.getElementById("billMonthly").textContent = isTariffEnabled ? (subResult.isFullyFree ? "₹0 (Free)" : `${currencySymbol}${monthlyRs}`) : `${Math.round(monthlyGrossKwh)} u`;
 
     const budgetPct = Math.min(100, Math.round((monthlyRs / monthlyBudgetInr) * 100));
     document.getElementById("budgetRatioText").textContent = isTariffEnabled
       ? `${currencySymbol}${monthlyRs} / ${currencySymbol}${monthlyBudgetInr}`
-      : `${Math.round(s.todayTotalKwh * 30)} / ${Math.round(monthlyBudgetInr / (tariffPerKwh || 8))} u`;
+      : `${Math.round(monthlyGrossKwh)} / ${Math.round(monthlyBudgetInr / (tariffPerKwh || 8))} u`;
     document.getElementById("budgetFillBar").style.width = `${budgetPct}%`;
     document.getElementById("budgetStatusText").textContent =
-      budgetPct > 90 ? "⚠️ Near Target Budget" : "✅ Within Target Budget";
+      subResult.isFullyFree ? "🎉 100% Free under Gov Subsidy" : (budgetPct > 90 ? "⚠️ Near Target Budget" : "✅ Within Target Budget");
+
+    // Update Subsidy Progress Meter
+    if (subsidyConfig.enabled && subsidyConfig.freeUnits > 0) {
+      const freeQuota = parseFloat(subsidyConfig.freeUnits) || 60;
+      const usedMonthKwh = monthlyGrossKwh;
+      const pctUsed = Math.min(100, Math.round((usedMonthKwh / freeQuota) * 100));
+      const rem = Math.max(0, Math.round((freeQuota - usedMonthKwh) * 10) / 10);
+      const remEl = document.getElementById("subsidyRemainingUnitsVal");
+      if (remEl) remEl.textContent = `${rem.toFixed(1)} / ${freeQuota} Units Free`;
+      const fillEl = document.getElementById("subsidyFillBar");
+      if (fillEl) fillEl.style.width = `${pctUsed}%`;
+      const saveEl = document.getElementById("subsidySavingsVal");
+      if (saveEl) saveEl.textContent = `💰 Gov Subsidy: Saving ${currencySymbol}${subResult.subsidizedSavingsRs.toFixed(0)}`;
+      const statusEl = document.getElementById("subsidyBillStatusVal");
+      if (statusEl) {
+        if (subResult.isFullyFree) {
+          statusEl.textContent = "₹0.00 Net Bill (100% Free)";
+          statusEl.style.color = "var(--emerald)";
+        } else {
+          statusEl.textContent = `${currencySymbol}${subResult.netPayableRs.toFixed(0)} Net Payable (${subResult.netBillableKwh} units excess)`;
+          statusEl.style.color = "var(--amber)";
+        }
+      }
+    }
 
     const wTitle = document.getElementById("weeklyChartTitle");
     if (wTitle) wTitle.textContent = isTariffEnabled ? `📊 Last 7 Days Electricity Cost (${currencySymbol})` : "📊 Last 7 Days Energy Consumption (Units / kWh)";
@@ -4123,13 +4885,21 @@ function doGet(e) {
       const w = computeDeviceWatts(d);
       const todayKwh = (d.todayWh || 0) / 1000.0;
       const todayCostOrUnits = isTariffEnabled ? `${currencySymbol}${(todayKwh * tariffPerKwh).toFixed(1)}` : `${todayKwh.toFixed(2)}u`;
-      const sourceTag = d.isNativePower ? '⚡' : '📐';
-      const stateLbl = d.isCtMeter ? 'METER' : (d.isOn ? 'ON' : 'OFF');
-      const clickAction = d.isCtMeter ? '' : `toggleAppliance(${idx})`;
+      const sourceTag = (d.isAlwaysOn || d.isHomeConnect) ? '🧊' : (d.isNativePower ? '⚡' : '📐');
+      const stateLbl = d.isCtMeter ? 'METER' : (d.isAlwaysOn ? '24×7' : (d.isOn ? 'ON' : 'OFF'));
+      const clickAction = (d.isCtMeter || d.isAlwaysOn) ? '' : `toggleAppliance(${idx})`;
       const isHotIdle = d.isOn && d.thermostatState === 'idle_hot';
       let quickSub = `${d.room} • ${todayCostOrUnits} today`;
       if (d.isOn) {
-        quickSub = isHotIdle ? `0W (Hot) • ${d.room}` : `${w.toFixed(0)}W • ${d.room}`;
+        if (isHotIdle) {
+          quickSub = `0W (Hot) • ${d.room}`;
+        } else if ((d.isTv || d.category === "tv") && d.tvScreenState === "standby") {
+          quickSub = `0.5W (Standby) • ${d.room}`;
+        } else if (d.isAlwaysOn) {
+          quickSub = `${w.toFixed(0)}W (24×7) • ${d.room}`;
+        } else {
+          quickSub = `${w.toFixed(0)}W • ${d.room}`;
+        }
       }
       return `
         <div class="quick-tile ${d.isOn ? 'on' : ''}" onclick="${clickAction}">
@@ -4185,10 +4955,26 @@ function doGet(e) {
         : `<div class="runtime-pill">⏱️ ${runtimeStr} • ${todayCostOrUnits}</div>`;
 
       let sourceBadgeHtml = '';
-      if (d.isNativePower && d.isAtomberg) {
+      if (d.isTv || d.category === "tv") {
+        if (d.isOn) {
+          if (d.tvScreenState === "standby") {
+            sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(56,189,248,0.18);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);cursor:pointer;" title="AI Remote Standby: TV switch is ON, screen is in deep standby (~0.5W). Tap to configure." onclick="openDeviceConfigModal(${idx}, event)">💤 Standby (0.5W) [AI] ✎</span>`;
+          } else {
+            sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(234,179,8,0.18);color:#facc15;border:1px solid rgba(234,179,8,0.4);cursor:pointer;" title="TV Screen Active. Tap to configure." onclick="openDeviceConfigModal(${idx}, event)">🎬 Screen Active (${w.toFixed(0)}W) ✎</span>`;
+          }
+        } else {
+          sourceBadgeHtml = `<span class="source-badge assumed" style="cursor:pointer;" onclick="openDeviceConfigModal(${idx}, event)">📺 ${d.tvBrand || 'Smart TV'} (${d.ratedWatts}W) ✎</span>`;
+        }
+      } else if (d.isAlwaysOn) {
+        sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(16,185,129,0.18);color:var(--emerald);border:1px solid rgba(16,185,129,0.4);cursor:pointer;" title="Continuous baseline load running 24×7. Tap to configure." onclick="openDeviceConfigModal(${idx}, event)">🧊 Always-On (${d.dutyCyclePercent || 35}% Duty Cycle) ✎</span>`;
+      } else if (d.isHomeConnect || d.category === "dishwasher") {
+        sourceBadgeHtml = `<span class="source-badge native" style="background:rgba(99,102,241,0.18);color:#818cf8;border:1px solid rgba(99,102,241,0.4);cursor:pointer;" title="Bosch Home Connect Smart Appliance. Tap to configure." onclick="openDeviceConfigModal(${idx}, event)">🍽️ Home Connect (${(d.cyclePhase || 'ready').toUpperCase()}) ✎</span>`;
+      } else if (d.isManual) {
+        sourceBadgeHtml = `<span class="source-badge assumed" style="cursor:pointer;" title="Non-connected manual load. Tap to configure." onclick="openDeviceConfigModal(${idx}, event)">🧺 Manual Load (${d.ratedWatts}W) ✎</span>`;
+      } else if (d.isNativePower && d.isAtomberg) {
         sourceBadgeHtml = `<span class="source-badge native" style="cursor:pointer;" title="Atomberg BLDC Profile. Tap to configure" onclick="openDeviceConfigModal(${idx}, event)">⚡ Atomberg BLDC (${ATOMBERG_SPEED_WATTS[d.fanSpeed || 4]}W) ✎</span>`;
       } else if (d.isNativePower) {
-        sourceBadgeHtml = `<span class="source-badge native" style="cursor:pointer;" title="Direct hardware telemetry / calibrated BLDC profile. Tap to configure" onclick="openDeviceConfigModal(${idx}, event)">⚡ Native Device ✎</span>`;
+        sourceBadgeHtml = `<span class="source-badge native" style="cursor:pointer;" title="Direct hardware telemetry. Tap to configure" onclick="openDeviceConfigModal(${idx}, event)">⚡ Native Device ✎</span>`;
       } else if (d.isOn && d.thermostatState === 'idle_hot') {
         sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(234,179,8,0.18);color:#facc15;border:1px solid rgba(234,179,8,0.4);cursor:pointer;" title="AI CT Disaggregation: Water is fully heated. Internal thermostat is idle (0W draw) while switch relay is ON. Tap to configure." onclick="openDeviceConfigModal(${idx}, event)">🔥 Water Hot • Thermostat Idle (0W) [AI] ✎</span>`;
       } else if (d.isOn && d.thermostatState === 'heating') {
@@ -4203,6 +4989,12 @@ function doGet(e) {
         if (d.thermostatState === 'idle_hot') {
           powerTagHtml = `<div class="app-power-tag" style="color:#facc15;">0.0 W (Hot)</div>`;
           costTagHtml = `<div class="app-cost-tag">Thermostat open (0 cost)</div>`;
+        } else if ((d.isTv || d.category === "tv") && d.tvScreenState === "standby") {
+          powerTagHtml = `<div class="app-power-tag" style="color:#38bdf8;">0.5 W</div>`;
+          costTagHtml = `<div class="app-cost-tag">Deep Standby (0.5W)</div>`;
+        } else if (d.isAlwaysOn) {
+          powerTagHtml = `<div class="app-power-tag" style="color:var(--emerald);">${w.toFixed(1)} W</div>`;
+          costTagHtml = `<div class="app-cost-tag">${hrCostOrUnits} (24×7)</div>`;
         } else {
           powerTagHtml = `<div class="app-power-tag" style="color:var(--emerald);">${w.toFixed(1)} W</div>`;
           costTagHtml = `<div class="app-cost-tag">${hrCostOrUnits}</div>`;
@@ -4220,6 +5012,32 @@ function doGet(e) {
               <button class="step-btn ${(d.fanSpeed || 4) === spd ? 'active' : ''}"
                       onclick="setFanSpeed(${idx}, ${spd})">${spd === 6 ? 'B' : spd}</button>
             `).join("")}
+          </div>
+        </div>
+      ` : "";
+
+      const tvControlHtml = ((d.isTv || d.category === "tv") && d.isOn) ? `
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+          <span style="font-size:11px;color:var(--muted);">📺 TV Remote State:</span>
+          <div style="display:flex;gap:6px;">
+            <button class="step-btn ${d.tvScreenState === 'standby' ? 'active' : ''}" style="width:auto;padding:3px 10px;font-size:10.5px;" onclick="setTvScreenState(${idx}, 'standby')">
+              💤 Standby (0.5W)
+            </button>
+            <button class="step-btn ${d.tvScreenState === 'active' ? 'active' : ''}" style="width:auto;padding:3px 10px;font-size:10.5px;" onclick="setTvScreenState(${idx}, 'active')">
+              🎬 Active (${d.tvActiveWatts || d.ratedWatts || 110}W)
+            </button>
+          </div>
+        </div>
+      ` : "";
+
+      const dishwasherControlHtml = (d.isHomeConnect || d.category === "dishwasher") ? `
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+          <span style="font-size:11px;color:var(--muted);">🍽️ Dishwasher Cycle:</span>
+          <div style="display:flex;gap:4px;">
+            <button class="step-btn ${(d.cyclePhase || 'ready') === 'ready' ? 'active' : ''}" style="width:auto;padding:2px 8px;font-size:10px;" onclick="setDishwasherCycle(${idx}, 'ready')">Ready (0.5W)</button>
+            <button class="step-btn ${d.cyclePhase === 'wash' ? 'active' : ''}" style="width:auto;padding:2px 8px;font-size:10px;" onclick="setDishwasherCycle(${idx}, 'wash')">Wash (90W)</button>
+            <button class="step-btn ${d.cyclePhase === 'heat' ? 'active' : ''}" style="width:auto;padding:2px 8px;font-size:10px;" onclick="setDishwasherCycle(${idx}, 'heat')">Heat (1800W)</button>
+            <button class="step-btn ${d.cyclePhase === 'dry' ? 'active' : ''}" style="width:auto;padding:2px 8px;font-size:10px;" onclick="setDishwasherCycle(${idx}, 'dry')">Dry (30W)</button>
           </div>
         </div>
       ` : "";
@@ -4243,7 +5061,7 @@ function doGet(e) {
                   <span>${d.name}</span>
                   <span style="font-size:12px;color:var(--sky);cursor:pointer;opacity:0.85;" title="Configure Appliance & Vendor" onclick="openDeviceConfigModal(${idx}, event)">✏️</span>
                 </div>
-                <div class="app-room">${d.room} • ${d.isAtomberg ? 'Atomberg BLDC Fan' : (d.isCtMeter ? 'Grid Energy Meter' : (d.dp_code || 'Smart Load'))}</div>
+                <div class="app-room">${d.room} • ${d.isAtomberg ? 'Atomberg BLDC Fan' : (d.isCtMeter ? 'Grid Energy Meter' : (d.isAlwaysOn ? 'Always-On 24×7' : (d.dp_code || 'Smart Load')))}</div>
                 ${runtimePillHtml}
                 <div>${sourceBadgeHtml}</div>
               </div>
@@ -4257,15 +5075,21 @@ function doGet(e) {
                 <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:var(--emerald);font-size:11px;font-weight:700;padding:5px 9px;border-radius:12px;white-space:nowrap;letter-spacing:0.3px;">
                   ⚡ METER
                 </div>
+              ` : (d.isAlwaysOn ? `
+                <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:var(--emerald);font-size:11px;font-weight:700;padding:5px 9px;border-radius:12px;white-space:nowrap;letter-spacing:0.3px;">
+                  🧊 24×7
+                </div>
               ` : `
                 <label class="switch-toggle">
                   <input type="checkbox" ${d.isOn ? 'checked' : ''} onchange="toggleAppliance(${idx})" />
                   <span class="switch-slider"></span>
                 </label>
-              `}
+              `)}
             </div>
           </div>
           ${speedHtml}
+          ${tvControlHtml}
+          ${dishwasherControlHtml}
           ${demoSimulateBtnHtml}
         </div>
       `;
@@ -4429,6 +5253,10 @@ function doGet(e) {
     if (uniqueRooms.length === 0) uniqueRooms.push("Living Room", "Master Bedroom", "Kitchen");
     sel.innerHTML = uniqueRooms.map(r => `<option value="${r}">${r}</option>`).join("") +
       `<option value="Other Room">＋ Other Room</option>`;
+    
+    // Default preset
+    document.getElementById("newAppPreset").value = "fridge";
+    applyPresetSelection();
     document.getElementById("addModal").classList.add("open");
   }
 
@@ -4436,51 +5264,119 @@ function doGet(e) {
     document.getElementById("addModal").classList.remove("open");
   }
 
+  function onNewAppNatureChange() {
+    const nature = document.getElementById("newAppNature").value;
+    const dutyField = document.getElementById("newAppDutyCycleField");
+    if (dutyField) {
+      dutyField.style.display = nature === "always_on" ? "block" : "none";
+    }
+  }
+
+  function onNewAppRoomChange() {
+    const rm = document.getElementById("newAppRoom").value;
+    const customFld = document.getElementById("newAppCustomRoomField");
+    if (customFld) {
+      customFld.style.display = rm === "Other Room" ? "block" : "none";
+    }
+  }
+
+  function onDutyCycleSliderChange() {
+    const slider = document.getElementById("newAppDutyCycle");
+    const pct = parseInt(slider.value) || 35;
+    const pctVal = document.getElementById("dutyCyclePercentVal");
+    if (pctVal) pctVal.textContent = `${pct}%`;
+    const ratedW = parseFloat(document.getElementById("newAppWatts").value) || 160;
+    const effW = Math.round((ratedW * (pct / 100)) * 10) / 10;
+    const effVal = document.getElementById("dutyCycleWattsVal");
+    if (effVal) effVal.textContent = effW.toFixed(1);
+  }
+
   function applyPresetSelection() {
     const preset = document.getElementById("newAppPreset").value;
     const map = {
-      fan_bldc: { name: "Atomberg Smart Fan", w: 28 },
-      fan_reg: { name: "Ceiling Fan", w: 75 },
-      light_led: { name: "Room LED Light", w: 20 },
-      geyser: { name: "Water Heater / Geyser", w: 2000 },
-      ac: { name: "Split Air Conditioner", w: 1400 },
-      tv: { name: "Living Room Smart TV", w: 110 },
-      fridge: { name: "Refrigerator", w: 160 }
+      fridge: { name: "Kitchen Refrigerator", w: 160, nature: "always_on", duty: 35, room: "Kitchen" },
+      washer: { name: "Washing Machine", w: 500, nature: "manual", duty: 100, room: "Utility" },
+      dishwasher: { name: "Bosch Series 6 Dishwasher", w: 1400, nature: "manual", duty: 100, room: "Kitchen" },
+      router: { name: "Wi-Fi 6 Router & Fiber ONT", w: 12, nature: "always_on", duty: 100, room: "Living Room" },
+      tv: { name: "Living Room Smart TV", w: 110, nature: "smart_switch", duty: 100, room: "Living Room" },
+      fan_bldc: { name: "Atomberg BLDC Smart Fan", w: 28, nature: "smart_switch", duty: 100, room: "Master Bedroom" },
+      fan_reg: { name: "Ceiling Fan", w: 75, nature: "smart_switch", duty: 100, room: "Living Room" },
+      light_led: { name: "Room LED Light", w: 20, nature: "smart_switch", duty: 100, room: "Living Room" },
+      geyser: { name: "Water Heater / Geyser", w: 2000, nature: "smart_switch", duty: 100, room: "Bathroom" },
+      ac: { name: "Split Air Conditioner", w: 1400, nature: "smart_switch", duty: 100, room: "Master Bedroom" },
+      microwave: { name: "Microwave Oven", w: 1200, nature: "manual", duty: 100, room: "Kitchen" },
+      iron: { name: "Steam Iron", w: 1500, nature: "manual", duty: 100, room: "Master Bedroom" },
+      custom: { name: "Custom Appliance", w: 100, nature: "smart_switch", duty: 100, room: "Living Room" }
     };
-    if (map[preset]) {
-      document.getElementById("newAppName").value = map[preset].name;
-      document.getElementById("newAppWatts").value = map[preset].w;
+    const item = map[preset] || map.custom;
+    document.getElementById("newAppName").value = item.name;
+    document.getElementById("newAppWatts").value = item.w;
+    document.getElementById("newAppNature").value = item.nature;
+    onNewAppNatureChange();
+    if (item.nature === "always_on") {
+      document.getElementById("newAppDutyCycle").value = item.duty;
+      onDutyCycleSliderChange();
     }
   }
 
   function confirmAddAppliance() {
     haptic(25);
     const preset = document.getElementById("newAppPreset").value;
+    const nature = document.getElementById("newAppNature").value;
     const iconMap = {
-      fan_bldc: "🌀", fan_reg: "🌀", light_led: "💡", geyser: "🚿", ac: "❄️", tv: "📺", fridge: "🧊"
+      fridge: "🧊", washer: "🧺", dishwasher: "🍽️", router: "📶", tv: "📺",
+      fan_bldc: "🌀", fan_reg: "🌀", light_led: "💡", geyser: "🚿", ac: "❄️",
+      microwave: "🍳", iron: "♨️", custom: "⚡"
     };
     const name = document.getElementById("newAppName").value.trim() || "New Appliance";
-    const room = document.getElementById("newAppRoom").value;
+    let room = document.getElementById("newAppRoom").value;
+    if (room === "Other Room") {
+      room = document.getElementById("newAppCustomRoom").value.trim() || "Other Room";
+    }
     const watts = parseFloat(document.getElementById("newAppWatts").value) || 28;
-    const isBldc = preset === "fan_bldc";
 
-    devices.push({
+    const isAlwaysOn = nature === "always_on";
+    const isManual = nature === "manual";
+    const dutyCycle = isAlwaysOn ? (parseInt(document.getElementById("newAppDutyCycle").value) || 35) : 100;
+    const effectiveWatts = isAlwaysOn ? (Math.round((watts * (dutyCycle / 100)) * 10) / 10) : watts;
+
+    const isBldc = preset === "fan_bldc";
+    const isTv = preset === "tv";
+    const isDw = preset === "dishwasher";
+
+    const dev = {
       id: "custom_" + Date.now(),
       cid: "",
       dp_code: "custom",
       name,
       room,
       icon: iconMap[preset] || "🔌",
+      category: preset,
+      connectionType: nature,
+      isAlwaysOn,
+      dutyCyclePercent: isAlwaysOn ? dutyCycle : undefined,
+      isManual,
       isAtomberg: isBldc,
       isNativePower: isBldc,
       powerSource: isBldc ? 'native' : 'assumed',
       fanSpeed: isBldc ? 4 : undefined,
+      fanVendor: isBldc ? "atomberg" : undefined,
+      isTv,
+      tvBrand: isTv ? "Samsung" : undefined,
+      tvScreenState: isTv ? "standby" : undefined,
+      tvActiveWatts: isTv ? watts : undefined,
+      tvStandbyWatts: isTv ? 0.5 : undefined,
+      isHomeConnect: isDw,
+      cyclePhase: isDw ? "ready" : undefined,
       ratedWatts: watts,
+      effectiveWatts: isTv ? 0.5 : effectiveWatts,
       currentLevelPercent: 100,
       isOn: true,
       todaySeconds: 60,
-      todayWh: watts / 60.0
-    });
+      todayWh: effectiveWatts / 60.0
+    };
+
+    devices.push(dev);
 
     if (appMode === "demo") recomputeDemoCtMeter();
 
@@ -4488,7 +5384,7 @@ function doGet(e) {
     closeAddApplianceModal();
     autoSaveSnapshotSilently();
     renderAll();
-    showToast(`✅ Added "${name}" to ${room}`);
+    showToast(`✅ Added "${name}" (${effectiveWatts.toFixed(0)}W) to ${room}`);
   }
 
   // ===========================================================================
