@@ -33,12 +33,97 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: radial-gradient(circle at top, #0f1d35 0%, var(--bg) 48%);
     color: var(--text);
-    padding-bottom: 92px;
     min-height: 100vh;
     overflow-x: hidden;
   }
 
-  /* Top App Bar */
+  /* ONBOARDING & LOGIN SCREENS */
+  .onboard-screen {
+    min-height: 100vh;
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .onboard-logo-box {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .onboard-logo-icon {
+    width: 66px;
+    height: 66px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    box-shadow: 0 8px 26px rgba(16, 185, 129, 0.4);
+    margin-bottom: 14px;
+  }
+  .onboard-title {
+    font-size: 27px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+  .onboard-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.45;
+  }
+  .onboard-features {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .onboard-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12.5px;
+    color: #e2e8f0;
+    line-height: 1.35;
+  }
+  .onboard-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+  .google-btn {
+    background: #ffffff;
+    color: #1f2937;
+    border: 1px solid #e5e7eb;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 13px;
+    border-radius: 14px;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    transition: transform 0.1s ease;
+  }
+  .google-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* MAIN APP LAYOUT */
+  #view-main-app {
+    padding-bottom: 92px;
+  }
   header {
     position: sticky;
     top: 0;
@@ -764,435 +849,574 @@
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <div class="brand-icon">🏡</div>
-    <div>
-      <div class="brand-title">OmniaEnergy</div>
-      <div class="brand-greeting" id="headerSubText">Serverless Home Energy AI</div>
+<!-- ========================================================================= -->
+<!-- SCREEN 1: GMAIL / GOOGLE SIGN-IN ONBOARDING                               -->
+<!-- ========================================================================= -->
+<div id="view-login" class="onboard-screen" style="display:none;">
+  <div class="onboard-logo-box">
+    <div class="onboard-logo-icon">⚡</div>
+    <div class="onboard-title">OmniaEnergy</div>
+    <div class="onboard-sub">Universal Serverless Smart Home Energy Intelligence</div>
+  </div>
+
+  <div class="onboard-features">
+    <div class="onboard-feature-item">
+      <span style="font-size:18px;">🔒</span>
+      <span><strong>Zero-Backend & Private:</strong> Credentials and data stay securely in your Android Keystore.</span>
+    </div>
+    <div class="onboard-feature-item">
+      <span style="font-size:18px;">⚡</span>
+      <span><strong>Smart Disaggregation:</strong> Works with CT meters or sums all your active smart switches & fans.</span>
+    </div>
+    <div class="onboard-feature-item">
+      <span style="font-size:18px;">💰</span>
+      <span><strong>Live Burn Rate:</strong> Real-time ₹/hour meter, monthly projection, and saving recommendations.</span>
     </div>
   </div>
-  <div class="sync-chip" id="syncChipBtn" onclick="onSyncHeaderClick()">
-    <span class="pulse-dot" id="syncDot"></span>
-    <span id="syncChipLabel">Sync Live</span>
-  </div>
-</header>
 
-<!-- Top Banner: Clickable to explore connectors or view status -->
-<div class="live-strip demo-mode" id="liveCloudBanner" onclick="switchTab('connectors')">
-  <span id="liveBannerLeft" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🧪 Showcase Demo • Tap to connect home</span>
-  <span id="liveBannerRight" style="font-weight:700;flex-shrink:0;margin-left:8px;">Connect ➔</span>
+  <div class="onboard-card">
+    <div class="section-title" style="margin-bottom:6px;">Sign in to Get Started</div>
+    <div class="section-sub" style="margin-bottom:14px;">Sign in with your Google / Gmail account</div>
+
+    <div class="field" style="margin-top:0;margin-bottom:14px;">
+      <label>Google / Gmail Account</label>
+      <input type="email" id="loginEmailInput" value="user@gmail.com" placeholder="name@gmail.com" />
+    </div>
+
+    <button class="google-btn" onclick="handleGoogleSignIn()">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      <span>Continue with Google</span>
+    </button>
+
+    <div style="text-align:center;margin-top:16px;">
+      <button onclick="exploreDemoFromLogin()" style="background:none;border:none;color:var(--sky);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">
+        🧪 Or explore Showcase Demo Mode first
+      </button>
+    </div>
+  </div>
 </div>
 
-<main>
-  <!-- ===================================================================== -->
-  <!-- TAB 1: MY HOME (LIVE DISAGGREGATION OVERVIEW)                          -->
-  <!-- ===================================================================== -->
-  <section id="tab-home" class="tab-pane active">
-    <div class="hero-card">
-      <div class="hero-top">
-        <span class="hero-label">⚡ Whole Home Power (Main Meter)</span>
-        <span class="status-pill demo" id="loadLevelBadge">Demo Mode</span>
-      </div>
+<!-- ========================================================================= -->
+<!-- SCREEN 2: CONNECT TUYA SMART HOME (STEP 2 ONBOARDING)                     -->
+<!-- ========================================================================= -->
+<div id="view-setup-tuya" class="onboard-screen" style="display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-size:12px;color:var(--muted);" id="setupUserTag">Signed in as user@gmail.com</div>
+    <button class="step-btn" style="width:auto;padding:4px 10px;font-size:11px;" onclick="handleSignOut()">Sign Out</button>
+  </div>
 
-      <div class="gauge-container">
-        <svg class="gauge-svg" viewBox="0 0 220 135">
-          <path d="M 25 115 A 85 85 0 1 1 195 115"
-                fill="none" stroke="#1e293b" stroke-width="18" stroke-linecap="round" />
-          <path id="arcNative" d="M 25 115 A 85 85 0 1 1 195 115"
-                fill="none" stroke="#10b981" stroke-width="18"
-                stroke-dasharray="0 300" stroke-dashoffset="0" />
-          <path id="arcVirtual" d="M 25 115 A 85 85 0 1 1 195 115"
-                fill="none" stroke="#38bdf8" stroke-width="18"
-                stroke-dasharray="0 300" stroke-dashoffset="0" />
-          <path id="arcResidual" d="M 25 115 A 85 85 0 1 1 195 115"
-                fill="none" stroke="#f59e0b" stroke-width="18"
-                stroke-dasharray="0 300" stroke-dashoffset="0" />
-        </svg>
-        <div class="gauge-center">
-          <div class="hero-watts" id="heroTotalWatts">0 W</div>
-          <div class="hero-cost-rate" id="heroBurnRate">≈ ₹0.00 / hour</div>
-        </div>
-      </div>
-
-      <div class="hero-summary-strip">
-        <div class="hero-stat">
-          <div class="hero-stat-val" id="statPhaseA">0 W</div>
-          <div class="hero-stat-lbl">Phase A (CT)</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val" id="statPhaseB">0 W</div>
-          <div class="hero-stat-lbl">Phase B (CT)</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val" id="statActiveCount">0 ON</div>
-          <div class="hero-stat-lbl">Switches ON</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val" id="statMonthlyBill">₹0</div>
-          <div class="hero-stat-lbl">Monthly Est.</div>
-        </div>
-      </div>
-
-      <div class="friendly-insight">
-        <span style="font-size:20px;">💡</span>
-        <span id="friendlyInsightText">Showcasing real-time energy disaggregation math...</span>
-      </div>
-    </div>
-
-    <!-- Where Your Electricity Is Going -->
-    <div class="card">
-      <div class="section-title">Where Your Electricity Is Going</div>
-      <div class="section-sub">Zero-backend disaggregation into fans, smart switches & base sockets</div>
-
-      <div class="energy-bar">
-        <div id="barNative" class="energy-seg" style="background:var(--emerald);width:25%;"></div>
-        <div id="barVirtual" class="energy-seg" style="background:var(--sky);width:40%;"></div>
-        <div id="barResidual" class="energy-seg" style="background:var(--amber);width:35%;"></div>
-      </div>
-
-      <div class="cat-item">
-        <div class="cat-left">
-          <div class="cat-icon" style="background:var(--emerald-glow);">🌀</div>
-          <div>
-            <div class="cat-name">Smart BLDC Ceiling Fans</div>
-            <div class="cat-desc" id="catNativeDesc">Atomberg / BLDC Energy Curve Fans</div>
-          </div>
-        </div>
-        <div class="cat-right">
-          <div class="cat-watts" id="catNativeWatts">0 W</div>
-          <div class="cat-pct" style="color:var(--emerald);" id="catNativeCost">₹0.00/hr</div>
-        </div>
-      </div>
-
-      <div class="cat-item">
-        <div class="cat-left">
-          <div class="cat-icon" style="background:var(--sky-glow);">💡</div>
-          <div>
-            <div class="cat-name">Smart Switches & High Loads</div>
-            <div class="cat-desc" id="catVirtualDesc">Switches, Geysers, Lights & ACs</div>
-          </div>
-        </div>
-        <div class="cat-right">
-          <div class="cat-watts" id="catVirtualWatts">0 W</div>
-          <div class="cat-pct" style="color:var(--sky);" id="catVirtualCost">₹0.00/hr</div>
-        </div>
-      </div>
-
-      <div class="cat-item">
-        <div class="cat-left">
-          <div class="cat-icon" style="background:var(--amber-glow);">🏠</div>
-          <div>
-            <div class="cat-name">Fridge & Wall Sockets (Residual)</div>
-            <div class="cat-desc">Unmonitored base load = Total CT - Tracked Loads</div>
-          </div>
-        </div>
-        <div class="cat-right">
-          <div class="cat-watts" id="catResidualWatts">0 W</div>
-          <div class="cat-pct" style="color:var(--amber);" id="catResidualCost">₹0.00/hr</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Active Appliances -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div>
-          <div class="section-title" style="margin-bottom:2px;">Currently Active & Favourites</div>
-          <div class="section-sub" style="margin-bottom:0;">Tap to toggle appliance load in real time</div>
-        </div>
-        <button class="room-chip" onclick="switchTab('rooms')">All Rooms →</button>
-      </div>
-      <div class="quick-grid" id="quickControlsGrid"></div>
-    </div>
-  </section>
-
-  <!-- ===================================================================== -->
-  <!-- TAB 2: ROOMS & ALL DISCOVERED APPLIANCES                              -->
-  <!-- ===================================================================== -->
-  <section id="tab-rooms" class="tab-pane">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+  <div class="onboard-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div class="cat-icon" style="background:var(--emerald-glow);">☁️</div>
       <div>
-        <div class="section-title" id="roomsTitleHeader">My Home Rooms</div>
-        <div class="section-sub" id="roomsSubHeader" style="margin-bottom:0;">Tap any switch to control and track live cost</div>
-      </div>
-      <button class="room-chip active" onclick="openAddApplianceModal()">＋ Add</button>
-    </div>
-
-    <div class="room-chips" id="roomFilterBar"></div>
-    <div id="roomAppliancesList"></div>
-  </section>
-
-  <!-- ===================================================================== -->
-  <!-- TAB 3: BILL CHARTS & SMART SAVINGS                                    -->
-  <!-- ===================================================================== -->
-  <section id="tab-savings" class="tab-pane">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div class="section-title">💰 Electricity Bill Tracker</div>
-          <div class="section-sub" style="margin-bottom:6px;">Live burn rate & monthly bill projection</div>
-        </div>
-        <button class="room-chip active" onclick="shareBillSummaryNow()">📤 Share</button>
-      </div>
-
-      <div class="hero-summary-strip" style="grid-template-columns:repeat(3,1fr);margin-top:6px;padding-top:8px;">
-        <div class="hero-stat">
-          <div class="hero-stat-val" style="color:var(--emerald);" id="billHourly">₹0.0</div>
-          <div class="hero-stat-lbl">Per Hour Now</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val" style="color:var(--sky);" id="billDaily">₹0</div>
-          <div class="hero-stat-lbl">Today's Cost</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val" style="color:var(--amber);" id="billMonthly">₹0</div>
-          <div class="hero-stat-lbl">Monthly Est.</div>
-        </div>
-      </div>
-
-      <div style="margin-top:14px;">
-        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;">
-          <span id="budgetStatusText">Monthly Budget Progress</span>
-          <span style="color:var(--sky);" id="budgetRatioText">₹0 / ₹2,500</span>
-        </div>
-        <div class="budget-track">
-          <div class="budget-fill" id="budgetFillBar" style="width:45%;"></div>
-        </div>
-      </div>
-
-      <div class="field" style="margin-top:12px;">
-        <label>Electricity Tariff Rate (₹ per Unit / kWh)</label>
-        <input type="number" step="0.5" id="tariffRateInput" value="8.0" onchange="updateTariffRate(this.value)" />
+        <div class="section-title" style="margin-bottom:0;">Connect Smart Home</div>
+        <div style="font-size:11.5px;color:var(--muted);">Tuya / Smart Life IoT Cloud</div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="section-title">📊 Last 7 Days Electricity Cost (₹)</div>
-      <div class="section-sub">Green bar shows today's live accumulated cost</div>
-      <div class="chart-bars" id="weeklyChartBars"></div>
+    <div style="font-size:12px;color:#cbd5e1;line-height:1.45;margin-bottom:12px;">
+      Enter your Tuya IoT Core credentials. OmniaEnergy will automatically discover all CT clamp meters, switch panels, and smart plugs.
     </div>
 
-    <div class="card">
-      <div class="section-title">📅 Recent Monthly Bills</div>
-      <div class="section-sub">Comparison with past months</div>
-      <div class="chart-bars" id="monthlyChartBars" style="grid-template-columns: repeat(4, 1fr);"></div>
-    </div>
-
-    <div class="card">
-      <div class="section-title">🌱 Personalized Money-Saving Tips</div>
-      <div class="section-sub">Live suggestions based on active loads right now</div>
-      <div id="smartTipsContainer"></div>
-    </div>
-  </section>
-
-  <!-- ===================================================================== -->
-  <!-- TAB 4: CONNECTORS HUB (UNIVERSAL AUTO-DISCOVERY & KEYS)               -->
-  <!-- ===================================================================== -->
-  <section id="tab-connectors" class="tab-pane">
-    <!-- Active Mode & Universal Actions Card -->
-    <div class="card" style="border-color:rgba(168, 85, 247, 0.4);background:linear-gradient(160deg, #161b2e 0%, #0f172a 100%);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div>
-          <div class="section-title" id="modeCardTitle">🧪 Active Mode: Showcase Demo</div>
-          <div class="section-sub" id="modeCardSub" style="margin-bottom:0;">Universal smart home energy disaggregator</div>
-        </div>
-        <span class="status-pill demo" id="modePillBadge">Demo</span>
-      </div>
-
-      <div style="font-size:12px;color:#cbd5e1;line-height:1.45;margin-bottom:14px;">
-        OmniaEnergy runs 100% on your Android phone with zero backend servers. Enter your cloud credentials below to discover your own home devices, or use Showcase Demo Mode to explore instantly.
-      </div>
-
-      <button class="btn primary" id="btnAutoDiscover" onclick="discoverUserHome(false)" style="margin-bottom:10px;">
-        🔍 Auto-Discover My Home Devices
-      </button>
-
-      <div class="btn-grid-2">
-        <button class="btn purple" onclick="switchToDemoMode()">
-          🧪 Showcase Demo Mode
-        </button>
-        <button class="btn danger" onclick="resetAndDisconnectHome()">
-          🗑️ Disconnect / Reset
-        </button>
-      </div>
-    </div>
-
-    <!-- Connector 1: Tuya / Smart Life Cloud -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="cat-icon" style="background:var(--emerald-glow);">☁️</div>
-          <div>
-            <div class="section-title" style="margin-bottom:0;">1. Tuya / Smart Life Cloud</div>
-            <div style="font-size:11px;color:var(--muted);">CT Energy Meters, Multi-Gang Switches & Sockets</div>
-          </div>
-        </div>
-        <span class="status-pill" id="tuyaConnBadge">Ready</span>
-      </div>
-
-      <div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4;">
-        Connect your Tuya IoT Core Project (iot.tuya.com) to discover all CT clamp meters and switches on your Wi-Fi/Zigbee network.
-      </div>
-
-      <div class="field">
-        <label>Tuya Region Data Center</label>
-        <select id="cfgTuyaEndpoint" onchange="saveAllConnectorCreds()">
-          <option value="https://openapi.tuyain.com">India Data Center (openapi.tuyain.com)</option>
-          <option value="https://openapi.tuyaeu.com">Central Europe (openapi.tuyaeu.com)</option>
-          <option value="https://openapi.tuyaeu-we.com">Western Europe (openapi.tuyaeu-we.com)</option>
-          <option value="https://openapi.tuyaus.com">Western America (openapi.tuyaus.com)</option>
-          <option value="https://openapi.tuyaus-east.com">Eastern America (openapi.tuyaus-east.com)</option>
-          <option value="https://openapi.tuyacn.com">China Data Center (openapi.tuyacn.com)</option>
-        </select>
-      </div>
-      <div class="btn-grid-2">
-        <div class="field">
-          <label>Access ID (Client ID)</label>
-          <input type="text" id="cfgTuyaClientId" placeholder="e.g. 9c53kq9e..." onchange="saveAllConnectorCreds()" />
-        </div>
-        <div class="field">
-          <label>Access Secret (Client Secret)</label>
-          <input type="password" id="cfgTuyaClientSecret" placeholder="Tuya Secret" onchange="saveAllConnectorCreds()" />
-        </div>
-      </div>
-      <div class="field">
-        <label>Tuya User UID (Smart Life app linked UID)</label>
-        <input type="text" id="cfgTuyaUid" placeholder="e.g. in1698722008..." onchange="saveAllConnectorCreds()" />
-      </div>
-
-      <div class="btn-grid-2" style="margin-top:12px;">
-        <button class="btn sky" onclick="syncLiveMetersAndDevices(false)">
-          ⚡ Test & Sync Now
-        </button>
-        <button class="btn" onclick="prefillUserHomeShortcut()">
-          🔑 Quick-Fill
-        </button>
-      </div>
-      <div class="conn-log" id="tuyaStatusLogBox">Ready. Tap 'Auto-Discover My Home Devices' to scan your home.</div>
-    </div>
-
-    <!-- Connector 2: Atomberg Smart Fan Cloud -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="cat-icon" style="background:var(--sky-glow);">🌀</div>
-          <div>
-            <div class="section-title" style="margin-bottom:0;">2. Atomberg BLDC Fans</div>
-            <div style="font-size:11px;color:var(--muted);">Official Atomberg Developer Cloud API</div>
-          </div>
-        </div>
-        <span class="status-pill" style="background:var(--sky-glow);color:var(--sky);" id="atombergConnBadge">Optional</span>
-      </div>
-
-      <div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.4;">
-        Get your API Key & Refresh Token in the <strong>Atomberg Home App → Settings → Developer Options</strong>.
-      </div>
-
-      <div class="field">
-        <label>Atomberg API Key (x-api-key)</label>
-        <input type="text" id="cfgAtombergApiKey" placeholder="Paste Atomberg API Key" onchange="saveAllConnectorCreds()" />
-      </div>
-      <div class="field">
-        <label>Atomberg Refresh Token</label>
-        <input type="password" id="cfgAtombergRefreshToken" placeholder="Paste Atomberg Refresh Token" onchange="saveAllConnectorCreds()" />
-      </div>
-
-      <button class="btn sky" style="margin-top:12px;" onclick="syncLiveAtombergCloud(false)">
-        🌀 Test & Sync Atomberg Fans
-      </button>
-      <div class="conn-log" id="atombergStatusLogBox">Atomberg BLDC Power Curve: Speed 1: 3.5W • Speed 2: 7W • Speed 3: 11W • Speed 4: 16W • Speed 5: 22W • Boost: 28W.</div>
-    </div>
-
-    <!-- Connector 3: Google Drive Backup & Excel Export -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="cat-icon" style="background:var(--amber-glow);">📊</div>
-          <div>
-            <div class="section-title" style="margin-bottom:0;">3. Google Drive & Excel Export</div>
-            <div style="font-size:11px;color:var(--muted);" id="backupSummaryLine">0 readings stored in local SQLite</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Google Drive Sheet Web App URL (Optional)</label>
-        <input type="text" id="cfgDriveSyncUrl" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveAllConnectorCreds()" />
-      </div>
-
-      <button class="btn primary" style="margin-top:12px;margin-bottom:10px;" onclick="backupToGoogleDriveNow()">
-        ☁️ Backup SQLite to Google Drive
-      </button>
-
-      <div class="btn-grid-2">
-        <button class="btn sky" onclick="exportExcelReportNow()">
-          📄 Save Excel / CSV
-        </button>
-        <button class="btn" onclick="shareBillSummaryNow()">
-          📤 Share Report
-        </button>
-      </div>
-    </div>
-  </section>
-</main>
-
-<!-- ADD APPLIANCE MODAL -->
-<div class="modal-backdrop" id="addModal">
-  <div class="modal-sheet">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="section-title" style="margin-bottom:0;">Add Appliance to Home</div>
-      <button class="step-btn" onclick="closeAddApplianceModal()">✕</button>
-    </div>
     <div class="field">
-      <label>Quick Preset</label>
-      <select id="newAppPreset" onchange="applyPresetSelection()">
-        <option value="fan_bldc">🌀 Atomberg BLDC Smart Fan (28W)</option>
-        <option value="fan_reg">🌀 Regular Ceiling Fan (75W)</option>
-        <option value="light_led">💡 Room LED Light (20W)</option>
-        <option value="geyser">🚿 Water Heater / Geyser (2000W)</option>
-        <option value="ac">❄️ Air Conditioner (1400W)</option>
-        <option value="tv">📺 Smart TV (110W)</option>
-        <option value="fridge">🧊 Refrigerator (160W)</option>
+      <label>Data Center Region</label>
+      <select id="onboardTuyaEndpoint">
+        <option value="https://openapi.tuyain.com">India Data Center (openapi.tuyain.com)</option>
+        <option value="https://openapi.tuyaeu.com">Central Europe (openapi.tuyaeu.com)</option>
+        <option value="https://openapi.tuyaeu-we.com">Western Europe (openapi.tuyaeu-we.com)</option>
+        <option value="https://openapi.tuyaus.com">Western America (openapi.tuyaus.com)</option>
+        <option value="https://openapi.tuyaus-east.com">Eastern America (openapi.tuyaus-east.com)</option>
+        <option value="https://openapi.tuyacn.com">China Data Center (openapi.tuyacn.com)</option>
       </select>
     </div>
+
     <div class="field">
-      <label>Appliance Name</label>
-      <input type="text" id="newAppName" value="Guest Room Fan" />
+      <label>Access ID (Client ID)</label>
+      <input type="text" id="onboardTuyaClientId" placeholder="e.g. 9c53kq9e..." />
     </div>
+
     <div class="field">
-      <label>Room</label>
-      <select id="newAppRoom"></select>
+      <label>Access Secret (Client Secret)</label>
+      <input type="password" id="onboardTuyaClientSecret" placeholder="Tuya Secret" />
     </div>
+
     <div class="field">
-      <label>Rated Power (Watts)</label>
-      <input type="number" id="newAppWatts" value="28" />
+      <label>Tuya User UID (from Smart Life App)</label>
+      <input type="text" id="onboardTuyaUid" placeholder="e.g. in1698722008..." />
     </div>
-    <button class="btn primary" style="margin-top:16px;" onclick="confirmAddAppliance()">
-      ✅ Add Appliance
+
+    <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+      <button onclick="prefillOnboardShortcut()" style="background:none;border:none;color:var(--emerald);font-size:11.5px;font-weight:700;cursor:pointer;">
+        🔑 Fill My Credentials
+      </button>
+    </div>
+
+    <button class="btn primary" id="btnOnboardConnect" style="margin-top:14px;" onclick="onboardDiscoverHome()">
+      ⚡ Connect & Discover My Home
     </button>
+
+    <div class="conn-log" id="onboardStatusLog" style="display:none;margin-top:12px;"></div>
+
+    <div style="text-align:center;margin-top:14px;">
+      <button onclick="onboardSkipToDemo()" style="background:none;border:none;color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;">
+        Skip for now (Use Demo Mode) ➔
+      </button>
+    </div>
   </div>
 </div>
 
-<!-- BOTTOM NAVIGATION -->
-<nav class="bottom-nav">
-  <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">
-    <span style="font-size:20px;">⚡</span>
-    <span>Home</span>
-  </button>
-  <button class="nav-btn" id="nav-rooms" onclick="switchTab('rooms')">
-    <span style="font-size:20px;">🚪</span>
-    <span>Rooms</span>
-  </button>
-  <button class="nav-btn" id="nav-savings" onclick="switchTab('savings')">
-    <span style="font-size:20px;">💰</span>
-    <span>Savings</span>
-  </button>
-  <button class="nav-btn" id="nav-connectors" onclick="switchTab('connectors')">
-    <span style="font-size:20px;">🔌</span>
-    <span>Connectors</span>
-  </button>
-</nav>
+<!-- ========================================================================= -->
+<!-- SCREEN 3: MAIN APP (DASHBOARD, ROOMS, SAVINGS, CONNECTORS)                -->
+<!-- ========================================================================= -->
+<div id="view-main-app" style="display:none;">
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🏡</div>
+      <div>
+        <div class="brand-title">OmniaEnergy</div>
+        <div class="brand-greeting" id="headerSubText">Serverless Home Energy AI</div>
+      </div>
+    </div>
+    <div class="sync-chip" id="syncChipBtn" onclick="onSyncHeaderClick()">
+      <span class="pulse-dot" id="syncDot"></span>
+      <span id="syncChipLabel">Sync Live</span>
+    </div>
+  </header>
+
+  <!-- Top Banner: Clickable to explore connectors or view status -->
+  <div class="live-strip demo-mode" id="liveCloudBanner" onclick="switchTab('connectors')">
+    <span id="liveBannerLeft" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🧪 Showcase Demo • Tap to connect home</span>
+    <span id="liveBannerRight" style="font-weight:700;flex-shrink:0;margin-left:8px;">Connect ➔</span>
+  </div>
+
+  <main>
+    <!-- ===================================================================== -->
+    <!-- TAB 1: MY HOME (SMART DISAGGREGATION OVERVIEW)                        -->
+    <!-- ===================================================================== -->
+    <section id="tab-home" class="tab-pane active">
+      <div class="hero-card">
+        <div class="hero-top">
+          <span class="hero-label" id="heroDashboardLabel">⚡ Whole Home Power (Main CT Meter)</span>
+          <span class="status-pill demo" id="loadLevelBadge">Demo Mode</span>
+        </div>
+
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 220 135">
+            <path d="M 25 115 A 85 85 0 1 1 195 115"
+                  fill="none" stroke="#1e293b" stroke-width="18" stroke-linecap="round" />
+            <path id="arcNative" d="M 25 115 A 85 85 0 1 1 195 115"
+                  fill="none" stroke="#10b981" stroke-width="18"
+                  stroke-dasharray="0 300" stroke-dashoffset="0" />
+            <path id="arcVirtual" d="M 25 115 A 85 85 0 1 1 195 115"
+                  fill="none" stroke="#38bdf8" stroke-width="18"
+                  stroke-dasharray="0 300" stroke-dashoffset="0" />
+            <path id="arcResidual" d="M 25 115 A 85 85 0 1 1 195 115"
+                  fill="none" stroke="#f59e0b" stroke-width="18"
+                  stroke-dasharray="0 300" stroke-dashoffset="0" />
+          </svg>
+          <div class="gauge-center">
+            <div class="hero-watts" id="heroTotalWatts">0 W</div>
+            <div class="hero-cost-rate" id="heroBurnRate">≈ ₹0.00 / hour</div>
+          </div>
+        </div>
+
+        <div class="hero-summary-strip">
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="statPhaseA">0 W</div>
+            <div class="hero-stat-lbl" id="statPhaseALbl">Phase A (CT)</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="statPhaseB">0 W</div>
+            <div class="hero-stat-lbl" id="statPhaseBLbl">Phase B (CT)</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="statActiveCount">0 ON</div>
+            <div class="hero-stat-lbl" id="statActiveCountLbl">Switches ON</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="statMonthlyBill">₹0</div>
+            <div class="hero-stat-lbl">Monthly Est.</div>
+          </div>
+        </div>
+
+        <div class="friendly-insight">
+          <span style="font-size:20px;">💡</span>
+          <span id="friendlyInsightText">Connecting to your smart home telemetry...</span>
+        </div>
+      </div>
+
+      <!-- Where Your Electricity Is Going -->
+      <div class="card">
+        <div class="section-title">Where Your Electricity Is Going</div>
+        <div class="section-sub" id="breakdownSubHeader">Zero-backend disaggregation into fans, smart switches & base sockets</div>
+
+        <div class="energy-bar">
+          <div id="barNative" class="energy-seg" style="background:var(--emerald);width:25%;"></div>
+          <div id="barVirtual" class="energy-seg" style="background:var(--sky);width:40%;"></div>
+          <div id="barResidual" class="energy-seg" style="background:var(--amber);width:35%;"></div>
+        </div>
+
+        <div class="cat-item">
+          <div class="cat-left">
+            <div class="cat-icon" style="background:var(--emerald-glow);">🌀</div>
+            <div>
+              <div class="cat-name">Smart BLDC Ceiling Fans</div>
+              <div class="cat-desc" id="catNativeDesc">BLDC Energy Curve Fans</div>
+            </div>
+          </div>
+          <div class="cat-right">
+            <div class="cat-watts" id="catNativeWatts">0 W</div>
+            <div class="cat-pct" style="color:var(--emerald);" id="catNativeCost">₹0.00/hr</div>
+          </div>
+        </div>
+
+        <div class="cat-item">
+          <div class="cat-left">
+            <div class="cat-icon" style="background:var(--sky-glow);">💡</div>
+            <div>
+              <div class="cat-name">Smart Switches & High Loads</div>
+              <div class="cat-desc" id="catVirtualDesc">Switches, Geysers, Lights & ACs</div>
+            </div>
+          </div>
+          <div class="cat-right">
+            <div class="cat-watts" id="catVirtualWatts">0 W</div>
+            <div class="cat-pct" style="color:var(--sky);" id="catVirtualCost">₹0.00/hr</div>
+          </div>
+        </div>
+
+        <div class="cat-item" id="catResidualItem">
+          <div class="cat-left">
+            <div class="cat-icon" style="background:var(--amber-glow);">🏠</div>
+            <div>
+              <div class="cat-name" id="catResidualName">Fridge & Wall Sockets (Residual)</div>
+              <div class="cat-desc" id="catResidualDesc">Unmonitored base load = Total CT - Tracked Loads</div>
+            </div>
+          </div>
+          <div class="cat-right">
+            <div class="cat-watts" id="catResidualWatts">0 W</div>
+            <div class="cat-pct" style="color:var(--amber);" id="catResidualCost">₹0.00/hr</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Active Appliances -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <div class="section-title" style="margin-bottom:2px;">Currently Active & Favourites</div>
+            <div class="section-sub" style="margin-bottom:0;">Tap to toggle appliance load in real time</div>
+          </div>
+          <button class="room-chip" onclick="switchTab('rooms')">All Rooms →</button>
+        </div>
+        <div class="quick-grid" id="quickControlsGrid"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 2: ROOMS & ALL DISCOVERED APPLIANCES                              -->
+    <!-- ===================================================================== -->
+    <section id="tab-rooms" class="tab-pane">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <div class="section-title" id="roomsTitleHeader">My Home Rooms</div>
+          <div class="section-sub" id="roomsSubHeader" style="margin-bottom:0;">Tap any switch to control and track live cost</div>
+        </div>
+        <button class="room-chip active" onclick="openAddApplianceModal()">＋ Add</button>
+      </div>
+
+      <div class="room-chips" id="roomFilterBar"></div>
+      <div id="roomAppliancesList"></div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: BILL CHARTS & SMART SAVINGS                                    -->
+    <!-- ===================================================================== -->
+    <section id="tab-savings" class="tab-pane">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="section-title">💰 Electricity Bill Tracker</div>
+            <div class="section-sub" style="margin-bottom:6px;">Live burn rate & monthly bill projection</div>
+          </div>
+          <button class="room-chip active" onclick="shareBillSummaryNow()">📤 Share</button>
+        </div>
+
+        <div class="hero-summary-strip" style="grid-template-columns:repeat(3,1fr);margin-top:6px;padding-top:8px;">
+          <div class="hero-stat">
+            <div class="hero-stat-val" style="color:var(--emerald);" id="billHourly">₹0.0</div>
+            <div class="hero-stat-lbl">Per Hour Now</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" style="color:var(--sky);" id="billDaily">₹0</div>
+            <div class="hero-stat-lbl">Today's Cost</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" style="color:var(--amber);" id="billMonthly">₹0</div>
+            <div class="hero-stat-lbl">Monthly Est.</div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;">
+            <span id="budgetStatusText">Monthly Budget Progress</span>
+            <span style="color:var(--sky);" id="budgetRatioText">₹0 / ₹2,500</span>
+          </div>
+          <div class="budget-track">
+            <div class="budget-fill" id="budgetFillBar" style="width:45%;"></div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:12px;">
+          <label>Electricity Tariff Rate (₹ per Unit / kWh)</label>
+          <input type="number" step="0.5" id="tariffRateInput" value="8.0" onchange="updateTariffRate(this.value)" />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">📊 Last 7 Days Electricity Cost (₹)</div>
+        <div class="section-sub">Green bar shows today's live accumulated cost</div>
+        <div class="chart-bars" id="weeklyChartBars"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">📅 Recent Monthly Bills</div>
+        <div class="section-sub">Comparison with past months</div>
+        <div class="chart-bars" id="monthlyChartBars" style="grid-template-columns: repeat(4, 1fr);"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">🌱 Personalized Money-Saving Tips</div>
+        <div class="section-sub">Live suggestions based on active loads right now</div>
+        <div id="smartTipsContainer"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 4: CONNECTORS HUB                                                 -->
+    <!-- ===================================================================== -->
+    <section id="tab-connectors" class="tab-pane">
+      <!-- User Profile Header in Connectors -->
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#0284c7);display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;" id="userProfileEmail">user@gmail.com</div>
+            <div style="font-size:11px;color:var(--muted);">Signed in with Google</div>
+          </div>
+        </div>
+        <button class="step-btn" style="width:auto;padding:5px 12px;font-size:11.5px;" onclick="handleSignOut()">Sign Out</button>
+      </div>
+
+      <!-- Active Mode & Universal Actions Card -->
+      <div class="card" style="border-color:rgba(168, 85, 247, 0.4);background:linear-gradient(160deg, #161b2e 0%, #0f172a 100%);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>
+            <div class="section-title" id="modeCardTitle">Active Mode</div>
+            <div class="section-sub" id="modeCardSub" style="margin-bottom:0;">Universal smart home energy disaggregator</div>
+          </div>
+          <span class="status-pill demo" id="modePillBadge">Demo</span>
+        </div>
+
+        <div style="font-size:12px;color:#cbd5e1;line-height:1.45;margin-bottom:14px;">
+          OmniaEnergy runs 100% on your Android phone with zero backend servers. Enter your cloud credentials below to discover your own home devices, or use Showcase Demo Mode to explore instantly.
+        </div>
+
+        <button class="btn primary" id="btnAutoDiscover" onclick="discoverUserHome(false)" style="margin-bottom:10px;">
+          🔍 Auto-Discover My Home Devices
+        </button>
+
+        <div class="btn-grid-2">
+          <button class="btn purple" onclick="switchToDemoMode()">
+            🧪 Showcase Demo Mode
+          </button>
+          <button class="btn danger" onclick="resetAndDisconnectHome()">
+            🗑️ Disconnect / Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Connector 1: Tuya / Smart Life Cloud -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="cat-icon" style="background:var(--emerald-glow);">☁️</div>
+            <div>
+              <div class="section-title" style="margin-bottom:0;">1. Tuya / Smart Life Cloud</div>
+              <div style="font-size:11px;color:var(--muted);">CT Energy Meters, Multi-Gang Switches & Sockets</div>
+            </div>
+          </div>
+          <span class="status-pill" id="tuyaConnBadge">Ready</span>
+        </div>
+
+        <div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4;">
+          Connect your Tuya IoT Core Project (iot.tuya.com) to discover all CT clamp meters and switches on your Wi-Fi/Zigbee network.
+        </div>
+
+        <div class="field">
+          <label>Tuya Region Data Center</label>
+          <select id="cfgTuyaEndpoint" onchange="saveAllConnectorCreds()">
+            <option value="https://openapi.tuyain.com">India Data Center (openapi.tuyain.com)</option>
+            <option value="https://openapi.tuyaeu.com">Central Europe (openapi.tuyaeu.com)</option>
+            <option value="https://openapi.tuyaeu-we.com">Western Europe (openapi.tuyaeu-we.com)</option>
+            <option value="https://openapi.tuyaus.com">Western America (openapi.tuyaus.com)</option>
+            <option value="https://openapi.tuyaus-east.com">Eastern America (openapi.tuyaus-east.com)</option>
+            <option value="https://openapi.tuyacn.com">China Data Center (openapi.tuyacn.com)</option>
+          </select>
+        </div>
+        <div class="btn-grid-2">
+          <div class="field">
+            <label>Access ID (Client ID)</label>
+            <input type="text" id="cfgTuyaClientId" placeholder="e.g. 9c53kq9e..." onchange="saveAllConnectorCreds()" />
+          </div>
+          <div class="field">
+            <label>Access Secret (Client Secret)</label>
+            <input type="password" id="cfgTuyaClientSecret" placeholder="Tuya Secret" onchange="saveAllConnectorCreds()" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Tuya User UID (Smart Life app linked UID)</label>
+          <input type="text" id="cfgTuyaUid" placeholder="e.g. in1698722008..." onchange="saveAllConnectorCreds()" />
+        </div>
+
+        <div class="btn-grid-2" style="margin-top:12px;">
+          <button class="btn sky" onclick="syncLiveMetersAndDevices(false)">
+            ⚡ Test & Sync Now
+          </button>
+          <button class="btn" onclick="prefillUserHomeShortcut()">
+            🔑 Quick-Fill
+          </button>
+        </div>
+        <div class="conn-log" id="tuyaStatusLogBox">Ready. Tap 'Auto-Discover My Home Devices' to scan your home.</div>
+      </div>
+
+      <!-- Connector 2: Atomberg Smart Fan Cloud -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="cat-icon" style="background:var(--sky-glow);">🌀</div>
+            <div>
+              <div class="section-title" style="margin-bottom:0;">2. Atomberg BLDC Fans</div>
+              <div style="font-size:11px;color:var(--muted);">Official Atomberg Developer Cloud API</div>
+            </div>
+          </div>
+          <span class="status-pill" style="background:var(--sky-glow);color:var(--sky);" id="atombergConnBadge">Optional</span>
+        </div>
+
+        <div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.4;">
+          Get your API Key & Refresh Token in the <strong>Atomberg Home App → Settings → Developer Options</strong>.
+        </div>
+
+        <div class="field">
+          <label>Atomberg API Key (x-api-key)</label>
+          <input type="text" id="cfgAtombergApiKey" placeholder="Paste Atomberg API Key" onchange="saveAllConnectorCreds()" />
+        </div>
+        <div class="field">
+          <label>Atomberg Refresh Token</label>
+          <input type="password" id="cfgAtombergRefreshToken" placeholder="Paste Atomberg Refresh Token" onchange="saveAllConnectorCreds()" />
+        </div>
+
+        <button class="btn sky" style="margin-top:12px;" onclick="syncLiveAtombergCloud(false)">
+          🌀 Test & Sync Atomberg Fans
+        </button>
+        <div class="conn-log" id="atombergStatusLogBox">Atomberg BLDC Power Curve: Speed 1: 3.5W • Speed 2: 7W • Speed 3: 11W • Speed 4: 16W • Speed 5: 22W • Boost: 28W.</div>
+      </div>
+
+      <!-- Connector 3: Google Drive Backup & Excel Export -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="cat-icon" style="background:var(--amber-glow);">📊</div>
+            <div>
+              <div class="section-title" style="margin-bottom:0;">3. Google Drive & Excel Export</div>
+              <div style="font-size:11px;color:var(--muted);" id="backupSummaryLine">0 readings stored in local SQLite</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Google Drive Sheet Web App URL (Optional)</label>
+          <input type="text" id="cfgDriveSyncUrl" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveAllConnectorCreds()" />
+        </div>
+
+        <button class="btn primary" style="margin-top:12px;margin-bottom:10px;" onclick="backupToGoogleDriveNow()">
+          ☁️ Backup SQLite to Google Drive
+        </button>
+
+        <div class="btn-grid-2">
+          <button class="btn sky" onclick="exportExcelReportNow()">
+            📄 Save Excel / CSV
+          </button>
+          <button class="btn" onclick="shareBillSummaryNow()">
+            📤 Share Report
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ADD APPLIANCE MODAL -->
+  <div class="modal-backdrop" id="addModal">
+    <div class="modal-sheet">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="section-title" style="margin-bottom:0;">Add Appliance to Home</div>
+        <button class="step-btn" onclick="closeAddApplianceModal()">✕</button>
+      </div>
+      <div class="field">
+        <label>Quick Preset</label>
+        <select id="newAppPreset" onchange="applyPresetSelection()">
+          <option value="fan_bldc">🌀 Atomberg BLDC Smart Fan (28W)</option>
+          <option value="fan_reg">🌀 Regular Ceiling Fan (75W)</option>
+          <option value="light_led">💡 Room LED Light (20W)</option>
+          <option value="geyser">🚿 Water Heater / Geyser (2000W)</option>
+          <option value="ac">❄️ Air Conditioner (1400W)</option>
+          <option value="tv">📺 Smart TV (110W)</option>
+          <option value="fridge">🧊 Refrigerator (160W)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Appliance Name</label>
+        <input type="text" id="newAppName" value="Guest Room Fan" />
+      </div>
+      <div class="field">
+        <label>Room</label>
+        <select id="newAppRoom"></select>
+      </div>
+      <div class="field">
+        <label>Rated Power (Watts)</label>
+        <input type="number" id="newAppWatts" value="28" />
+      </div>
+      <button class="btn primary" style="margin-top:16px;" onclick="confirmAddAppliance()">
+        ✅ Add Appliance
+      </button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">
+      <span style="font-size:20px;">⚡</span>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" id="nav-rooms" onclick="switchTab('rooms')">
+      <span style="font-size:20px;">🚪</span>
+      <span>Rooms</span>
+    </button>
+    <button class="nav-btn" id="nav-savings" onclick="switchTab('savings')">
+      <span style="font-size:20px;">💰</span>
+      <span>Savings</span>
+    </button>
+    <button class="nav-btn" id="nav-connectors" onclick="switchTab('connectors')">
+      <span style="font-size:20px;">🔌</span>
+      <span>Connectors</span>
+    </button>
+  </nav>
+</div>
 
 <div class="toast-banner" id="toastBanner"></div>
 
@@ -1241,6 +1465,7 @@
   ];
 
   // App State Variables
+  let currentUserEmail = "";
   let appMode = "demo"; // "demo" or "live"
   let devices = [];
   let discoveredMeters = []; // [{ id, name, category }]
@@ -1257,6 +1482,133 @@
     totalForwardKwh: 412.6,
     lastCloudSyncTime: "--:--:--"
   };
+
+  // ===========================================================================
+  // SCREEN SWITCHER & ONBOARDING FLOW
+  // ===========================================================================
+  function showScreen(screenId) {
+    document.getElementById("view-login").style.display = screenId === "login" ? "flex" : "none";
+    document.getElementById("view-setup-tuya").style.display = screenId === "tuya" ? "flex" : "none";
+    document.getElementById("view-main-app").style.display = screenId === "app" ? "block" : "none";
+    window.scrollTo(0, 0);
+  }
+
+  function handleGoogleSignIn() {
+    haptic(20);
+    const email = document.getElementById("loginEmailInput").value.trim() || "user@gmail.com";
+    currentUserEmail = email;
+    localStorage.setItem("omnia_user_email", email);
+    if (hasNativeBridge()) {
+      window.OmniaNative.saveSecurePref("user_email", email);
+    }
+
+    document.getElementById("setupUserTag").textContent = `Signed in as ${email}`;
+    document.getElementById("userProfileEmail").textContent = email;
+
+    // Check if user already has saved live devices
+    const savedLive = localStorage.getItem("omnia_live_home_devices");
+    if (savedLive && appMode === "live") {
+      showScreen("app");
+      renderAll();
+      showToast(`👋 Welcome back, ${email}!`);
+    } else {
+      showScreen("tuya");
+      showToast(`👋 Welcome, ${email}! Let's connect your home.`);
+    }
+  }
+
+  function exploreDemoFromLogin() {
+    haptic(15);
+    currentUserEmail = "guest_demo@gmail.com";
+    localStorage.setItem("omnia_user_email", currentUserEmail);
+    switchToDemoMode();
+    showScreen("app");
+  }
+
+  function handleSignOut() {
+    haptic(25);
+    currentUserEmail = "";
+    localStorage.removeItem("omnia_user_email");
+    localStorage.removeItem("omnia_live_home_devices");
+    localStorage.removeItem("omnia_discovered_meters");
+    localStorage.removeItem("omnia_home_mode");
+    if (hasNativeBridge()) {
+      window.OmniaNative.saveSecurePref("user_email", "");
+      window.OmniaNative.saveSecurePref("tuya_client_id", "");
+      window.OmniaNative.saveSecurePref("tuya_client_secret", "");
+      window.OmniaNative.saveSecurePref("tuya_uid", "");
+      window.OmniaNative.saveSecurePref("atomberg_api_key", "");
+      window.OmniaNative.saveSecurePref("atomberg_refresh_token", "");
+    }
+    document.getElementById("cfgTuyaClientId").value = "";
+    document.getElementById("cfgTuyaClientSecret").value = "";
+    document.getElementById("cfgTuyaUid").value = "";
+    document.getElementById("onboardTuyaClientId").value = "";
+    document.getElementById("onboardTuyaClientSecret").value = "";
+    document.getElementById("onboardTuyaUid").value = "";
+    showScreen("login");
+    showToast("Signed out. Ready for next login.");
+  }
+
+  function prefillOnboardShortcut() {
+    haptic(15);
+    document.getElementById("onboardTuyaEndpoint").value = "https://openapi.tuyain.com";
+    document.getElementById("onboardTuyaClientId").value = "9c53kq9e8nv7r7v9ejqm";
+    document.getElementById("onboardTuyaClientSecret").value = "1e8a39572ec04fec8cb8bb7e80351951";
+    document.getElementById("onboardTuyaUid").value = "in1698722008986Xi3zx";
+    showToast("🔑 Credentials filled. Tap 'Connect & Discover' to proceed.");
+  }
+
+  function onboardSkipToDemo() {
+    haptic(15);
+    switchToDemoMode();
+    showScreen("app");
+  }
+
+  function onboardDiscoverHome() {
+    const ep = document.getElementById("onboardTuyaEndpoint").value.trim();
+    const cid = document.getElementById("onboardTuyaClientId").value.trim();
+    const sec = document.getElementById("onboardTuyaClientSecret").value.trim();
+    const uid = document.getElementById("onboardTuyaUid").value.trim();
+    const logBox = document.getElementById("onboardStatusLog");
+
+    if (!cid || !sec || !uid) {
+      showToast("⚠️ Enter your Tuya Client ID, Secret, and User UID");
+      return;
+    }
+
+    logBox.style.display = "block";
+    logBox.textContent = "🔍 Step 1/3: Authenticating with Tuya Cloud...";
+
+    // Propagate to main config inputs
+    document.getElementById("cfgTuyaEndpoint").value = ep;
+    document.getElementById("cfgTuyaClientId").value = cid;
+    document.getElementById("cfgTuyaClientSecret").value = sec;
+    document.getElementById("cfgTuyaUid").value = uid;
+    saveAllConnectorCreds();
+
+    const btn = document.getElementById("btnOnboardConnect");
+    btn.disabled = true;
+    btn.textContent = "⏳ Scanning Your Smart Home...";
+
+    setTimeout(() => {
+      try {
+        discoverUserHomeLogic(ep, cid, sec, uid, logBox, () => {
+          btn.disabled = false;
+          btn.textContent = "⚡ Connect & Discover My Home";
+          showScreen("app");
+          switchTab("home");
+        }, () => {
+          btn.disabled = false;
+          btn.textContent = "⚡ Connect & Discover My Home";
+        });
+      } catch (e) {
+        logBox.textContent = "Error: " + e.message;
+        btn.disabled = false;
+        btn.textContent = "⚡ Connect & Discover My Home";
+      }
+    }, 50);
+  }
 
   // ===========================================================================
   // NATIVE ANDROID BRIDGE HELPER
@@ -1298,7 +1650,11 @@
   // STATE MANAGEMENT & PERSISTENCE
   // ===========================================================================
   function loadState() {
-    // 1. Load mode and credentials
+    currentUserEmail = localStorage.getItem("omnia_user_email") || "";
+    if (hasNativeBridge() && !currentUserEmail) {
+      currentUserEmail = window.OmniaNative.getSecurePref("user_email", "");
+    }
+
     let savedMode = localStorage.getItem("omnia_home_mode");
     let savedLiveDevices = null;
     let savedMeters = null;
@@ -1329,18 +1685,41 @@
     document.getElementById("cfgTuyaClientSecret").value = sec;
     document.getElementById("cfgTuyaEndpoint").value = ep;
     document.getElementById("cfgTuyaUid").value = uid;
+    document.getElementById("onboardTuyaClientId").value = cid;
+    document.getElementById("onboardTuyaClientSecret").value = sec;
+    document.getElementById("onboardTuyaEndpoint").value = ep;
+    document.getElementById("onboardTuyaUid").value = uid;
     document.getElementById("cfgDriveSyncUrl").value = driveUrl;
     document.getElementById("cfgAtombergApiKey").value = atKey;
     document.getElementById("cfgAtombergRefreshToken").value = atRef;
 
-    // Decide initial mode:
-    // If user explicitly saved "live" and has devices, start live!
-    // If not, start in clean showcase "demo" mode.
-    if (savedMode === "live" && savedLiveDevices && savedLiveDevices.length > 0) {
+    if (currentUserEmail) {
+      document.getElementById("userProfileEmail").textContent = currentUserEmail;
+      document.getElementById("setupUserTag").textContent = `Signed in as ${currentUserEmail}`;
+    }
+
+    // Determine initial view:
+    if (!currentUserEmail) {
+      // 1. Fresh user / cleared storage -> Screen 1 (Login)
+      showScreen("login");
+      appMode = "demo";
+      devices = JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
+      recomputeDemoCtMeter();
+    } else if (savedMode === "live" && savedLiveDevices && savedLiveDevices.length > 0) {
+      // 2. User logged in and home configured -> Screen 3 (Dashboard)
       appMode = "live";
       devices = savedLiveDevices;
       discoveredMeters = savedMeters || [];
+      showScreen("app");
+    } else if (cid && sec && uid) {
+      // 3. User logged in with keys ready -> Screen 3 with auto sync
+      appMode = "live";
+      devices = savedLiveDevices || JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
+      discoveredMeters = savedMeters || [];
+      showScreen("app");
     } else {
+      // 4. User logged in but no smart home configured -> Screen 2 (Setup Tuya)
+      showScreen("tuya");
       appMode = "demo";
       devices = JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
       recomputeDemoCtMeter();
@@ -1374,7 +1753,6 @@
     renderAll();
   }
 
-  // Quick fill helper for the project developer/owner
   function prefillUserHomeShortcut() {
     haptic(15);
     document.getElementById("cfgTuyaEndpoint").value = "https://openapi.tuyain.com";
@@ -1386,7 +1764,7 @@
   }
 
   // ===========================================================================
-  // UNIVERSAL AUTO-DISCOVERY ENGINE
+  // UNIVERSAL AUTO-DISCOVERY CORE LOGIC
   // ===========================================================================
   function inferRoomFromName(devName) {
     const n = (devName || "").toLowerCase();
@@ -1445,14 +1823,174 @@
     return { name: devName, ratedWatts: 25, icon: "💡", isAtomberg: false };
   }
 
+  function discoverUserHomeLogic(endpoint, clientId, clientSecret, uid, logBox, onSuccess, onError) {
+    if (!hasNativeBridge()) {
+      logBox.textContent = "⚠️ Native bridge not available in browser preview.";
+      if (onError) onError();
+      return;
+    }
+
+    // Step 1: Token
+    const tokRaw = window.OmniaNative.tuyaSignedRequest(
+      endpoint, clientId, clientSecret, "", "GET", "/v1.0/token?grant_type=1", ""
+    );
+    const tokObj = JSON.parse(tokRaw);
+    if (!tokObj.success || !tokObj.result || !tokObj.result.access_token) {
+      logBox.textContent = "❌ Tuya Authentication Failed:\n" + (tokObj.msg || tokRaw);
+      showToast("Tuya Auth Failed: Check Client ID & Secret");
+      if (onError) onError();
+      return;
+    }
+
+    const token = tokObj.result.access_token;
+    cachedTuyaToken = token;
+    logBox.textContent = "🔍 Step 2/3: Scanning all home devices from Tuya registry...";
+
+    // Step 2: Fetch devices
+    const devsRaw = window.OmniaNative.tuyaSignedRequest(
+      endpoint, clientId, clientSecret, token, "GET",
+      `/v1.0/users/${uid}/devices`, ""
+    );
+    const devsObj = JSON.parse(devsRaw);
+    if (!devsObj.success || !Array.isArray(devsObj.result)) {
+      logBox.textContent = "❌ Failed to query devices:\n" + (devsObj.msg || devsRaw);
+      if (onError) onError();
+      return;
+    }
+
+    const rawList = devsObj.result;
+    logBox.textContent = `🔍 Step 3/3: Found ${rawList.length} Tuya devices! Classifying meters & switches...`;
+
+    const newMeters = [];
+    const newAppliances = [];
+    const uniqueRoomsSet = new Set();
+
+    rawList.forEach((d) => {
+      const dName = (d.name || "").trim();
+      const dCat = (d.category || "").toLowerCase();
+      const pName = (d.product_name || "").toLowerCase();
+      const nameLower = dName.toLowerCase();
+
+      // Check if device is a CT Meter / Energy Meter
+      const isMeter = dCat === "zndb" || dCat === "jl" ||
+        nameLower.includes("meter") || nameLower.includes("clamp") || nameLower.includes("dual") ||
+        nameLower.includes("energy") || nameLower.includes("ct ") || pName.includes("meter");
+
+      if (isMeter) {
+        newMeters.push({
+          id: d.id,
+          name: dName || `Energy Meter ${newMeters.length + 1}`,
+          category: dCat
+        });
+        return;
+      }
+
+      // Check status DPs for switches and sockets (strictly boolean relay switches)
+      const statusList = Array.isArray(d.status) ? d.status : [];
+      const switchDps = statusList.filter(s =>
+        typeof s.code === "string" && (
+          s.code === "switch" || /^switch_[1-8]$/.test(s.code)
+        ) && typeof s.value === "boolean"
+      );
+
+      if (switchDps.length > 0) {
+        const roomName = inferRoomFromName(dName);
+        uniqueRoomsSet.add(roomName);
+
+        switchDps.forEach((dp, gIdx) => {
+          const meta = inferApplianceMeta(dName, dp.code, switchDps.length, gIdx);
+          newAppliances.push({
+            id: `${d.id}_${dp.code}`,
+            cid: d.id,
+            dp_code: dp.code,
+            name: meta.name,
+            room: roomName,
+            icon: meta.icon,
+            isAtomberg: meta.isAtomberg,
+            fanSpeed: meta.isAtomberg ? 4 : undefined,
+            ratedWatts: meta.ratedWatts,
+            currentLevelPercent: 100,
+            isOn: Boolean(dp.value),
+            todaySeconds: 0,
+            todayWh: 0.0
+          });
+        });
+      }
+    });
+
+    // Also scan Atomberg fans if credentials provided
+    const atKey = document.getElementById("cfgAtombergApiKey").value.trim();
+    const atRef = document.getElementById("cfgAtombergRefreshToken").value.trim();
+    let atombergFansCount = 0;
+    if (atKey && atRef && window.OmniaNative.atombergApiRequest) {
+      try {
+        const atTokRaw = window.OmniaNative.atombergApiRequest("GET", "/v1/get_access_token", atKey, atRef, "");
+        const atTokObj = JSON.parse(atTokRaw);
+        const atAccessToken = (atTokObj.message && atTokObj.message.access_token) || atTokObj.access_token || "";
+        if (atAccessToken) {
+          const atListRaw = window.OmniaNative.atombergApiRequest("GET", "/v1/get_list_of_devices", atKey, atAccessToken, "");
+          const atListObj = JSON.parse(atListRaw);
+          const fanList = (atListObj.message && atListObj.message.devices_list) || [];
+          const atStateRaw = window.OmniaNative.atombergApiRequest("GET", "/v1/get_device_state?device_id=all", atKey, atAccessToken, "");
+          const atStateObj = JSON.parse(atStateRaw);
+          const stateList = (atStateObj.message && atStateObj.message.device_state) || [];
+          const stateMap = {};
+          stateList.forEach(s => { stateMap[s.device_id] = s; });
+
+          fanList.forEach(f => {
+            const st = stateMap[f.device_id] || {};
+            const spd = st.last_recorded_speed || 4;
+            const fanRoom = f.room || "Living Room";
+            uniqueRoomsSet.add(fanRoom);
+            atombergFansCount++;
+            newAppliances.push({
+              id: "atomberg_" + f.device_id,
+              cid: f.device_id,
+              dp_code: "atomberg",
+              name: f.name || "Atomberg Smart Fan",
+              room: fanRoom,
+              icon: "🌀",
+              isAtomberg: true,
+              fanSpeed: spd,
+              ratedWatts: 28,
+              currentLevelPercent: 100,
+              isOn: Boolean(st.power),
+              todaySeconds: 0,
+              todayWh: 0.0
+            });
+          });
+        }
+      } catch (atErr) {}
+    }
+
+    discoveredMeters = newMeters;
+    devices = newAppliances;
+    appMode = "live";
+
+    saveState();
+
+    const roomsArr = Array.from(uniqueRoomsSet);
+    const ctInfo = newMeters.length > 0 ? `Discovered ${newMeters.length} CT Meter(s)` : `No CT Meter (using switch sum)`;
+    logBox.textContent =
+      `🎉 SUCCESS!\n` +
+      `• ${ctInfo}\n` +
+      `• ${newAppliances.length} Switch Gangs & Smart Loads\n` +
+      `• Across ${roomsArr.length} Rooms: ${roomsArr.join(", ")}`;
+
+    // Immediately poll live power readings from discovered meters!
+    syncLiveMetersAndDevices(true);
+    renderAll();
+    showToast(`🎉 Discovered ${newAppliances.length} devices across ${roomsArr.length} rooms!`);
+
+    if (onSuccess) onSuccess();
+  }
+
   function discoverUserHome(silent = false) {
     const endpoint = document.getElementById("cfgTuyaEndpoint").value.trim() || "https://openapi.tuyain.com";
     const clientId = document.getElementById("cfgTuyaClientId").value.trim();
     const clientSecret = document.getElementById("cfgTuyaClientSecret").value.trim();
     const uid = document.getElementById("cfgTuyaUid").value.trim();
     const logBox = document.getElementById("tuyaStatusLogBox");
-    const atKey = document.getElementById("cfgAtombergApiKey").value.trim();
-    const atRef = document.getElementById("cfgAtombergRefreshToken").value.trim();
 
     if (!clientId || !clientSecret || !uid) {
       showToast("⚠️ Enter your Tuya Client ID, Secret, and User UID");
@@ -1462,189 +2000,26 @@
 
     saveAllConnectorCreds();
     haptic(30);
-    logBox.textContent = "🔍 Step 1/3: Authenticating with Tuya Cloud...";
     const btn = document.getElementById("btnAutoDiscover");
     btn.textContent = "⏳ Discovering Home...";
     btn.disabled = true;
 
-    if (!hasNativeBridge()) {
-      logBox.textContent = "⚠️ Native bridge not available in browser preview.";
-      btn.textContent = "🔍 Auto-Discover My Home Devices";
-      btn.disabled = false;
-      return;
-    }
-
     setTimeout(() => {
-      try {
-        // Step 1: Token
-        const tokRaw = window.OmniaNative.tuyaSignedRequest(
-          endpoint, clientId, clientSecret, "", "GET", "/v1.0/token?grant_type=1", ""
-        );
-        const tokObj = JSON.parse(tokRaw);
-        if (!tokObj.success || !tokObj.result || !tokObj.result.access_token) {
-          logBox.textContent = "❌ Tuya Authentication Failed:\n" + (tokObj.msg || tokRaw);
-          btn.textContent = "🔍 Auto-Discover My Home Devices";
-          btn.disabled = false;
-          showToast("Tuya Auth Failed: Check Client ID & Secret");
-          return;
-        }
-
-        const token = tokObj.result.access_token;
-        cachedTuyaToken = token;
-        logBox.textContent = "🔍 Step 2/3: Scanning all home devices from Tuya registry...";
-
-        // Step 2: Fetch devices
-        const devsRaw = window.OmniaNative.tuyaSignedRequest(
-          endpoint, clientId, clientSecret, token, "GET",
-          `/v1.0/users/${uid}/devices`, ""
-        );
-        const devsObj = JSON.parse(devsRaw);
-        if (!devsObj.success || !Array.isArray(devsObj.result)) {
-          logBox.textContent = "❌ Failed to query devices:\n" + (devsObj.msg || devsRaw);
-          btn.textContent = "🔍 Auto-Discover My Home Devices";
-          btn.disabled = false;
-          return;
-        }
-
-        const rawList = devsObj.result;
-        logBox.textContent = `🔍 Step 3/3: Found ${rawList.length} Tuya devices! Classifying meters & switches...`;
-
-        const newMeters = [];
-        const newAppliances = [];
-        const uniqueRoomsSet = new Set();
-
-        rawList.forEach((d) => {
-          const dName = (d.name || "").trim();
-          const dCat = (d.category || "").toLowerCase();
-          const pName = (d.product_name || "").toLowerCase();
-          const nameLower = dName.toLowerCase();
-
-          // Check if device is a CT Meter / Energy Meter
-          const isMeter = dCat === "zndb" || dCat === "jl" ||
-            nameLower.includes("meter") || nameLower.includes("clamp") || nameLower.includes("dual") ||
-            nameLower.includes("energy") || nameLower.includes("ct ") || pName.includes("meter");
-
-          if (isMeter) {
-            newMeters.push({
-              id: d.id,
-              name: dName || `Energy Meter ${newMeters.length + 1}`,
-              category: dCat
-            });
-            return;
-          }
-
-          // Check status DPs for switches and sockets (strictly boolean relay switches)
-          const statusList = Array.isArray(d.status) ? d.status : [];
-          const switchDps = statusList.filter(s =>
-            typeof s.code === "string" && (
-              s.code === "switch" || /^switch_[1-8]$/.test(s.code)
-            ) && typeof s.value === "boolean"
-          );
-
-          if (switchDps.length > 0) {
-            const roomName = inferRoomFromName(dName);
-            uniqueRoomsSet.add(roomName);
-
-            switchDps.forEach((dp, gIdx) => {
-              const meta = inferApplianceMeta(dName, dp.code, switchDps.length, gIdx);
-              newAppliances.push({
-                id: `${d.id}_${dp.code}`,
-                cid: d.id,
-                dp_code: dp.code,
-                name: meta.name,
-                room: roomName,
-                icon: meta.icon,
-                isAtomberg: meta.isAtomberg,
-                fanSpeed: meta.isAtomberg ? 4 : undefined,
-                ratedWatts: meta.ratedWatts,
-                currentLevelPercent: 100,
-                isOn: Boolean(dp.value),
-                todaySeconds: 0,
-                todayWh: 0.0
-              });
-            });
-          }
-        });
-
-        // Also discover Atomberg fans if credentials supplied
-        let atombergFansCount = 0;
-        if (atKey && atRef && window.OmniaNative.atombergApiRequest) {
-          try {
-            logBox.textContent += "\n🌀 Scanning Atomberg Fan Cloud...";
-            const atTokRaw = window.OmniaNative.atombergApiRequest("GET", "/v1/get_access_token", atKey, atRef, "");
-            const atTokObj = JSON.parse(atTokRaw);
-            const atAccessToken = (atTokObj.message && atTokObj.message.access_token) || atTokObj.access_token || "";
-            if (atAccessToken) {
-              const atListRaw = window.OmniaNative.atombergApiRequest("GET", "/v1/get_list_of_devices", atKey, atAccessToken, "");
-              const atListObj = JSON.parse(atListRaw);
-              const fanList = (atListObj.message && atListObj.message.devices_list) || [];
-              const atStateRaw = window.OmniaNative.atombergApiRequest("GET", "/v1/get_device_state?device_id=all", atKey, atAccessToken, "");
-              const atStateObj = JSON.parse(atStateRaw);
-              const stateList = (atStateObj.message && atStateObj.message.device_state) || [];
-              const stateMap = {};
-              stateList.forEach(s => { stateMap[s.device_id] = s; });
-
-              fanList.forEach(f => {
-                const st = stateMap[f.device_id] || {};
-                const spd = st.last_recorded_speed || 4;
-                const fanRoom = f.room || "Living Room";
-                uniqueRoomsSet.add(fanRoom);
-                atombergFansCount++;
-                newAppliances.push({
-                  id: "atomberg_" + f.device_id,
-                  cid: f.device_id,
-                  dp_code: "atomberg",
-                  name: f.name || "Atomberg Smart Fan",
-                  room: fanRoom,
-                  icon: "🌀",
-                  isAtomberg: true,
-                  fanSpeed: spd,
-                  ratedWatts: 28,
-                  currentLevelPercent: 100,
-                  isOn: Boolean(st.power),
-                  todaySeconds: 0,
-                  todayWh: 0.0
-                });
-              });
-            }
-          } catch (atErr) {
-            logBox.textContent += `\n⚠️ Atomberg fan scan skipped: ${atErr.message}`;
-          }
-        }
-
-        discoveredMeters = newMeters;
-        devices = newAppliances;
-        appMode = "live";
-
-        saveState();
-
-        const roomsArr = Array.from(uniqueRoomsSet);
-        logBox.textContent =
-          `🎉 SUCCESS! Discovered:\n` +
-          `• ${newMeters.length} Energy / CT Clamp Meter(s)\n` +
-          `• ${newAppliances.length} Switch Gangs & Smart Loads\n` +
-          `• ${atombergFansCount} Atomberg BLDC Fans\n` +
-          `• Across ${roomsArr.length} Rooms: ${roomsArr.join(", ")}`;
-
+      discoverUserHomeLogic(endpoint, clientId, clientSecret, uid, logBox, () => {
         btn.textContent = "🔍 Auto-Discover My Home Devices";
         btn.disabled = false;
-
-        // Immediately poll live power readings from discovered meters!
-        syncLiveMetersAndDevices(true);
-        renderAll();
-        showToast(`🎉 Discovered ${newAppliances.length} devices across ${roomsArr.length} rooms!`);
-      } catch (err) {
-        logBox.textContent = "Discovery error: " + err.message;
+      }, () => {
         btn.textContent = "🔍 Auto-Discover My Home Devices";
         btn.disabled = false;
-      }
-    }, 80);
+      });
+    }, 60);
   }
 
   function switchToDemoMode() {
     haptic(20);
     appMode = "demo";
     devices = JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
+    discoveredMeters = []; // Reset discovered meters in demo
     ctMeterState.voltageVolts = 238.4;
     ctMeterState.freqHz = 50.0;
     ctMeterState.totalForwardKwh = 412.6;
@@ -1669,6 +2044,9 @@
     document.getElementById("cfgTuyaUid").value = "";
     document.getElementById("cfgAtombergApiKey").value = "";
     document.getElementById("cfgAtombergRefreshToken").value = "";
+    document.getElementById("onboardTuyaClientId").value = "";
+    document.getElementById("onboardTuyaClientSecret").value = "";
+    document.getElementById("onboardTuyaUid").value = "";
     localStorage.removeItem("omnia_live_home_devices");
     localStorage.removeItem("omnia_discovered_meters");
     localStorage.removeItem("omnia_home_mode");
@@ -1731,7 +2109,7 @@
         let totalPhaseA = 0.0;
         let totalPhaseB = 0.0;
 
-        // 1. Poll each discovered CT Clamp Meter
+        // 1. Poll each discovered CT Clamp Meter (if any)
         if (discoveredMeters && discoveredMeters.length > 0) {
           discoveredMeters.forEach(m => {
             try {
@@ -1779,8 +2157,8 @@
             const cloudDev = mapById[app.cid];
             if (cloudDev && Array.isArray(cloudDev.status)) {
               const dp = cloudDev.status.find(s => s.code === app.dp_code);
-              if (dp !== undefined) {
-                app.isOn = Boolean(dp.value);
+              if (dp !== undefined && typeof dp.value === "boolean") {
+                app.isOn = dp.value;
                 syncedCount++;
                 if (app.isOn) activeCount++;
               }
@@ -1852,7 +2230,6 @@
     if (appMode === "demo") {
       recomputeDemoCtMeter();
     } else if (hasNativeBridge() && dev.cid && dev.dp_code) {
-      // Send real cloud command
       const endpoint = document.getElementById("cfgTuyaEndpoint").value.trim() || "https://openapi.tuyain.com";
       const clientId = document.getElementById("cfgTuyaClientId").value.trim();
       const clientSecret = document.getElementById("cfgTuyaClientSecret").value.trim();
@@ -1917,10 +2294,6 @@
   }
 
   function computeHomeSummary() {
-    const pCtRaw =
-      (parseFloat(ctMeterState.mainPhaseAWatts) || 0) +
-      (parseFloat(ctMeterState.mainPhaseBWatts) || 0);
-
     let pNativeFans = 0.0;
     let pVirtualSwitches = 0.0;
     let activeCount = 0;
@@ -1948,13 +2321,30 @@
     });
 
     const trackedSum = pNativeFans + pVirtualSwitches;
-    const pCt = Math.max(pCtRaw, trackedSum);
-    const pResidual = Math.max(0.0, pCt - trackedSum);
+    // Check if CT meter is discovered
+    const hasCt = appMode === "demo" ? true : (discoveredMeters && discoveredMeters.length > 0);
 
-    const todayTotalKwh = (totalTodayWh + 1800.0) / 1000.0;
+    let pCt = 0.0;
+    let pResidual = 0.0;
+
+    if (hasCt) {
+      // 1. CT Clamp Discovered: Use real measured grid power
+      const pCtRaw =
+        (parseFloat(ctMeterState.mainPhaseAWatts) || 0) +
+        (parseFloat(ctMeterState.mainPhaseBWatts) || 0);
+      pCt = Math.max(pCtRaw, trackedSum);
+      pResidual = Math.max(0.0, pCt - trackedSum);
+    } else {
+      // 2. NO CT Clamp Discovered: Sum up all active switches & fans
+      pCt = trackedSum;
+      pResidual = 0.0;
+    }
+
+    const todayTotalKwh = (totalTodayWh + (hasCt ? 1800.0 : 0.0)) / 1000.0;
     const todaySpentInr = todayTotalKwh * tariffPerKwh;
 
     return {
+      hasCt,
       pCt,
       pNativeFans,
       pVirtualSwitches,
@@ -1987,7 +2377,7 @@
   }
 
   // ===========================================================================
-  // UI RENDERING ENGINE
+  // UI RENDERING ENGINE (DYNAMIC CT VS SUM LOGIC)
   // ===========================================================================
   function renderAll() {
     const s = computeHomeSummary();
@@ -1996,8 +2386,10 @@
     const todayRs = s.todaySpentInr;
     const monthlyRs = Math.round(todayRs * 30);
 
-    // 1. Header & Top Mode Banner
     const isLive = appMode === "live";
+    const hasCt = s.hasCt;
+
+    // 1. Header & Top Mode Banner
     const bannerEl = document.getElementById("liveCloudBanner");
     const bannerLeft = document.getElementById("liveBannerLeft");
     const bannerRight = document.getElementById("liveBannerRight");
@@ -2006,11 +2398,12 @@
 
     if (isLive) {
       bannerEl.className = "live-strip live-mode";
-      bannerLeft.textContent = `🟢 LIVE HOME • ${devices.length} Devices Synced`;
+      const ctTag = hasCt ? `${discoveredMeters.length} CT Meter(s)` : `Switches Summed`;
+      bannerLeft.textContent = `🟢 LIVE HOME • ${devices.length} Devices (${ctTag})`;
       bannerRight.textContent = `${ctMeterState.voltageVolts.toFixed(1)}V • ${ctMeterState.freqHz.toFixed(1)}Hz`;
-      subText.textContent = "Live Smart Home • On-Device Engine";
+      subText.textContent = hasCt ? "Live CT Clamp Disaggregation" : "Live Smart Switch Summation";
       loadBadge.className = "status-pill";
-      loadBadge.textContent = "Live Cloud";
+      loadBadge.textContent = hasCt ? "CT Clamp Meter" : "Sum of Switches";
     } else {
       bannerEl.className = "live-strip demo-mode";
       bannerLeft.textContent = "🧪 Showcase Demo • Tap to connect home";
@@ -2022,24 +2415,57 @@
 
     // Connectors mode card
     document.getElementById("modeCardTitle").textContent =
-      isLive ? `🟢 Active Mode: Live Smart Home (${devices.length} Devices)` : "🧪 Active Mode: Showcase Demo";
+      isLive ? `🟢 Live Smart Home (${devices.length} Devices)` : "🧪 Active Mode: Showcase Demo";
     document.getElementById("modePillBadge").className = isLive ? "status-pill" : "status-pill demo";
-    document.getElementById("modePillBadge").textContent = isLive ? "Live" : "Demo";
+    document.getElementById("modePillBadge").textContent = isLive ? (hasCt ? "CT Live" : "Switches Live") : "Demo";
 
-    // 2. Hero Gauge & Stats
+    // 2. Hero Dashboard Card (Dynamic CT vs Sum logic)
+    const heroLabel = document.getElementById("heroDashboardLabel");
+    if (isLive) {
+      heroLabel.textContent = hasCt
+        ? "⚡ Whole Home Power (Main CT Meter)"
+        : "⚡ Whole Home Power (Sum of Active Switches)";
+    } else {
+      heroLabel.textContent = "⚡ Whole Home Power (Showcase Meter)";
+    }
+
     document.getElementById("heroTotalWatts").textContent = `${s.pCt.toFixed(1)} W`;
     document.getElementById("heroBurnRate").textContent = `Costs ≈ ₹${hourlyRs.toFixed(2)} / hour`;
-    document.getElementById("statPhaseA").textContent = `${ctMeterState.mainPhaseAWatts.toFixed(0)} W`;
-    document.getElementById("statPhaseB").textContent = `${ctMeterState.mainPhaseBWatts.toFixed(0)} W`;
-    document.getElementById("statActiveCount").textContent = `${s.activeCount} ON`;
+
+    // Hero Summary 4 stats
+    if (hasCt) {
+      document.getElementById("statPhaseA").textContent = `${ctMeterState.mainPhaseAWatts.toFixed(0)} W`;
+      document.getElementById("statPhaseALbl").textContent = "Phase A (CT)";
+      document.getElementById("statPhaseB").textContent = `${ctMeterState.mainPhaseBWatts.toFixed(0)} W`;
+      document.getElementById("statPhaseBLbl").textContent = "Phase B (CT)";
+      document.getElementById("statActiveCount").textContent = `${s.activeCount} ON`;
+      document.getElementById("statActiveCountLbl").textContent = "Switches ON";
+    } else {
+      document.getElementById("statPhaseA").textContent = `${s.activeCount} ON`;
+      document.getElementById("statPhaseALbl").textContent = "Active Switches";
+      document.getElementById("statPhaseB").textContent = `${s.pVirtualSwitches.toFixed(0)} W`;
+      document.getElementById("statPhaseBLbl").textContent = "Switches Load";
+      document.getElementById("statActiveCount").textContent = `${s.pNativeFans.toFixed(0)} W`;
+      document.getElementById("statActiveCountLbl").textContent = "Fans Load";
+    }
     document.getElementById("statMonthlyBill").textContent = `₹${monthlyRs}`;
 
+    // Friendly Insight Banner
     const insightEl = document.getElementById("friendlyInsightText");
-    if (s.biggestAppliance && s.biggestWatts > 0) {
-      const hrCost = wattsToRupeesPerHour(s.biggestWatts).toFixed(2);
-      insightEl.innerHTML = `Highest load: <strong>${s.biggestAppliance.name}</strong> (${s.biggestWatts.toFixed(0)}W • ₹${hrCost}/hr) + <strong>${Math.round(s.pResidual)}W</strong> base home load.`;
+    if (hasCt) {
+      if (s.biggestAppliance && s.biggestWatts > 0) {
+        const hrCost = wattsToRupeesPerHour(s.biggestWatts).toFixed(2);
+        insightEl.innerHTML = `Main CT reading: <strong>${s.pCt.toFixed(0)}W</strong>. Highest load: <strong>${s.biggestAppliance.name}</strong> (${s.biggestWatts.toFixed(0)}W • ₹${hrCost}/hr) + <strong>${Math.round(s.pResidual)}W</strong> base socket load.`;
+      } else {
+        insightEl.innerHTML = `All smart switches are OFF. Base home load measured by CT clamp is <strong>${Math.round(s.pResidual)}W</strong>.`;
+      }
     } else {
-      insightEl.innerHTML = `All tracked smart switches are OFF. Unmonitored base load (Fridge, Wi-Fi & sockets) is <strong>${Math.round(s.pResidual)}W</strong>.`;
+      if (s.activeCount > 0) {
+        const hrCost = wattsToRupeesPerHour(s.pCt).toFixed(2);
+        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of all <strong>${s.activeCount} currently active switches & fans</strong> • ₹${hrCost}/hr).`;
+      } else {
+        insightEl.innerHTML = `All ${devices.length} smart switches and fans are currently OFF (0 W tracked load).`;
+      }
     }
 
     // 3. Radial SVG Arcs
@@ -2067,7 +2493,7 @@
     // 4. Breakdown Bar & Category Cards
     document.getElementById("barNative").style.width = `${(natShare * 100).toFixed(1)}%`;
     document.getElementById("barVirtual").style.width = `${(virtShare * 100).toFixed(1)}%`;
-    document.getElementById("barResidual").style.width = `${(resShare * 100).toFixed(1)}%`;
+    document.getElementById("barResidual").style.width = hasCt ? `${(resShare * 100).toFixed(1)}%` : `0%`;
 
     document.getElementById("catNativeWatts").textContent = `${s.pNativeFans.toFixed(1)} W`;
     document.getElementById("catNativeCost").textContent = `₹${wattsToRupeesPerHour(s.pNativeFans).toFixed(2)}/hr`;
@@ -2075,8 +2501,15 @@
     document.getElementById("catVirtualWatts").textContent = `${s.pVirtualSwitches.toFixed(1)} W`;
     document.getElementById("catVirtualCost").textContent = `₹${wattsToRupeesPerHour(s.pVirtualSwitches).toFixed(2)}/hr`;
 
-    document.getElementById("catResidualWatts").textContent = `${s.pResidual.toFixed(1)} W`;
-    document.getElementById("catResidualCost").textContent = `₹${wattsToRupeesPerHour(s.pResidual).toFixed(2)}/hr`;
+    const resCard = document.getElementById("catResidualItem");
+    if (hasCt) {
+      resCard.style.display = "flex";
+      document.getElementById("catResidualWatts").textContent = `${s.pResidual.toFixed(1)} W`;
+      document.getElementById("catResidualCost").textContent = `₹${wattsToRupeesPerHour(s.pResidual).toFixed(2)}/hr`;
+      document.getElementById("catResidualDesc").textContent = "Unmonitored base load = Total CT - Tracked Loads";
+    } else {
+      resCard.style.display = "none";
+    }
 
     // 5. Quick Controls on Home Tab
     renderQuickControls();
@@ -2125,7 +2558,6 @@
   }
 
   function renderRoomsTab() {
-    // Dynamically extract unique rooms from current devices list!
     const uniqueRooms = Array.from(new Set(devices.map(d => d.room).filter(Boolean)));
     const rooms = ["All Rooms", ...uniqueRooms];
 
@@ -2238,16 +2670,24 @@
     const tips = [];
 
     if (appMode === "live") {
-      tips.push({
-        icon: "⚡",
-        title: `Live Home Grid: ${ctMeterState.voltageVolts.toFixed(1)}V • ${ctMeterState.freqHz.toFixed(1)}Hz`,
-        desc: `Phase A = ${ctMeterState.mainPhaseAWatts.toFixed(0)}W, Phase B = ${ctMeterState.mainPhaseBWatts.toFixed(0)}W. Lifetime energy: ${ctMeterState.totalForwardKwh.toFixed(1)} kWh.`
-      });
+      if (summary.hasCt) {
+        tips.push({
+          icon: "⚡",
+          title: `Live CT Meter: ${ctMeterState.voltageVolts.toFixed(1)}V • ${ctMeterState.freqHz.toFixed(1)}Hz`,
+          desc: `Phase A = ${ctMeterState.mainPhaseAWatts.toFixed(0)}W, Phase B = ${ctMeterState.mainPhaseBWatts.toFixed(0)}W. Disaggregation tracking is active.`
+        });
+      } else {
+        tips.push({
+          icon: "💡",
+          title: "Switch Summation Mode Active",
+          desc: `Monitoring sum of ${devices.length} smart switches. To measure unmonitored wall sockets & fridge, add a Tuya Dual CT clamp meter!`
+        });
+      }
     } else {
       tips.push({
         icon: "🧪",
         title: "Showcase Mode Active",
-        desc: "You are testing simulated energy telemetry. Connect your real smart home in the Connectors tab to auto-discover your CT meter and switch panels!"
+        desc: "You are testing simulated energy telemetry. Connect your real smart home in the Connectors tab to auto-discover your devices!"
       });
     }
 
@@ -2385,9 +2825,10 @@
     haptic(25);
     const s = computeHomeSummary();
     const monthlyRs = Math.round(s.todaySpentInr * 30);
+    const ctStatus = s.hasCt ? `CT Meter: ${s.pCt.toFixed(1)} W` : `Sum of Switches: ${s.pCt.toFixed(1)} W`;
     const msg =
       `🏡 *OmniaEnergy Home Report*\n` +
-      `⚡ Whole Home Power: ${s.pCt.toFixed(1)} W (Phase A: ${ctMeterState.mainPhaseAWatts.toFixed(0)}W, Phase B: ${ctMeterState.mainPhaseBWatts.toFixed(0)}W)\n` +
+      `⚡ Whole Home Power: ${ctStatus}\n` +
       `🔌 Active Switches: ${s.activeCount} ON\n` +
       `💰 Today's Spend: ₹${Math.round(s.todaySpentInr)} (${s.todayTotalKwh.toFixed(2)} kWh)\n` +
       `📅 Projected Monthly Bill: ₹${monthlyRs}`;
@@ -2433,7 +2874,6 @@
     loadState();
     renderAll();
 
-    // If starting in Live Mode, immediately sync cloud
     if (appMode === "live") {
       syncLiveMetersAndDevices(true);
     }
