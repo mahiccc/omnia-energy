@@ -44,7 +44,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     _devices = <DeviceModel>[
       DeviceModel(
-        id: 'd79bffe403697ffc699f5d',
+        id: 'main_home_meter',
         name: 'Main Home Smart Meter',
         category: DeviceCategory.ctClamp,
         vendor: DeviceVendor.hardwareCt,
@@ -64,7 +64,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         updatedAtMs: nowMs,
       ),
       DeviceModel(
-        id: 'd76868c21ede5a8a9bq2rc',
+        id: 'master_bath_geyser',
         name: 'Master Bath Water Heater',
         category: DeviceCategory.virtualPayload,
         vendor: DeviceVendor.tuyaOpenApi,
