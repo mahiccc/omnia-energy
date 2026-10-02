@@ -1650,6 +1650,70 @@ function doGet(e) {
     </div>
   </div>
 
+  <!-- EDIT / CONFIGURE APPLIANCE & FAN VENDOR MODAL -->
+  <div class="modal-backdrop" id="editDeviceModal">
+    <div class="modal-sheet" style="max-height:88vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div class="section-title" style="margin-bottom:0;" id="editDeviceModalTitle">⚙️ Configure Appliance</div>
+        <button class="step-btn" onclick="closeEditDeviceModal()">✕</button>
+      </div>
+      
+      <input type="hidden" id="editDeviceIdx" value="" />
+
+      <div class="field">
+        <label>Appliance / Circuit Name</label>
+        <input type="text" id="editDeviceName" placeholder="e.g. Captain Fan, MBR Main Light" />
+      </div>
+
+      <div class="field">
+        <label>Room</label>
+        <input type="text" id="editDeviceRoom" placeholder="e.g. Kids Room, Living Room" />
+      </div>
+
+      <div class="field">
+        <label>Appliance Type</label>
+        <select id="editDeviceCategory" onchange="onEditDeviceCategoryChange()">
+          <option value="fan">🌀 Ceiling Fan</option>
+          <option value="light">💡 Light / LED Strip</option>
+          <option value="geyser">🚿 Geyser / Water Heater (AI Cutoff)</option>
+          <option value="ac">❄️ Air Conditioner</option>
+          <option value="socket">🔌 Socket / Heavy Plug</option>
+          <option value="chimney">🍳 Kitchen Exhaust / Chimney</option>
+          <option value="fridge">🧊 Refrigerator</option>
+          <option value="other">⚡ Other Appliance</option>
+        </select>
+      </div>
+
+      <!-- Fan Vendor Selection (visible when category is fan) -->
+      <div id="fanVendorSection" style="display:none;background:var(--surface-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--sky);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <span>🌀</span> Fan Technology & Vendor
+        </div>
+        <div class="field" style="margin-bottom:8px;">
+          <select id="editFanVendor" onchange="onFanVendorChange()">
+            <option value="atomberg">🌀 Atomberg BLDC (Smart Energy Curve: 3.5W - 28W)</option>
+            <option value="standard">⚡ Standard Induction Fan (Assumed Fixed ~75W)</option>
+          </select>
+        </div>
+        <div id="atombergVendorInfo" style="font-size:11px;color:var(--muted);line-height:1.45;">
+          <span style="color:#38bdf8;font-weight:600;">⚡ Atomberg Telemetry Mapping:</span> This fan is mapped to Atomberg's calibrated 6-speed BLDC curve (Speed 1: 3.5W to Speed 6: 28W) for <strong><span id="atombergRoomLabel">this room</span></strong>. Interactive speed buttons will appear directly on the appliance card.
+        </div>
+      </div>
+
+      <!-- Wattage adjustment section (visible when not Atomberg) -->
+      <div class="field" id="editDeviceWattsField">
+        <label id="editDeviceWattsLabel">Assumed Power Draw (Watts)</label>
+        <input type="number" id="editDeviceWatts" value="28" min="1" max="10000" />
+        <div style="font-size:10.5px;color:var(--muted);margin-top:4px;" id="editDeviceWattsHint">Power draw when active. AI will cross-reference this against whole-home CT.</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn secondary" style="flex:1;" onclick="closeEditDeviceModal()">Cancel</button>
+        <button class="btn primary" style="flex:2;" onclick="saveEditedDevice()">💾 Save & Sync</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAVIGATION -->
   <nav class="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">
@@ -2209,6 +2273,10 @@ function doGet(e) {
   }
 
   function promptEditDeviceAssumption(idx, event) {
+    openDeviceConfigModal(idx, event);
+  }
+
+  function openDeviceConfigModal(idx, event) {
     if (event) {
       event.stopPropagation();
       event.preventDefault();
@@ -2216,30 +2284,166 @@ function doGet(e) {
     haptic(15);
     const d = devices[idx];
     if (!d) return;
-    const curW = d.ratedWatts || 20;
-    const isThermo = isThermostaticAppliance(d);
-    let promptMsg = `📐 Adjust Assumed Power for:\n"${d.name}"\n\n`;
-    if (isThermo) {
-      promptMsg += `♨️ Thermostatic Appliance (Geyser / Water Heater)\n` +
-                   `• Active Heating Power: ${curW} W\n` +
-                   `• AI Feature: Automatically recalculates to 0W when CT load drops (water is hot) while switch remains ON.\n\n` +
-                   `Enter active heating wattage (1 - 5000 W):`;
-    } else {
-      promptMsg += `This device has no direct power meter hardware, so its energy is calculated with an assumed wattage.\n\n` +
-                   `Current assumed rating: ${curW} W\nEnter new wattage (1 - 5000 W):`;
+
+    document.getElementById("editDeviceIdx").value = idx;
+    document.getElementById("editDeviceName").value = d.name || "";
+    document.getElementById("editDeviceRoom").value = d.room || "";
+
+    let cat = "other";
+    const n = (d.name || "").toLowerCase();
+    if (d.isAtomberg || d.fanVendor === "atomberg" || n.includes("fan") || n.includes("bldc") || d.icon === "🌀") {
+      cat = "fan";
+    } else if (n.includes("geyser") || n.includes("water heater") || n.includes("boiler") || isThermostaticAppliance(d)) {
+      cat = "geyser";
+    } else if (n.includes("ac") || n.includes("air con") || n.includes("cooler") || n.includes("hvac")) {
+      cat = "ac";
+    } else if (n.includes("light") || n.includes("lamp") || n.includes("bulb") || n.includes("strip") || n.includes("led") || n.includes("spot") || n.includes("cove")) {
+      cat = "light";
+    } else if (n.includes("socket") || n.includes("plug")) {
+      cat = "socket";
+    } else if (n.includes("chimney")) {
+      cat = "chimney";
+    } else if (n.includes("fridge")) {
+      cat = "fridge";
     }
-    const res = window.prompt(promptMsg, String(curW));
-    if (res === null) return;
-    const parsed = parseFloat(res);
-    if (!isNaN(parsed) && parsed > 0 && parsed <= 10000) {
-      d.ratedWatts = Math.round(parsed * 10) / 10;
-      saveState();
-      autoBackupToDriveSilently("wattage_edited");
-      renderAll();
-      showToast(`✅ "${d.name}" assumed load updated to ${d.ratedWatts}W`);
+
+    document.getElementById("editDeviceCategory").value = cat;
+    document.getElementById("editFanVendor").value = (d.isAtomberg || d.fanVendor === "atomberg") ? "atomberg" : (d.fanVendor || "atomberg");
+    document.getElementById("editDeviceWatts").value = d.ratedWatts || 20;
+
+    onEditDeviceCategoryChange();
+    document.getElementById("editDeviceModal").classList.add("open");
+  }
+
+  function closeEditDeviceModal() {
+    haptic(10);
+    document.getElementById("editDeviceModal").classList.remove("open");
+  }
+
+  function onEditDeviceCategoryChange() {
+    const cat = document.getElementById("editDeviceCategory").value;
+    const fanSec = document.getElementById("fanVendorSection");
+    const wattsField = document.getElementById("editDeviceWattsField");
+    const room = document.getElementById("editDeviceRoom").value || "this room";
+    document.getElementById("atombergRoomLabel").textContent = room;
+
+    if (cat === "fan") {
+      fanSec.style.display = "block";
+      onFanVendorChange();
     } else {
-      showToast("⚠️ Invalid wattage entered");
+      fanSec.style.display = "none";
+      wattsField.style.display = "block";
+      document.getElementById("editDeviceWattsLabel").textContent = "Assumed Power Draw (Watts)";
+      document.getElementById("editDeviceWattsHint").textContent = "Power draw when active. AI will cross-reference this against whole-home CT.";
+      const defaultWatts = {
+        light: 20,
+        geyser: 2000,
+        ac: 1400,
+        socket: 800,
+        chimney: 180,
+        fridge: 160,
+        other: 25
+      };
+      const curW = parseFloat(document.getElementById("editDeviceWatts").value);
+      if (!curW || curW === 28 || curW === 75) {
+        document.getElementById("editDeviceWatts").value = defaultWatts[cat] || 25;
+      }
     }
+  }
+
+  function onFanVendorChange() {
+    const vendor = document.getElementById("editFanVendor").value;
+    const wattsField = document.getElementById("editDeviceWattsField");
+    const atomInfo = document.getElementById("atombergVendorInfo");
+    if (vendor === "atomberg") {
+      atomInfo.style.display = "block";
+      wattsField.style.display = "none";
+    } else {
+      atomInfo.style.display = "none";
+      wattsField.style.display = "block";
+      document.getElementById("editDeviceWattsLabel").textContent = "Standard Fan Wattage";
+      document.getElementById("editDeviceWattsHint").textContent = "Standard induction fan motor rating (typically 70W - 80W).";
+      const curW = parseFloat(document.getElementById("editDeviceWatts").value);
+      if (!curW || curW === 28) {
+        document.getElementById("editDeviceWatts").value = "75";
+      }
+    }
+  }
+
+  function saveEditedDevice() {
+    const idx = parseInt(document.getElementById("editDeviceIdx").value, 10);
+    const d = devices[idx];
+    if (!d) return;
+
+    const newName = document.getElementById("editDeviceName").value.trim();
+    const newRoom = document.getElementById("editDeviceRoom").value.trim();
+    const cat = document.getElementById("editDeviceCategory").value;
+    const vendor = document.getElementById("editFanVendor").value;
+
+    if (newName) d.name = newName;
+    if (newRoom) d.room = newRoom;
+
+    if (cat === "fan") {
+      d.icon = "🌀";
+      if (vendor === "atomberg") {
+        d.isAtomberg = true;
+        d.fanVendor = "atomberg";
+        d.isNativePower = true;
+        d.powerSource = "native";
+        d.fanSpeed = d.fanSpeed || 4;
+        d.ratedWatts = 28;
+        d.effectiveWatts = ATOMBERG_SPEED_WATTS[d.fanSpeed] || 16.0;
+      } else {
+        d.isAtomberg = false;
+        d.fanVendor = "standard";
+        d.isNativePower = false;
+        d.powerSource = "assumed";
+        d.ratedWatts = parseFloat(document.getElementById("editDeviceWatts").value) || 75;
+        d.effectiveWatts = d.ratedWatts;
+      }
+    } else {
+      d.isAtomberg = false;
+      d.fanVendor = "";
+      d.isNativePower = false;
+      d.powerSource = "assumed";
+      const icons = {
+        light: "💡",
+        geyser: "🚿",
+        ac: "❄️",
+        socket: "🔌",
+        chimney: "🍳",
+        fridge: "🧊",
+        other: "⚡"
+      };
+      d.icon = icons[cat] || "🔌";
+      d.ratedWatts = parseFloat(document.getElementById("editDeviceWatts").value) || 25;
+      d.effectiveWatts = d.ratedWatts;
+    }
+
+    // Save customization entry for persistence across discovery
+    let customMap = {};
+    try {
+      customMap = JSON.parse(localStorage.getItem("omnia_device_customizations") || "{}");
+    } catch(e){}
+    const devKey = d.id || `${d.cid}_${d.dp_code}`;
+    customMap[devKey] = {
+      name: d.name,
+      room: d.room,
+      icon: d.icon,
+      isAtomberg: d.isAtomberg,
+      fanVendor: d.fanVendor,
+      fanSpeed: d.fanSpeed,
+      ratedWatts: d.ratedWatts,
+      isNativePower: d.isNativePower,
+      powerSource: d.powerSource
+    };
+    localStorage.setItem("omnia_device_customizations", JSON.stringify(customMap));
+
+    saveState();
+    autoBackupToDriveSilently("device_customized");
+    renderAll();
+    closeEditDeviceModal();
+    showToast(`✅ "${d.name}" updated as ${cat === "fan" && d.isAtomberg ? "Atomberg BLDC Fan" : d.name}!`);
   }
 
   // ===========================================================================
@@ -2274,6 +2478,9 @@ function doGet(e) {
             name: d.name,
             room: d.room,
             icon: d.icon,
+            isAtomberg: Boolean(d.isAtomberg),
+            fanVendor: d.fanVendor || (d.isAtomberg ? "atomberg" : ""),
+            fanSpeed: d.fanSpeed || 4,
             isNativePower: d.isNativePower,
             powerSource: d.powerSource
           };
@@ -2598,6 +2805,104 @@ function doGet(e) {
           }
         });
       }
+      // Apply saved device customizations
+      let savedCust = {};
+      try {
+        savedCust = JSON.parse(localStorage.getItem("omnia_device_customizations") || "{}");
+      } catch(e){}
+      devices.forEach(d => {
+        const key = d.id || `${d.cid}_${d.dp_code}`;
+        if (savedCust[key]) {
+          const c = savedCust[key];
+          if (c.name) d.name = c.name;
+          if (c.room) d.room = c.room;
+          if (c.icon) d.icon = c.icon;
+          if (c.isAtomberg !== undefined) d.isAtomberg = c.isAtomberg;
+          if (c.fanVendor) d.fanVendor = c.fanVendor;
+          if (c.fanSpeed !== undefined) d.fanSpeed = c.fanSpeed;
+          if (c.ratedWatts !== undefined) d.ratedWatts = c.ratedWatts;
+          if (c.isNativePower !== undefined) d.isNativePower = c.isNativePower;
+          if (c.powerSource) d.powerSource = c.powerSource;
+        }
+      });
+
+      let needsSaveAfterMigration = false;
+
+      // 1. Auto-map kids room switch_1 to Captain Fan (Atomberg BLDC) if still default
+      const captDev = devices.find(d =>
+        d && (d.id === "d7445ccfc6da215112azo4_switch_1" ||
+             (d.name && d.name.toLowerCase().includes("kids room") && d.dp_code === "switch_1" && d.name.includes("Main Light")))
+      );
+      if (captDev && (!captDev.fanVendor || captDev.name.includes("Main Light"))) {
+        captDev.name = "Captain Fan";
+        captDev.room = "Kids Room";
+        captDev.icon = "🌀";
+        captDev.isAtomberg = true;
+        captDev.fanVendor = "atomberg";
+        captDev.isNativePower = true;
+        captDev.powerSource = "native";
+        captDev.fanSpeed = captDev.fanSpeed || 4;
+        captDev.ratedWatts = 28;
+        captDev.effectiveWatts = ATOMBERG_SPEED_WATTS[captDev.fanSpeed] || 16.0;
+        needsSaveAfterMigration = true;
+      }
+
+      // 2. Auto-map 3CH Zigbee Switch Module to individual appliances: 1 TV, 1 Show Light, Showlight 2
+      devices.forEach(d => {
+        if (!d) return;
+        if (d.cid === "d76253e070e8452f5flcjy" || (d.id && d.id.startsWith("d76253e070e8452f5flcjy"))) {
+          if (d.dp_code === "switch_1" && (!d.name || d.name.includes("3CH Zigbee") || d.name.includes("Main Light"))) {
+            d.name = "TV";
+            d.room = "Living Room";
+            d.icon = "📺";
+            d.ratedWatts = 110;
+            d.effectiveWatts = 110;
+            d.isAtomberg = false;
+            d.isNativePower = false;
+            d.powerSource = "assumed";
+            needsSaveAfterMigration = true;
+          } else if (d.dp_code === "switch_2" && (!d.name || d.name.includes("3CH Zigbee") || d.name.includes("Profile Light"))) {
+            d.name = "Show Light";
+            d.room = "Living Room";
+            d.icon = "💡";
+            d.ratedWatts = 15;
+            d.effectiveWatts = 15;
+            d.isAtomberg = false;
+            d.isNativePower = false;
+            d.powerSource = "assumed";
+            needsSaveAfterMigration = true;
+          } else if (d.dp_code === "switch_3" && (!d.name || d.name.includes("3CH Zigbee") || d.name.includes("Accent Lamp"))) {
+            d.name = "Showlight 2";
+            d.room = "Living Room";
+            d.icon = "💡";
+            d.ratedWatts = 15;
+            d.effectiveWatts = 15;
+            d.isAtomberg = false;
+            d.isNativePower = false;
+            d.powerSource = "assumed";
+            needsSaveAfterMigration = true;
+          }
+        }
+        if (d.cid === "d709a5c7d939120fdcnk4j" || (d.id && d.id.startsWith("d709a5c7d939120fdcnk4j"))) {
+          if (d.dp_code === "switch_1" && (!d.name || d.name.includes("2CH Zigbee") || d.name.includes("Main Light"))) {
+            d.name = "2CH Switch 1";
+            d.room = "Living Room";
+            d.icon = "💡";
+            needsSaveAfterMigration = true;
+          } else if (d.dp_code === "switch_2" && (!d.name || d.name.includes("2CH Zigbee") || d.name.includes("Profile Light"))) {
+            d.name = "2CH Switch 2";
+            d.room = "Living Room";
+            d.icon = "💡";
+            needsSaveAfterMigration = true;
+          }
+        }
+      });
+
+      if (needsSaveAfterMigration) {
+        saveState();
+        autoBackupToDriveSilently("switches_separated");
+      }
+
       showScreen("app");
     } else if (cid && sec && uid) {
       appMode = "live";
@@ -2831,21 +3136,91 @@ function doGet(e) {
         const curPowerDp = statusList.find(s => s && (s.code === "cur_power" || s.code === "power" || s.code === "cur_power_1"));
         const hasNativeMeter = Boolean(curPowerDp);
 
+        let customMap = {};
+        try {
+          customMap = JSON.parse(localStorage.getItem("omnia_device_customizations") || "{}");
+        } catch(e){}
+
         switchDps.forEach((dp, gIdx) => {
+          const devKey = `${d.id}_${dp.code}`;
+          const cust = customMap[devKey];
           const meta = inferApplianceMeta(dName, dp.code, switchDps.length, gIdx);
-          const isNat = hasNativeMeter || meta.isAtomberg;
+
+          let appName = (cust && cust.name) ? cust.name : meta.name;
+          let appRoom = (cust && cust.room) ? cust.room : roomName;
+          let appIcon = (cust && cust.icon) ? cust.icon : meta.icon;
+          let isAt = cust ? Boolean(cust.isAtomberg) : meta.isAtomberg;
+          let fanV = cust ? (cust.fanVendor || (isAt ? "atomberg" : "")) : (meta.isAtomberg ? "atomberg" : "");
+          let fSpd = (cust && cust.fanSpeed !== undefined) ? cust.fanSpeed : (isAt ? 4 : undefined);
+          let rWatts = (cust && cust.ratedWatts !== undefined) ? cust.ratedWatts : meta.ratedWatts;
+          let isNat = hasNativeMeter || isAt;
+
+          // Hardware-level mapping for user's 3CH Zigbee Switch Module
+          if (!cust && d.id === "d76253e070e8452f5flcjy") {
+            if (dp.code === "switch_1") {
+              appName = "TV";
+              appRoom = "Living Room";
+              appIcon = "📺";
+              rWatts = 110;
+              isAt = false;
+              isNat = false;
+            } else if (dp.code === "switch_2") {
+              appName = "Show Light";
+              appRoom = "Living Room";
+              appIcon = "💡";
+              rWatts = 15;
+              isAt = false;
+              isNat = false;
+            } else if (dp.code === "switch_3") {
+              appName = "Showlight 2";
+              appRoom = "Living Room";
+              appIcon = "💡";
+              rWatts = 15;
+              isAt = false;
+              isNat = false;
+            }
+          }
+
+          // Hardware-level mapping for Captain Fan (Kids Room switch_1)
+          if (!cust && d.id === "d7445ccfc6da215112azo4" && dp.code === "switch_1") {
+            appName = "Captain Fan";
+            appRoom = "Kids Room";
+            appIcon = "🌀";
+            isAt = true;
+            fanV = "atomberg";
+            fSpd = 4;
+            rWatts = 28;
+            isNat = true;
+          }
+
+          // Hardware-level mapping for 2CH Zigbee Switch Module
+          if (!cust && d.id === "d709a5c7d939120fdcnk4j") {
+            if (dp.code === "switch_1") {
+              appName = "2CH Switch 1";
+              appRoom = "Living Room";
+              appIcon = "💡";
+            } else if (dp.code === "switch_2") {
+              appName = "2CH Switch 2";
+              appRoom = "Living Room";
+              appIcon = "💡";
+            }
+          }
+
+          uniqueRoomsSet.add(appRoom);
+
           newAppliances.push({
-            id: `${d.id}_${dp.code}`,
+            id: devKey,
             cid: d.id,
             dp_code: dp.code,
-            name: meta.name,
-            room: roomName,
-            icon: meta.icon,
-            isAtomberg: meta.isAtomberg,
+            name: appName,
+            room: appRoom,
+            icon: appIcon,
+            isAtomberg: isAt,
+            fanVendor: fanV,
+            fanSpeed: fSpd,
             isNativePower: isNat,
             powerSource: isNat ? 'native' : 'assumed',
-            fanSpeed: meta.isAtomberg ? 4 : undefined,
-            ratedWatts: meta.ratedWatts,
+            ratedWatts: rWatts,
             currentLevelPercent: 100,
             isOnline: isDevOnline,
             isOn: isDevOnline && Boolean(dp.value),
@@ -3810,14 +4185,16 @@ function doGet(e) {
         : `<div class="runtime-pill">⏱️ ${runtimeStr} • ${todayCostOrUnits}</div>`;
 
       let sourceBadgeHtml = '';
-      if (d.isNativePower) {
-        sourceBadgeHtml = `<span class="source-badge native" title="Direct hardware telemetry / calibrated BLDC profile">⚡ Native Device</span>`;
+      if (d.isNativePower && d.isAtomberg) {
+        sourceBadgeHtml = `<span class="source-badge native" style="cursor:pointer;" title="Atomberg BLDC Profile. Tap to configure" onclick="openDeviceConfigModal(${idx}, event)">⚡ Atomberg BLDC (${ATOMBERG_SPEED_WATTS[d.fanSpeed || 4]}W) ✎</span>`;
+      } else if (d.isNativePower) {
+        sourceBadgeHtml = `<span class="source-badge native" style="cursor:pointer;" title="Direct hardware telemetry / calibrated BLDC profile. Tap to configure" onclick="openDeviceConfigModal(${idx}, event)">⚡ Native Device ✎</span>`;
       } else if (d.isOn && d.thermostatState === 'idle_hot') {
-        sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(234,179,8,0.18);color:#facc15;border:1px solid rgba(234,179,8,0.4);" title="AI CT Disaggregation: Water is fully heated. Internal thermostat is idle (0W draw) while switch relay is ON. Tap to adjust." onclick="promptEditDeviceAssumption(${idx}, event)">🔥 Water Hot • Thermostat Idle (0W) [AI] ✎</span>`;
+        sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(234,179,8,0.18);color:#facc15;border:1px solid rgba(234,179,8,0.4);cursor:pointer;" title="AI CT Disaggregation: Water is fully heated. Internal thermostat is idle (0W draw) while switch relay is ON. Tap to configure." onclick="openDeviceConfigModal(${idx}, event)">🔥 Water Hot • Thermostat Idle (0W) [AI] ✎</span>`;
       } else if (d.isOn && d.thermostatState === 'heating') {
-        sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(244,63,94,0.18);color:#fb7185;border:1px solid rgba(244,63,94,0.4);" title="AI CT Disaggregation: Heating element active. CT load confirms full ~2000W draw. Tap to adjust." onclick="promptEditDeviceAssumption(${idx}, event)">♨️ Heating Active (~${w.toFixed(0)}W) [AI Verified] ✎</span>`;
+        sourceBadgeHtml = `<span class="source-badge assumed" style="background:rgba(244,63,94,0.18);color:#fb7185;border:1px solid rgba(244,63,94,0.4);cursor:pointer;" title="AI CT Disaggregation: Heating element active. CT load confirms full ~2000W draw. Tap to configure." onclick="openDeviceConfigModal(${idx}, event)">♨️ Heating Active (~${w.toFixed(0)}W) [AI Verified] ✎</span>`;
       } else {
-        sourceBadgeHtml = `<span class="source-badge assumed" title="Calculated assumption. Tap to adjust wattage" onclick="promptEditDeviceAssumption(${idx}, event)">📐 Calculated (${d.ratedWatts}W assumed) ✎</span>`;
+        sourceBadgeHtml = `<span class="source-badge assumed" style="cursor:pointer;" title="Calculated assumption. Tap to configure name, type & vendor" onclick="openDeviceConfigModal(${idx}, event)">📐 Calculated (${d.ratedWatts}W assumed) ✎</span>`;
       }
 
       let powerTagHtml = '';
@@ -3862,8 +4239,11 @@ function doGet(e) {
             <div class="app-info">
               <div class="app-avatar">${d.icon || '🔌'}</div>
               <div>
-                <div class="app-title">${d.name}</div>
-                <div class="app-room">${d.room} • ${d.isAtomberg ? 'BLDC Fan' : (d.isCtMeter ? 'Grid Energy Meter' : (d.dp_code || 'Smart Load'))}</div>
+                <div class="app-title" style="display:flex;align-items:center;gap:6px;">
+                  <span>${d.name}</span>
+                  <span style="font-size:12px;color:var(--sky);cursor:pointer;opacity:0.85;" title="Configure Appliance & Vendor" onclick="openDeviceConfigModal(${idx}, event)">✏️</span>
+                </div>
+                <div class="app-room">${d.room} • ${d.isAtomberg ? 'Atomberg BLDC Fan' : (d.isCtMeter ? 'Grid Energy Meter' : (d.dp_code || 'Smart Load'))}</div>
                 ${runtimePillHtml}
                 <div>${sourceBadgeHtml}</div>
               </div>
