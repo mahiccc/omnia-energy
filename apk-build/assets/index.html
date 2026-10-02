@@ -529,6 +529,32 @@
     font-size: 10.5px;
     font-weight: 700;
   }
+  .source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    user-select: none;
+    line-height: 1.3;
+  }
+  .source-badge.native {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+  .source-badge.assumed {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px dashed rgba(245, 158, 11, 0.4);
+    cursor: pointer;
+  }
+  .source-badge.assumed:active {
+    transform: scale(0.96);
+  }
   .app-power-tag {
     font-size: 14px;
     font-weight: 800;
@@ -870,7 +896,7 @@
     </div>
     <div class="onboard-feature-item">
       <span style="font-size:18px;">💰</span>
-      <span><strong>Live Burn Rate:</strong> Real-time ₹/hour meter, monthly projection, and saving recommendations.</span>
+      <span><strong>Live Burn Rate:</strong> Real-time cost & burn rate meter, monthly projection, and saving recommendations.</span>
     </div>
   </div>
 
@@ -880,7 +906,7 @@
 
     <div class="field" style="margin-top:0;margin-bottom:14px;">
       <label>Google / Gmail Account</label>
-      <input type="email" id="loginEmailInput" value="user@gmail.com" placeholder="name@gmail.com" />
+      <input type="email" id="loginEmailInput" placeholder="Enter your Gmail address..." autocomplete="email" onkeydown="if(event.key==='Enter')handleGoogleSignIn()" />
     </div>
 
     <button class="google-btn" onclick="handleGoogleSignIn()">
@@ -909,6 +935,67 @@
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
     <div style="font-size:12px;color:var(--muted);" id="setupUserTag">Signed in as user@gmail.com</div>
     <button class="step-btn" style="width:auto;padding:4px 10px;font-size:11px;" onclick="handleSignOut()">Sign Out</button>
+  </div>
+
+  <!-- ONBOARDING REGION, CURRENCY & TARIFF CARD -->
+  <div class="onboard-card" style="margin-bottom:14px;border-color:rgba(56,189,248,0.35);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div class="cat-icon" style="background:rgba(56,189,248,0.18);color:#38bdf8;">🌍</div>
+      <div>
+        <div class="section-title" style="margin-bottom:0;">Currency & Electricity Tariff</div>
+        <div style="font-size:11.5px;color:var(--muted);">Set currency and unit rate or track units only</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin:0;">Country & Currency</label>
+        <span id="onboardCountryDetectBadge" style="font-size:10.5px;background:rgba(16,185,129,0.15);color:#34d399;padding:1px 6px;border-radius:4px;">✨ Auto-detected</span>
+      </div>
+      <select id="onboardCountrySelect" onchange="onOnboardCountryChange()">
+        <option value="IN">🇮🇳 India (INR - ₹)</option>
+        <option value="US">🇺🇸 United States (USD - $)</option>
+        <option value="GB">🇬🇧 United Kingdom (GBP - £)</option>
+        <option value="DE">🇩🇪 Germany (EUR - €)</option>
+        <option value="FR">🇫🇷 France (EUR - €)</option>
+        <option value="ES">🇪🇸 Spain (EUR - €)</option>
+        <option value="IT">🇮🇹 Italy (EUR - €)</option>
+        <option value="NL">🇳🇱 Netherlands (EUR - €)</option>
+        <option value="EU">🇪🇺 European Union (EUR - €)</option>
+        <option value="CA">🇨🇦 Canada (CAD - C$)</option>
+        <option value="AU">🇦🇺 Australia (AUD - A$)</option>
+        <option value="AE">🇦🇪 United Arab Emirates (AED)</option>
+        <option value="SG">🇸🇬 Singapore (SGD - S$)</option>
+        <option value="JP">🇯🇵 Japan (JPY - ¥)</option>
+        <option value="BR">🇧🇷 Brazil (BRL - R$)</option>
+        <option value="ZA">🇿🇦 South Africa (ZAR - R)</option>
+        <option value="CUSTOM">🌐 Other / Custom Currency</option>
+      </select>
+    </div>
+
+    <div class="field" id="onboardCustomCurrencyField" style="display:none;">
+      <label>Custom Currency Symbol</label>
+      <input type="text" id="onboardCustomCurrencySymbol" placeholder="e.g. $, CHF, kr, ₪" maxlength="6" oninput="onOnboardCustomCurrencyInput()" />
+    </div>
+
+    <div class="field" id="onboardTariffField">
+      <label id="onboardTariffLabel">Electricity Unit Rate (₹ per kWh / Unit)</label>
+      <input type="number" step="0.01" id="onboardTariffRate" value="8.00" oninput="onOnboardTariffInput()" />
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="onboardTariffHint">
+        Standard residential benchmark for India is ₹8.00/kWh.
+      </div>
+    </div>
+
+    <div style="background:var(--surface-soft);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:12px;font-weight:700;">Skip Unit Rate (Units Only)</div>
+        <div style="font-size:10.5px;color:var(--muted);">Show energy in raw kWh / units without cost calculation</div>
+      </div>
+      <label class="switch-toggle" style="margin-left:12px;">
+        <input type="checkbox" id="onboardSkipTariffToggle" onchange="onOnboardSkipTariffToggle(this.checked)" />
+        <span class="switch-slider"></span>
+      </label>
+    </div>
   </div>
 
   <div class="onboard-card">
@@ -1170,22 +1257,71 @@
           <div class="budget-track">
             <div class="budget-fill" id="budgetFillBar" style="width:45%;"></div>
           </div>
+      </div>
+
+      <!-- Currency & Tariff Configuration Card -->
+      <div class="card" style="border-color:rgba(56,189,248,0.35);">
+        <div class="section-title">⚙️ Currency & Tariff Settings</div>
+        <div class="section-sub">Configure currency, electricity unit rate or pure kWh mode</div>
+
+        <div class="field" style="margin-top:10px;">
+          <label>Country / Currency</label>
+          <select id="settingsCountrySelect" onchange="onSettingsCountryChange()">
+            <option value="IN">🇮🇳 India (INR - ₹)</option>
+            <option value="US">🇺🇸 United States (USD - $)</option>
+            <option value="GB">🇬🇧 United Kingdom (GBP - £)</option>
+            <option value="DE">🇩🇪 Germany (EUR - €)</option>
+            <option value="FR">🇫🇷 France (EUR - €)</option>
+            <option value="ES">🇪🇸 Spain (EUR - €)</option>
+            <option value="IT">🇮🇹 Italy (EUR - €)</option>
+            <option value="NL">🇳🇱 Netherlands (EUR - €)</option>
+            <option value="EU">🇪🇺 European Union (EUR - €)</option>
+            <option value="CA">🇨🇦 Canada (CAD - C$)</option>
+            <option value="AU">🇦🇺 Australia (AUD - A$)</option>
+            <option value="AE">🇦🇪 United Arab Emirates (AED)</option>
+            <option value="SG">🇸🇬 Singapore (SGD - S$)</option>
+            <option value="JP">🇯🇵 Japan (JPY - ¥)</option>
+            <option value="BR">🇧🇷 Brazil (BRL - R$)</option>
+            <option value="ZA">🇿🇦 South Africa (ZAR - R)</option>
+            <option value="CUSTOM">🌐 Other / Custom Currency</option>
+          </select>
         </div>
 
-        <div class="field" style="margin-top:12px;">
-          <label>Electricity Tariff Rate (₹ per Unit / kWh)</label>
-          <input type="number" step="0.5" id="tariffRateInput" value="8.0" onchange="updateTariffRate(this.value)" />
+        <div class="field" id="settingsCustomCurrencyField" style="display:none;">
+          <label>Custom Currency Symbol</label>
+          <input type="text" id="settingsCustomCurrencySymbol" placeholder="e.g. $, CHF, kr, ₪" maxlength="6" oninput="onSettingsCustomCurrencyInput()" />
+        </div>
+
+        <div style="background:var(--surface-soft);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:12px;font-weight:700;">Calculate Cost in Currency</div>
+            <div style="font-size:10.5px;color:var(--muted);" id="tariffToggleDesc">Disable to track pure units (kWh) without pricing</div>
+          </div>
+          <label class="switch-toggle" style="margin-left:12px;">
+            <input type="checkbox" id="settingsTariffEnabledToggle" checked onchange="onSettingsTariffToggle(this.checked)" />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="field" id="settingsTariffRateField">
+          <label id="settingsTariffLabel">Electricity Unit Rate (₹ per kWh / Unit)</label>
+          <input type="number" step="0.01" id="tariffRateInput" value="8.00" onchange="updateTariffRate(this.value)" />
+        </div>
+
+        <div class="field" id="settingsBudgetField">
+          <label id="settingsBudgetLabel">Monthly Target Budget (₹)</label>
+          <input type="number" step="50" id="settingsBudgetInput" value="2500" onchange="updateMonthlyBudget(this.value)" />
         </div>
       </div>
 
       <div class="card">
-        <div class="section-title">📊 Last 7 Days Electricity Cost (₹)</div>
-        <div class="section-sub">Green bar shows today's live accumulated cost</div>
+        <div class="section-title" id="weeklyChartTitle">📊 Last 7 Days Electricity Cost (₹)</div>
+        <div class="section-sub" id="weeklyChartSub">Green bar shows today's live accumulated cost</div>
         <div class="chart-bars" id="weeklyChartBars"></div>
       </div>
 
       <div class="card">
-        <div class="section-title">📅 Recent Monthly Bills</div>
+        <div class="section-title" id="monthlyChartTitle">📅 Recent Monthly Bills</div>
         <div class="section-sub">Comparison with past months</div>
         <div class="chart-bars" id="monthlyChartBars" style="grid-template-columns: repeat(4, 1fr);"></div>
       </div>
@@ -1211,6 +1347,17 @@
           </div>
         </div>
         <button class="step-btn" style="width:auto;padding:5px 12px;font-size:11.5px;" onclick="handleSignOut()">Sign Out</button>
+      </div>
+
+      <!-- Region & Tariff Summary Strip in Connectors -->
+      <div class="card" style="padding:12px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);" id="connectorsRegionSummary">🌍 Country: India (INR - ₹)</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="connectorsTariffSummary">Rate: ₹8.00 / kWh • Cost calculation active</div>
+          </div>
+          <button class="step-btn" style="width:auto;padding:5px 12px;font-size:11px;" onclick="switchTab('savings')">Configure ➔</button>
+        </div>
       </div>
 
       <!-- Active Mode & Universal Actions Card -->
@@ -1433,35 +1580,56 @@
     6: 28.0 // Boost
   };
 
-  // Realistic Showcase Demo Appliances across common rooms
+  // Known Countries, Currency Symbols, and Residential Electricity Tariffs (per kWh)
+  const KNOWN_COUNTRY_CONFIGS = {
+    IN: { name: "India", currency: "INR", symbol: "₹", tariff: 8.00, flag: "🇮🇳" },
+    US: { name: "United States", currency: "USD", symbol: "$", tariff: 0.16, flag: "🇺🇸" },
+    GB: { name: "United Kingdom", currency: "GBP", symbol: "£", tariff: 0.26, flag: "🇬🇧" },
+    DE: { name: "Germany", currency: "EUR", symbol: "€", tariff: 0.38, flag: "🇩🇪" },
+    FR: { name: "France", currency: "EUR", symbol: "€", tariff: 0.25, flag: "🇫🇷" },
+    ES: { name: "Spain", currency: "EUR", symbol: "€", tariff: 0.24, flag: "🇪🇸" },
+    IT: { name: "Italy", currency: "EUR", symbol: "€", tariff: 0.32, flag: "🇮🇹" },
+    NL: { name: "Netherlands", currency: "EUR", symbol: "€", tariff: 0.30, flag: "🇳🇱" },
+    EU: { name: "European Union", currency: "EUR", symbol: "€", tariff: 0.28, flag: "🇪🇺" },
+    CA: { name: "Canada", currency: "CAD", symbol: "C$", tariff: 0.15, flag: "🇨🇦" },
+    AU: { name: "Australia", currency: "AUD", symbol: "A$", tariff: 0.32, flag: "🇦🇺" },
+    AE: { name: "United Arab Emirates", currency: "AED", symbol: "AED ", tariff: 0.32, flag: "🇦🇪" },
+    SG: { name: "Singapore", currency: "SGD", symbol: "S$", tariff: 0.30, flag: "🇸🇬" },
+    JP: { name: "Japan", currency: "JPY", symbol: "¥", tariff: 31.0, flag: "🇯🇵" },
+    BR: { name: "Brazil", currency: "BRL", symbol: "R$", tariff: 0.85, flag: "🇧🇷" },
+    ZA: { name: "South Africa", currency: "ZAR", symbol: "R ", tariff: 2.80, flag: "🇿🇦" },
+    CUSTOM: { name: "Other / Custom", currency: "USD", symbol: "$", tariff: 0.20, flag: "🌐" }
+  };
+
+  // Realistic Showcase Demo Appliances with source classification (native telemetry vs assumed calculation)
   const DEFAULT_DEMO_APPLIANCES = [
-    { id: "demo_lr_tv", cid: "", dp_code: "demo", name: "55\" 4K Smart TV", room: "Living Room", icon: "📺", isAtomberg: false, ratedWatts: 110, currentLevelPercent: 100, isOn: true, todaySeconds: 7200, todayWh: 220.0 },
-    { id: "demo_lr_fan", cid: "", dp_code: "demo", name: "Living Atomberg BLDC Fan", room: "Living Room", icon: "🌀", isAtomberg: true, fanSpeed: 4, ratedWatts: 28, currentLevelPercent: 100, isOn: true, todaySeconds: 14400, todayWh: 224.0 },
-    { id: "demo_lr_light", cid: "", dp_code: "demo", name: "Living Ambient Profile LED", room: "Living Room", icon: "✨", isAtomberg: false, ratedWatts: 25, currentLevelPercent: 100, isOn: true, todaySeconds: 10800, todayWh: 75.0 },
-    { id: "demo_lr_ac", cid: "", dp_code: "demo", name: "Living Inverter AC", room: "Living Room", icon: "❄️", isAtomberg: false, ratedWatts: 1400, currentLevelPercent: 100, isOn: false, todaySeconds: 0, todayWh: 0.0 },
-    { id: "demo_mbr_ac", cid: "", dp_code: "demo", name: "Master Bedroom AC", room: "Master Bedroom", icon: "❄️", isAtomberg: false, ratedWatts: 1200, currentLevelPercent: 100, isOn: true, todaySeconds: 18000, todayWh: 6000.0 },
-    { id: "demo_mbr_fan", cid: "", dp_code: "demo", name: "MBR Atomberg BLDC Fan", room: "Master Bedroom", icon: "🌀", isAtomberg: true, fanSpeed: 3, ratedWatts: 28, currentLevelPercent: 100, isOn: true, todaySeconds: 21600, todayWh: 237.6 },
-    { id: "demo_mbr_light", cid: "", dp_code: "demo", name: "MBR Reading Lamp", room: "Master Bedroom", icon: "💡", isAtomberg: false, ratedWatts: 20, currentLevelPercent: 100, isOn: false, todaySeconds: 3600, todayWh: 20.0 },
-    { id: "demo_mbr_geyser", cid: "", dp_code: "demo", name: "Master Bath Geyser", room: "Master Bedroom", icon: "🚿", isAtomberg: false, ratedWatts: 2000, currentLevelPercent: 100, isOn: false, todaySeconds: 2400, todayWh: 1333.3 },
-    { id: "demo_kit_fridge", cid: "", dp_code: "demo", name: "Double-Door Refrigerator", room: "Kitchen", icon: "🧊", isAtomberg: false, ratedWatts: 160, currentLevelPercent: 100, isOn: true, todaySeconds: 43200, todayWh: 1920.0 },
-    { id: "demo_kit_chimney", cid: "", dp_code: "demo", name: "Kitchen Exhaust Chimney", room: "Kitchen", icon: "🍳", isAtomberg: false, ratedWatts: 180, currentLevelPercent: 100, isOn: false, todaySeconds: 1800, todayWh: 90.0 },
-    { id: "demo_din_fan", cid: "", dp_code: "demo", name: "Dining Atomberg BLDC Fan", room: "Dining", icon: "🌀", isAtomberg: true, fanSpeed: 2, ratedWatts: 28, currentLevelPercent: 100, isOn: true, todaySeconds: 7200, todayWh: 50.4 },
-    { id: "demo_din_light", cid: "", dp_code: "demo", name: "Dining Chandelier", room: "Dining", icon: "💡", isAtomberg: false, ratedWatts: 40, currentLevelPercent: 100, isOn: false, todaySeconds: 1800, todayWh: 20.0 }
+    { id: "demo_lr_tv", cid: "", dp_code: "demo", name: "55\" 4K Smart TV", room: "Living Room", icon: "📺", isAtomberg: false, isNativePower: false, ratedWatts: 110, currentLevelPercent: 100, isOn: true, todaySeconds: 7200, todayWh: 220.0 },
+    { id: "demo_lr_fan", cid: "", dp_code: "demo", name: "Living Atomberg BLDC Fan", room: "Living Room", icon: "🌀", isAtomberg: true, isNativePower: true, fanSpeed: 4, ratedWatts: 28, currentLevelPercent: 100, isOn: true, todaySeconds: 14400, todayWh: 224.0 },
+    { id: "demo_lr_light", cid: "", dp_code: "demo", name: "Living Ambient Profile LED", room: "Living Room", icon: "✨", isAtomberg: false, isNativePower: false, ratedWatts: 25, currentLevelPercent: 100, isOn: true, todaySeconds: 10800, todayWh: 75.0 },
+    { id: "demo_lr_ac", cid: "", dp_code: "demo", name: "Living Inverter AC", room: "Living Room", icon: "❄️", isAtomberg: false, isNativePower: false, ratedWatts: 1400, currentLevelPercent: 100, isOn: false, todaySeconds: 0, todayWh: 0.0 },
+    { id: "demo_mbr_ac", cid: "", dp_code: "demo", name: "Master Bedroom AC", room: "Master Bedroom", icon: "❄️", isAtomberg: false, isNativePower: false, ratedWatts: 1200, currentLevelPercent: 100, isOn: true, todaySeconds: 18000, todayWh: 6000.0 },
+    { id: "demo_mbr_fan", cid: "", dp_code: "demo", name: "MBR Atomberg BLDC Fan", room: "Master Bedroom", icon: "🌀", isAtomberg: true, isNativePower: true, fanSpeed: 3, ratedWatts: 28, currentLevelPercent: 100, isOn: true, todaySeconds: 21600, todayWh: 237.6 },
+    { id: "demo_mbr_light", cid: "", dp_code: "demo", name: "MBR Reading Lamp", room: "Master Bedroom", icon: "💡", isAtomberg: false, isNativePower: false, ratedWatts: 20, currentLevelPercent: 100, isOn: false, todaySeconds: 3600, todayWh: 20.0 },
+    { id: "demo_mbr_geyser", cid: "", dp_code: "demo", name: "Master Bath Geyser", room: "Master Bedroom", icon: "🚿", isAtomberg: false, isNativePower: false, ratedWatts: 2000, currentLevelPercent: 100, isOn: false, todaySeconds: 2400, todayWh: 1333.3 },
+    { id: "demo_kit_fridge", cid: "", dp_code: "demo", name: "Double-Door Refrigerator", room: "Kitchen", icon: "🧊", isAtomberg: false, isNativePower: false, ratedWatts: 160, currentLevelPercent: 100, isOn: true, todaySeconds: 43200, todayWh: 1920.0 },
+    { id: "demo_kit_chimney", cid: "", dp_code: "demo", name: "Kitchen Exhaust Chimney", room: "Kitchen", icon: "🍳", isAtomberg: false, isNativePower: false, ratedWatts: 180, currentLevelPercent: 100, isOn: false, todaySeconds: 1800, todayWh: 90.0 },
+    { id: "demo_din_fan", cid: "", dp_code: "demo", name: "Dining Atomberg BLDC Fan", room: "Dining", icon: "🌀", isAtomberg: true, isNativePower: true, fanSpeed: 2, ratedWatts: 28, currentLevelPercent: 100, isOn: true, todaySeconds: 7200, todayWh: 50.4 },
+    { id: "demo_din_light", cid: "", dp_code: "demo", name: "Dining Chandelier", room: "Dining", icon: "💡", isAtomberg: false, isNativePower: false, ratedWatts: 40, currentLevelPercent: 100, isOn: false, todaySeconds: 1800, todayWh: 20.0 }
   ];
 
-  const PAST_6_DAYS_INR = [
-    { day: "Tue", rs: 68 },
-    { day: "Wed", rs: 74 },
-    { day: "Thu", rs: 62 },
-    { day: "Fri", rs: 79 },
-    { day: "Sat", rs: 92 },
-    { day: "Sun", rs: 85 }
+  const PAST_6_DAYS_KWH = [
+    { day: "Tue", kwh: 8.5 },
+    { day: "Wed", kwh: 9.25 },
+    { day: "Thu", kwh: 7.75 },
+    { day: "Fri", kwh: 9.87 },
+    { day: "Sat", kwh: 11.5 },
+    { day: "Sun", kwh: 10.6 }
   ];
 
-  const PAST_MONTHS_BILL = [
-    { mo: "Jul", rs: 1940 },
-    { mo: "Aug", rs: 2180 },
-    { mo: "Sep", rs: 2030 }
+  const PAST_MONTHS_KWH = [
+    { mo: "Jul", kwh: 242.5 },
+    { mo: "Aug", kwh: 272.5 },
+    { mo: "Sep", kwh: 253.7 }
   ];
 
   // App State Variables
@@ -1470,7 +1638,11 @@
   let devices = [];
   let discoveredMeters = []; // [{ id, name, category }]
   let selectedRoom = "All Rooms";
+  let selectedCountryCode = "IN";
+  let currencySymbol = "₹";
+  let currencyCode = "INR";
   let tariffPerKwh = 8.0;
+  let isTariffEnabled = true; // true = compute monetary costs; false = show units/kWh only
   let monthlyBudgetInr = 2500.0;
   let cachedTuyaToken = "";
 
@@ -1495,7 +1667,13 @@
 
   function handleGoogleSignIn() {
     haptic(20);
-    const email = document.getElementById("loginEmailInput").value.trim() || "user@gmail.com";
+    const email = document.getElementById("loginEmailInput").value.trim();
+    if (!email) {
+      showToast("⚠️ Please enter your Gmail address to continue");
+      const inp = document.getElementById("loginEmailInput");
+      if (inp) inp.focus();
+      return;
+    }
     currentUserEmail = email;
     localStorage.setItem("omnia_user_email", email);
     if (hasNativeBridge()) {
@@ -1532,6 +1710,12 @@
     localStorage.removeItem("omnia_live_home_devices");
     localStorage.removeItem("omnia_discovered_meters");
     localStorage.removeItem("omnia_home_mode");
+    localStorage.removeItem("omnia_country_code");
+    localStorage.removeItem("omnia_currency_symbol");
+    localStorage.removeItem("omnia_currency_code");
+    localStorage.removeItem("omnia_tariff_v4");
+    localStorage.removeItem("omnia_tariff_enabled");
+    localStorage.removeItem("omnia_budget_v4");
     if (hasNativeBridge()) {
       window.OmniaNative.saveSecurePref("user_email", "");
       window.OmniaNative.saveSecurePref("tuya_client_id", "");
@@ -1539,6 +1723,11 @@
       window.OmniaNative.saveSecurePref("tuya_uid", "");
       window.OmniaNative.saveSecurePref("atomberg_api_key", "");
       window.OmniaNative.saveSecurePref("atomberg_refresh_token", "");
+      window.OmniaNative.saveSecurePref("country_code", "");
+      window.OmniaNative.saveSecurePref("currency_symbol", "");
+      window.OmniaNative.saveSecurePref("currency_code", "");
+      window.OmniaNative.saveSecurePref("tariff_rate", "");
+      window.OmniaNative.saveSecurePref("tariff_enabled", "");
     }
     document.getElementById("cfgTuyaClientId").value = "";
     document.getElementById("cfgTuyaClientSecret").value = "";
@@ -1646,6 +1835,257 @@
     return (watts / 1000.0) * tariffPerKwh;
   }
 
+  function formatBurnRate(watts) {
+    if (isTariffEnabled) {
+      const hrCost = (watts / 1000.0) * tariffPerKwh;
+      return `Costs ≈ ${currencySymbol}${hrCost.toFixed(2)} / hour`;
+    } else {
+      const hrUnits = watts / 1000.0;
+      return `Burn Rate: ${hrUnits.toFixed(3)} units/hr`;
+    }
+  }
+
+  function formatCostOrUnits(kwh, decimals = 2) {
+    if (isTariffEnabled) {
+      const cost = kwh * tariffPerKwh;
+      return `${currencySymbol}${cost.toFixed(decimals)}`;
+    } else {
+      return `${kwh.toFixed(decimals)} units`;
+    }
+  }
+
+  function formatShortCostOrUnits(kwh) {
+    if (isTariffEnabled) {
+      return `${currencySymbol}${Math.round(kwh * tariffPerKwh)}`;
+    } else {
+      return `${kwh.toFixed(1)}u`;
+    }
+  }
+
+  function formatRatePerHour(watts) {
+    if (isTariffEnabled) {
+      const hrCost = (watts / 1000.0) * tariffPerKwh;
+      return `${currencySymbol}${hrCost.toFixed(2)}/hr`;
+    } else {
+      const hrUnits = watts / 1000.0;
+      return `${hrUnits.toFixed(2)} u/hr`;
+    }
+  }
+
+  // ===========================================================================
+  // COUNTRY & CURRENCY AUTO-DETECTION & CONFIGURATION
+  // ===========================================================================
+  function autoDetectCountryAndTariff() {
+    let code = "";
+    // 1. Android Native bridge locale
+    if (hasNativeBridge() && window.OmniaNative.getSystemCountryCode) {
+      try {
+        const cc = window.OmniaNative.getSystemCountryCode();
+        if (cc && cc.length === 2) code = cc.toUpperCase();
+      } catch (e) {}
+    }
+
+    // 2. Browser TimeZone heuristic
+    if (!code) {
+      try {
+        const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || "").toLowerCase();
+        if (tz.includes("kolkata") || tz.includes("calcutta") || tz.includes("india")) code = "IN";
+        else if (tz.includes("london")) code = "GB";
+        else if (tz.includes("new_york") || tz.includes("chicago") || tz.includes("los_angeles") || tz.includes("denver")) code = "US";
+        else if (tz.includes("berlin")) code = "DE";
+        else if (tz.includes("paris")) code = "FR";
+        else if (tz.includes("madrid")) code = "ES";
+        else if (tz.includes("rome")) code = "IT";
+        else if (tz.includes("amsterdam")) code = "NL";
+        else if (tz.includes("sydney") || tz.includes("melbourne") || tz.includes("perth") || tz.includes("brisbane")) code = "AU";
+        else if (tz.includes("toronto") || tz.includes("vancouver") || tz.includes("montreal")) code = "CA";
+        else if (tz.includes("dubai")) code = "AE";
+        else if (tz.includes("singapore")) code = "SG";
+        else if (tz.includes("tokyo")) code = "JP";
+        else if (tz.includes("sao_paulo")) code = "BR";
+        else if (tz.includes("johannesburg")) code = "ZA";
+      } catch (e) {}
+    }
+
+    // 3. Browser Language
+    if (!code && navigator.language) {
+      const parts = navigator.language.split("-");
+      if (parts.length > 1 && parts[1].length === 2) {
+        code = parts[1].toUpperCase();
+      }
+    }
+
+    if (code && KNOWN_COUNTRY_CONFIGS[code]) {
+      return { countryCode: code, ...KNOWN_COUNTRY_CONFIGS[code] };
+    }
+    return { countryCode: "IN", ...KNOWN_COUNTRY_CONFIGS["IN"] };
+  }
+
+  function applyCurrencyAndTariffConfig(countryCode, sym, rate, enabled, customCode = "") {
+    selectedCountryCode = countryCode || "IN";
+    const cfg = KNOWN_COUNTRY_CONFIGS[selectedCountryCode] || KNOWN_COUNTRY_CONFIGS["CUSTOM"];
+    currencySymbol = sym || cfg.symbol;
+    currencyCode = customCode || cfg.currency;
+    tariffPerKwh = typeof rate === "number" ? rate : (parseFloat(rate) || cfg.tariff);
+    isTariffEnabled = Boolean(enabled);
+
+    localStorage.setItem("omnia_country_code", selectedCountryCode);
+    localStorage.setItem("omnia_currency_symbol", currencySymbol);
+    localStorage.setItem("omnia_currency_code", currencyCode);
+    localStorage.setItem("omnia_tariff_v4", String(tariffPerKwh));
+    localStorage.setItem("omnia_tariff_enabled", String(isTariffEnabled));
+    if (hasNativeBridge()) {
+      window.OmniaNative.saveSecurePref("country_code", selectedCountryCode);
+      window.OmniaNative.saveSecurePref("currency_symbol", currencySymbol);
+      window.OmniaNative.saveSecurePref("currency_code", currencyCode);
+      window.OmniaNative.saveSecurePref("tariff_rate", String(tariffPerKwh));
+      window.OmniaNative.saveSecurePref("tariff_enabled", String(isTariffEnabled));
+    }
+
+    syncCurrencyUiControls();
+  }
+
+  function syncCurrencyUiControls() {
+    // 1. Onboarding controls
+    const obCountry = document.getElementById("onboardCountrySelect");
+    if (obCountry) obCountry.value = selectedCountryCode;
+    const obTariff = document.getElementById("onboardTariffRate");
+    if (obTariff) obTariff.value = tariffPerKwh.toFixed(2);
+    const obSkip = document.getElementById("onboardSkipTariffToggle");
+    if (obSkip) obSkip.checked = !isTariffEnabled;
+    const obCustomField = document.getElementById("onboardCustomCurrencyField");
+    if (obCustomField) obCustomField.style.display = selectedCountryCode === "CUSTOM" ? "block" : "none";
+    const obTariffLbl = document.getElementById("onboardTariffLabel");
+    if (obTariffLbl) obTariffLbl.textContent = `Electricity Unit Rate (${currencySymbol} per kWh / Unit)`;
+
+    // 2. Settings tab controls
+    const stCountry = document.getElementById("settingsCountrySelect");
+    if (stCountry) stCountry.value = selectedCountryCode;
+    const stTariff = document.getElementById("tariffRateInput");
+    if (stTariff) stTariff.value = tariffPerKwh.toFixed(2);
+    const stToggle = document.getElementById("settingsTariffEnabledToggle");
+    if (stToggle) stToggle.checked = isTariffEnabled;
+    const stCustomField = document.getElementById("settingsCustomCurrencyField");
+    if (stCustomField) stCustomField.style.display = selectedCountryCode === "CUSTOM" ? "block" : "none";
+    const stTariffLbl = document.getElementById("settingsTariffLabel");
+    if (stTariffLbl) stTariffLbl.textContent = `Electricity Unit Rate (${currencySymbol} per kWh / Unit)`;
+    const stBudgetLbl = document.getElementById("settingsBudgetLabel");
+    if (stBudgetLbl) stBudgetLbl.textContent = isTariffEnabled ? `Monthly Target Budget (${currencySymbol})` : "Monthly Target Budget (Units / kWh)";
+    const stBudget = document.getElementById("settingsBudgetInput");
+    if (stBudget) stBudget.value = monthlyBudgetInr;
+
+    // 3. Connectors summary strip
+    const connRegion = document.getElementById("connectorsRegionSummary");
+    if (connRegion) {
+      const cfg = KNOWN_COUNTRY_CONFIGS[selectedCountryCode] || KNOWN_COUNTRY_CONFIGS["CUSTOM"];
+      connRegion.textContent = `🌍 Country: ${cfg.flag || '🌐'} ${cfg.name} (${currencyCode} - ${currencySymbol})`;
+    }
+    const connTariff = document.getElementById("connectorsTariffSummary");
+    if (connTariff) {
+      connTariff.textContent = isTariffEnabled
+        ? `Rate: ${currencySymbol}${tariffPerKwh.toFixed(2)} / kWh • Monetary cost active`
+        : `Mode: Raw Units Only (kWh) • Monetary cost skipped`;
+    }
+  }
+
+  function onOnboardCountryChange() {
+    const code = document.getElementById("onboardCountrySelect").value;
+    const cfg = KNOWN_COUNTRY_CONFIGS[code] || KNOWN_COUNTRY_CONFIGS["CUSTOM"];
+    applyCurrencyAndTariffConfig(code, cfg.symbol, cfg.tariff, isTariffEnabled, cfg.currency);
+    const hint = document.getElementById("onboardTariffHint");
+    if (hint) hint.textContent = `Standard benchmark for ${cfg.name} is ${cfg.symbol}${cfg.tariff.toFixed(2)}/kWh.`;
+  }
+
+  function onOnboardCustomCurrencyInput() {
+    const sym = document.getElementById("onboardCustomCurrencySymbol").value.trim() || "$";
+    applyCurrencyAndTariffConfig("CUSTOM", sym, tariffPerKwh, isTariffEnabled, "CUSTOM");
+  }
+
+  function onOnboardTariffInput() {
+    const val = parseFloat(document.getElementById("onboardTariffRate").value);
+    if (!isNaN(val) && val >= 0) {
+      tariffPerKwh = val;
+      localStorage.setItem("omnia_tariff_v4", String(tariffPerKwh));
+      if (hasNativeBridge()) window.OmniaNative.saveSecurePref("tariff_rate", String(tariffPerKwh));
+    }
+  }
+
+  function onOnboardSkipTariffToggle(checked) {
+    isTariffEnabled = !checked;
+    localStorage.setItem("omnia_tariff_enabled", String(isTariffEnabled));
+    if (hasNativeBridge()) window.OmniaNative.saveSecurePref("tariff_enabled", String(isTariffEnabled));
+    const field = document.getElementById("onboardTariffField");
+    if (field) field.style.opacity = isTariffEnabled ? "1" : "0.45";
+    syncCurrencyUiControls();
+    showToast(isTariffEnabled ? "✅ Monetary cost enabled" : "ℹ️ Switched to Units-Only mode (kWh)");
+  }
+
+  function onSettingsCountryChange() {
+    const code = document.getElementById("settingsCountrySelect").value;
+    const cfg = KNOWN_COUNTRY_CONFIGS[code] || KNOWN_COUNTRY_CONFIGS["CUSTOM"];
+    applyCurrencyAndTariffConfig(code, cfg.symbol, cfg.tariff, isTariffEnabled, cfg.currency);
+    renderAll();
+    showToast(`🌍 Country updated: ${cfg.name} (${currencySymbol})`);
+  }
+
+  function onSettingsCustomCurrencyInput() {
+    const sym = document.getElementById("settingsCustomCurrencySymbol").value.trim() || "$";
+    applyCurrencyAndTariffConfig("CUSTOM", sym, tariffPerKwh, isTariffEnabled, "CUSTOM");
+    renderAll();
+  }
+
+  function onSettingsTariffToggle(checked) {
+    isTariffEnabled = checked;
+    localStorage.setItem("omnia_tariff_enabled", String(isTariffEnabled));
+    if (hasNativeBridge()) window.OmniaNative.saveSecurePref("tariff_enabled", String(isTariffEnabled));
+    const field = document.getElementById("settingsTariffRateField");
+    if (field) field.style.opacity = isTariffEnabled ? "1" : "0.45";
+    syncCurrencyUiControls();
+    renderAll();
+    showToast(isTariffEnabled ? `✅ Showing costs in ${currencySymbol}` : "ℹ️ Showing pure consumption units (kWh)");
+  }
+
+  function updateTariffRate(val) {
+    tariffPerKwh = Math.max(0, parseFloat(val) || 0);
+    localStorage.setItem("omnia_tariff_v4", String(tariffPerKwh));
+    if (hasNativeBridge()) window.OmniaNative.saveSecurePref("tariff_rate", String(tariffPerKwh));
+    syncCurrencyUiControls();
+    renderAll();
+    showToast(`✅ Tariff updated to ${currencySymbol}${tariffPerKwh.toFixed(2)} / kWh`);
+  }
+
+  function updateMonthlyBudget(val) {
+    monthlyBudgetInr = Math.max(10, parseFloat(val) || 2500);
+    localStorage.setItem("omnia_budget_v4", String(monthlyBudgetInr));
+    if (hasNativeBridge()) window.OmniaNative.saveSecurePref("budget", String(monthlyBudgetInr));
+    renderAll();
+  }
+
+  function promptEditDeviceAssumption(idx, event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    haptic(15);
+    const d = devices[idx];
+    if (!d) return;
+    const curW = d.ratedWatts || 20;
+    const res = window.prompt(
+      `📐 Adjust Assumed Wattage for:\n"${d.name}"\n\nThis device has no direct power meter hardware, so its energy is calculated with an assumed wattage.\n\nCurrent assumed rating: ${curW} W\nEnter new wattage (1 - 5000 W):`,
+      String(curW)
+    );
+    if (res === null) return;
+    const parsed = parseFloat(res);
+    if (!isNaN(parsed) && parsed > 0 && parsed <= 10000) {
+      d.ratedWatts = Math.round(parsed * 10) / 10;
+      saveState();
+      renderAll();
+      showToast(`✅ "${d.name}" assumed load updated to ${d.ratedWatts}W`);
+    } else {
+      showToast("⚠️ Invalid wattage entered");
+    }
+  }
+
   // ===========================================================================
   // STATE MANAGEMENT & PERSISTENCE
   // ===========================================================================
@@ -1666,8 +2106,35 @@
       if (rawMeters) savedMeters = JSON.parse(rawMeters);
     } catch (e) {}
 
-    tariffPerKwh = parseFloat(localStorage.getItem("omnia_tariff_v4") || "8.0") || 8.0;
-    document.getElementById("tariffRateInput").value = tariffPerKwh;
+    // Currency & Country auto-detect or restore
+    const detected = autoDetectCountryAndTariff();
+    let savedCountry = localStorage.getItem("omnia_country_code");
+    if (!savedCountry && hasNativeBridge()) {
+      savedCountry = window.OmniaNative.getSecurePref("country_code", "");
+    }
+    selectedCountryCode = savedCountry || detected.countryCode;
+
+    const countryCfg = KNOWN_COUNTRY_CONFIGS[selectedCountryCode] || KNOWN_COUNTRY_CONFIGS["CUSTOM"];
+    currencySymbol = localStorage.getItem("omnia_currency_symbol") ||
+      (hasNativeBridge() ? window.OmniaNative.getSecurePref("currency_symbol", "") : "") ||
+      countryCfg.symbol;
+    currencyCode = localStorage.getItem("omnia_currency_code") ||
+      (hasNativeBridge() ? window.OmniaNative.getSecurePref("currency_code", "") : "") ||
+      countryCfg.currency;
+
+    const rawTariff = localStorage.getItem("omnia_tariff_v4") ||
+      (hasNativeBridge() ? window.OmniaNative.getSecurePref("tariff_rate", "") : "");
+    tariffPerKwh = rawTariff !== "" && !isNaN(parseFloat(rawTariff))
+      ? parseFloat(rawTariff)
+      : countryCfg.tariff;
+
+    const rawEnabled = localStorage.getItem("omnia_tariff_enabled") ||
+      (hasNativeBridge() ? window.OmniaNative.getSecurePref("tariff_enabled", "") : "");
+    isTariffEnabled = rawEnabled !== "false";
+
+    monthlyBudgetInr = parseFloat(localStorage.getItem("omnia_budget_v4") || "2500.0") || 2500.0;
+
+    syncCurrencyUiControls();
 
     // Load credentials from Keystore
     let cid = "", sec = "", ep = "https://openapi.tuyain.com", uid = "", driveUrl = "", atKey = "", atRef = "";
@@ -1700,25 +2167,21 @@
 
     // Determine initial view:
     if (!currentUserEmail) {
-      // 1. Fresh user / cleared storage -> Screen 1 (Login)
       showScreen("login");
       appMode = "demo";
       devices = JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
       recomputeDemoCtMeter();
     } else if (savedMode === "live" && savedLiveDevices && savedLiveDevices.length > 0) {
-      // 2. User logged in and home configured -> Screen 3 (Dashboard)
       appMode = "live";
       devices = savedLiveDevices;
       discoveredMeters = savedMeters || [];
       showScreen("app");
     } else if (cid && sec && uid) {
-      // 3. User logged in with keys ready -> Screen 3 with auto sync
       appMode = "live";
       devices = savedLiveDevices || JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
       discoveredMeters = savedMeters || [];
       showScreen("app");
     } else {
-      // 4. User logged in but no smart home configured -> Screen 2 (Setup Tuya)
       showScreen("tuya");
       appMode = "demo";
       devices = JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
@@ -1733,6 +2196,12 @@
         localStorage.setItem("omnia_discovered_meters", JSON.stringify(discoveredMeters));
       }
       localStorage.setItem("omnia_home_mode", appMode);
+      localStorage.setItem("omnia_country_code", selectedCountryCode);
+      localStorage.setItem("omnia_currency_symbol", currencySymbol);
+      localStorage.setItem("omnia_currency_code", currencyCode);
+      localStorage.setItem("omnia_tariff_v4", String(tariffPerKwh));
+      localStorage.setItem("omnia_tariff_enabled", String(isTariffEnabled));
+      localStorage.setItem("omnia_budget_v4", String(monthlyBudgetInr));
     } catch (e) {}
   }
 
@@ -1745,12 +2214,6 @@
     window.OmniaNative.saveSecurePref("drive_sync_url", document.getElementById("cfgDriveSyncUrl").value.trim());
     window.OmniaNative.saveSecurePref("atomberg_api_key", document.getElementById("cfgAtombergApiKey").value.trim());
     window.OmniaNative.saveSecurePref("atomberg_refresh_token", document.getElementById("cfgAtombergRefreshToken").value.trim());
-  }
-
-  function updateTariffRate(val) {
-    tariffPerKwh = Math.max(1, parseFloat(val) || 8.0);
-    localStorage.setItem("omnia_tariff_v4", String(tariffPerKwh));
-    renderAll();
   }
 
   function prefillUserHomeShortcut() {
@@ -1896,9 +2359,12 @@
       if (switchDps.length > 0) {
         const roomName = inferRoomFromName(dName);
         uniqueRoomsSet.add(roomName);
+        const curPowerDp = statusList.find(s => s && (s.code === "cur_power" || s.code === "power" || s.code === "cur_power_1"));
+        const hasNativeMeter = Boolean(curPowerDp);
 
         switchDps.forEach((dp, gIdx) => {
           const meta = inferApplianceMeta(dName, dp.code, switchDps.length, gIdx);
+          const isNat = hasNativeMeter || meta.isAtomberg;
           newAppliances.push({
             id: `${d.id}_${dp.code}`,
             cid: d.id,
@@ -1907,6 +2373,8 @@
             room: roomName,
             icon: meta.icon,
             isAtomberg: meta.isAtomberg,
+            isNativePower: isNat,
+            powerSource: isNat ? 'native' : 'assumed',
             fanSpeed: meta.isAtomberg ? 4 : undefined,
             ratedWatts: meta.ratedWatts,
             currentLevelPercent: 100,
@@ -1951,6 +2419,8 @@
               room: fanRoom,
               icon: "🌀",
               isAtomberg: true,
+              isNativePower: true,
+              powerSource: 'native',
               fanSpeed: spd,
               ratedWatts: 28,
               currentLevelPercent: 100,
@@ -2430,7 +2900,7 @@
     }
 
     document.getElementById("heroTotalWatts").textContent = `${s.pCt.toFixed(1)} W`;
-    document.getElementById("heroBurnRate").textContent = `Costs ≈ ₹${hourlyRs.toFixed(2)} / hour`;
+    document.getElementById("heroBurnRate").textContent = formatBurnRate(s.pCt);
 
     // Hero Summary 4 stats
     if (hasCt) {
@@ -2448,21 +2918,21 @@
       document.getElementById("statActiveCount").textContent = `${s.pNativeFans.toFixed(0)} W`;
       document.getElementById("statActiveCountLbl").textContent = "Fans Load";
     }
-    document.getElementById("statMonthlyBill").textContent = `₹${monthlyRs}`;
+    document.getElementById("statMonthlyBill").textContent = isTariffEnabled ? `${currencySymbol}${monthlyRs}` : `${Math.round(s.todayTotalKwh * 30)} u`;
 
     // Friendly Insight Banner
     const insightEl = document.getElementById("friendlyInsightText");
     if (hasCt) {
       if (s.biggestAppliance && s.biggestWatts > 0) {
-        const hrCost = wattsToRupeesPerHour(s.biggestWatts).toFixed(2);
-        insightEl.innerHTML = `Main CT reading: <strong>${s.pCt.toFixed(0)}W</strong>. Highest load: <strong>${s.biggestAppliance.name}</strong> (${s.biggestWatts.toFixed(0)}W • ₹${hrCost}/hr) + <strong>${Math.round(s.pResidual)}W</strong> base socket load.`;
+        const hrCost = formatRatePerHour(s.biggestWatts);
+        insightEl.innerHTML = `Main CT reading: <strong>${s.pCt.toFixed(0)}W</strong>. Highest load: <strong>${s.biggestAppliance.name}</strong> (${s.biggestWatts.toFixed(0)}W • ${hrCost}) + <strong>${Math.round(s.pResidual)}W</strong> base socket load.`;
       } else {
         insightEl.innerHTML = `All smart switches are OFF. Base home load measured by CT clamp is <strong>${Math.round(s.pResidual)}W</strong>.`;
       }
     } else {
       if (s.activeCount > 0) {
-        const hrCost = wattsToRupeesPerHour(s.pCt).toFixed(2);
-        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of all <strong>${s.activeCount} currently active switches & fans</strong> • ₹${hrCost}/hr).`;
+        const hrCost = formatRatePerHour(s.pCt);
+        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of all <strong>${s.activeCount} currently active switches & fans</strong> • ${hrCost}).`;
       } else {
         insightEl.innerHTML = `All ${devices.length} smart switches and fans are currently OFF (0 W tracked load).`;
       }
@@ -2496,16 +2966,16 @@
     document.getElementById("barResidual").style.width = hasCt ? `${(resShare * 100).toFixed(1)}%` : `0%`;
 
     document.getElementById("catNativeWatts").textContent = `${s.pNativeFans.toFixed(1)} W`;
-    document.getElementById("catNativeCost").textContent = `₹${wattsToRupeesPerHour(s.pNativeFans).toFixed(2)}/hr`;
+    document.getElementById("catNativeCost").textContent = formatRatePerHour(s.pNativeFans);
 
     document.getElementById("catVirtualWatts").textContent = `${s.pVirtualSwitches.toFixed(1)} W`;
-    document.getElementById("catVirtualCost").textContent = `₹${wattsToRupeesPerHour(s.pVirtualSwitches).toFixed(2)}/hr`;
+    document.getElementById("catVirtualCost").textContent = formatRatePerHour(s.pVirtualSwitches);
 
     const resCard = document.getElementById("catResidualItem");
     if (hasCt) {
       resCard.style.display = "flex";
       document.getElementById("catResidualWatts").textContent = `${s.pResidual.toFixed(1)} W`;
-      document.getElementById("catResidualCost").textContent = `₹${wattsToRupeesPerHour(s.pResidual).toFixed(2)}/hr`;
+      document.getElementById("catResidualCost").textContent = formatRatePerHour(s.pResidual);
       document.getElementById("catResidualDesc").textContent = "Unmonitored base load = Total CT - Tracked Loads";
     } else {
       resCard.style.display = "none";
@@ -2518,15 +2988,24 @@
     renderRoomsTab();
 
     // 7. Bill & Charts Tab
-    document.getElementById("billHourly").textContent = `₹${hourlyRs.toFixed(2)}`;
-    document.getElementById("billDaily").textContent = `₹${Math.round(todayRs)}`;
-    document.getElementById("billMonthly").textContent = `₹${monthlyRs}`;
+    document.getElementById("billHourly").textContent = isTariffEnabled ? `${currencySymbol}${hourlyRs.toFixed(2)}` : `${(s.pCt / 1000.0).toFixed(2)} u/hr`;
+    document.getElementById("billDaily").textContent = isTariffEnabled ? `${currencySymbol}${Math.round(todayRs)}` : `${s.todayTotalKwh.toFixed(1)} u`;
+    document.getElementById("billMonthly").textContent = isTariffEnabled ? `${currencySymbol}${monthlyRs}` : `${Math.round(s.todayTotalKwh * 30)} u`;
 
     const budgetPct = Math.min(100, Math.round((monthlyRs / monthlyBudgetInr) * 100));
-    document.getElementById("budgetRatioText").textContent = `₹${monthlyRs} / ₹${monthlyBudgetInr}`;
+    document.getElementById("budgetRatioText").textContent = isTariffEnabled
+      ? `${currencySymbol}${monthlyRs} / ${currencySymbol}${monthlyBudgetInr}`
+      : `${Math.round(s.todayTotalKwh * 30)} / ${Math.round(monthlyBudgetInr / (tariffPerKwh || 8))} u`;
     document.getElementById("budgetFillBar").style.width = `${budgetPct}%`;
     document.getElementById("budgetStatusText").textContent =
-      budgetPct > 90 ? "⚠️ Near Monthly Budget" : "✅ Within Monthly Budget";
+      budgetPct > 90 ? "⚠️ Near Target Budget" : "✅ Within Target Budget";
+
+    const wTitle = document.getElementById("weeklyChartTitle");
+    if (wTitle) wTitle.textContent = isTariffEnabled ? `📊 Last 7 Days Electricity Cost (${currencySymbol})` : "📊 Last 7 Days Energy Consumption (Units / kWh)";
+    const wSub = document.getElementById("weeklyChartSub");
+    if (wSub) wSub.textContent = isTariffEnabled ? "Green bar shows today's live accumulated cost" : "Green bar shows today's live accumulated units (kWh)";
+    const mTitle = document.getElementById("monthlyChartTitle");
+    if (mTitle) mTitle.textContent = isTariffEnabled ? `📅 Recent Monthly Bills (${currencySymbol})` : "📅 Recent Monthly Consumption (Units / kWh)";
 
     renderBillCharts(Math.round(todayRs), monthlyRs);
     renderSmartTips(s);
@@ -2541,7 +3020,9 @@
 
     grid.innerHTML = sorted.map(({ d, idx }) => {
       const w = computeDeviceWatts(d);
-      const todayCost = ((d.todayWh || 0) / 1000.0) * tariffPerKwh;
+      const todayKwh = (d.todayWh || 0) / 1000.0;
+      const todayCostOrUnits = isTariffEnabled ? `${currencySymbol}${(todayKwh * tariffPerKwh).toFixed(1)}` : `${todayKwh.toFixed(2)}u`;
+      const sourceTag = d.isNativePower ? '⚡' : '📐';
       return `
         <div class="quick-tile ${d.isOn ? 'on' : ''}" onclick="toggleAppliance(${idx})">
           <div class="quick-tile-top">
@@ -2549,8 +3030,8 @@
             <span class="quick-state">${d.isOn ? 'ON' : 'OFF'}</span>
           </div>
           <div>
-            <div class="quick-name">${d.name}</div>
-            <div class="quick-sub">${d.isOn ? `${w.toFixed(0)}W • ${d.room}` : `${d.room} • ₹${todayCost.toFixed(1)} today`}</div>
+            <div class="quick-name">${sourceTag} ${d.name}</div>
+            <div class="quick-sub">${d.isOn ? `${w.toFixed(0)}W • ${d.room}` : `${d.room} • ${todayCostOrUnits} today`}</div>
           </div>
         </div>
       `;
@@ -2564,7 +3045,7 @@
     document.getElementById("roomsTitleHeader").textContent =
       `My Home Rooms (${devices.length} Devices)`;
     document.getElementById("roomsSubHeader").textContent =
-      appMode === "live" ? "Live status from your smart devices • Tap to control" : "Showcase demo loads • Tap switches to test";
+      appMode === "live" ? "Live status from your smart devices • Tap switches to control" : "Showcase demo loads • Tap switches to test";
 
     const chipBar = document.getElementById("roomFilterBar");
     chipBar.innerHTML = rooms.map(r => `
@@ -2583,9 +3064,18 @@
 
     listEl.innerHTML = filtered.map(({ d, idx }) => {
       const w = computeDeviceWatts(d);
-      const hrCost = wattsToRupeesPerHour(w).toFixed(2);
-      const todayRs = (((d.todayWh || 0) / 1000.0) * tariffPerKwh).toFixed(2);
+      const todayKwh = (d.todayWh || 0) / 1000.0;
+      const todayCostOrUnits = isTariffEnabled
+        ? `${currencySymbol}${(todayKwh * tariffPerKwh).toFixed(2)}`
+        : `${todayKwh.toFixed(2)} units`;
+      const hrCostOrUnits = isTariffEnabled
+        ? `${currencySymbol}${((w / 1000.0) * tariffPerKwh).toFixed(2)}/hr`
+        : `${(w / 1000.0).toFixed(2)} u/hr`;
       const runtimeStr = formatDuration(d.todaySeconds || 0);
+
+      const sourceBadgeHtml = d.isNativePower
+        ? `<span class="source-badge native" title="Direct hardware telemetry / calibrated BLDC profile">⚡ Native Device</span>`
+        : `<span class="source-badge assumed" title="Calculated assumption. Tap to adjust wattage" onclick="promptEditDeviceAssumption(${idx}, event)">📐 Calculated (${d.ratedWatts}W assumed) ✎</span>`;
 
       const speedHtml = d.isAtomberg ? `
         <div class="speed-bar">
@@ -2607,7 +3097,8 @@
               <div>
                 <div class="app-title">${d.name}</div>
                 <div class="app-room">${d.room} • ${d.isAtomberg ? 'BLDC Fan' : (d.dp_code || 'Smart Load')}</div>
-                <div class="runtime-pill">⏱️ ${runtimeStr} • ₹${todayRs}</div>
+                <div class="runtime-pill">⏱️ ${runtimeStr} • ${todayCostOrUnits}</div>
+                <div>${sourceBadgeHtml}</div>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
@@ -2615,7 +3106,7 @@
                 <div class="app-power-tag" style="color:${d.isOn ? 'var(--emerald)' : 'var(--muted)'};">
                   ${d.isOn ? `${w.toFixed(1)} W` : 'Off'}
                 </div>
-                <div class="app-cost-tag">${d.isOn ? `₹${hrCost}/hr` : `${d.ratedWatts}W rated`}</div>
+                <div class="app-cost-tag">${d.isOn ? hrCostOrUnits : `${d.ratedWatts}W rated`}</div>
               </div>
               <label class="switch-toggle">
                 <input type="checkbox" ${d.isOn ? 'checked' : ''} onchange="toggleAppliance(${idx})" />
@@ -2636,28 +3127,83 @@
   }
 
   function renderBillCharts(todayRs, currentMonthEstRs) {
-    const weekData = [...PAST_6_DAYS_INR, { day: "Today", rs: todayRs, isToday: true }];
-    const maxDayRs = Math.max(100, ...weekData.map(x => x.rs));
+    const s = computeHomeSummary();
+    const todayKwh = s.todayTotalKwh;
+    const currentMonthKwh = todayKwh * 30;
+
+    let weekData = [];
+    let monthData = [];
+
+    if (isTariffEnabled) {
+      weekData = PAST_6_DAYS_KWH.map(x => ({
+        day: x.day,
+        val: Math.round(x.kwh * tariffPerKwh),
+        lbl: `${currencySymbol}${Math.round(x.kwh * tariffPerKwh)}`
+      }));
+      weekData.push({
+        day: "Today",
+        val: Math.round(todayRs),
+        lbl: `${currencySymbol}${Math.round(todayRs)}`,
+        isToday: true
+      });
+
+      monthData = PAST_MONTHS_KWH.map(x => ({
+        mo: x.mo,
+        val: Math.round(x.kwh * tariffPerKwh),
+        lbl: `${currencySymbol}${Math.round(x.kwh * tariffPerKwh)}`
+      }));
+      monthData.push({
+        mo: "Curr*",
+        val: currentMonthEstRs,
+        lbl: `${currencySymbol}${currentMonthEstRs}`,
+        isToday: true
+      });
+    } else {
+      weekData = PAST_6_DAYS_KWH.map(x => ({
+        day: x.day,
+        val: x.kwh,
+        lbl: `${x.kwh.toFixed(1)}u`
+      }));
+      weekData.push({
+        day: "Today",
+        val: todayKwh,
+        lbl: `${todayKwh.toFixed(1)}u`,
+        isToday: true
+      });
+
+      monthData = PAST_MONTHS_KWH.map(x => ({
+        mo: x.mo,
+        val: Math.round(x.kwh),
+        lbl: `${Math.round(x.kwh)}u`
+      }));
+      monthData.push({
+        mo: "Curr*",
+        val: Math.round(currentMonthKwh),
+        lbl: `${Math.round(currentMonthKwh)}u`,
+        isToday: true
+      });
+    }
+
+    const maxDayVal = Math.max(isTariffEnabled ? 100 : 10, ...weekData.map(x => x.val));
     const weekEl = document.getElementById("weeklyChartBars");
     weekEl.innerHTML = weekData.map(item => {
-      const hPct = Math.max(14, Math.round((item.rs / maxDayRs) * 86));
+      const hPct = Math.max(14, Math.round((item.val / maxDayVal) * 86));
       return `
         <div class="chart-col">
-          <div class="chart-val">₹${item.rs}</div>
+          <div class="chart-val">${item.lbl}</div>
           <div class="chart-bar-fill ${item.isToday ? 'today' : ''}" style="height:${hPct}px;"></div>
           <div class="chart-lbl">${item.day}</div>
         </div>
       `;
     }).join("");
 
-    const monthData = [...PAST_MONTHS_BILL, { mo: "Curr*", rs: currentMonthEstRs, isToday: true }];
-    const maxMoRs = Math.max(2500, ...monthData.map(x => x.rs));
+    const maxMoVal = Math.max(isTariffEnabled ? 2500 : 300, ...monthData.map(x => x.val));
     const moEl = document.getElementById("monthlyChartBars");
     moEl.innerHTML = monthData.map(item => {
-      const hPct = Math.max(16, Math.round((item.rs / maxMoRs) * 86));
+      const hPct = Math.max(16, Math.round((item.val / maxMoVal) * 86));
       return `
         <div class="chart-col">
-          <div class="chart-val">₹${item.rs}</div>
+          <div class="chart-val">${item.lbl}</div>
           <div class="chart-bar-fill ${item.isToday ? 'today' : ''}" style="height:${hPct}px;"></div>
           <div class="chart-lbl">${item.mo}</div>
         </div>
@@ -2702,10 +3248,11 @@
 
     const hasGeysers = devices.some(d => d.ratedWatts >= 1500);
     if (hasGeysers) {
+      const gCost = formatRatePerHour(2000);
       tips.push({
         icon: "🚿",
         title: "High-Power Water Heater Alert",
-        desc: "A 2000W geyser burns ~₹16/hour. Using a 25-minute timer cuts morning peak demand significantly."
+        desc: `A 2000W geyser burns ~2.0 kWh/hr (${gCost}). Using a 25-minute timer cuts morning peak demand significantly.`
       });
     }
 
@@ -2763,6 +3310,7 @@
     const name = document.getElementById("newAppName").value.trim() || "New Appliance";
     const room = document.getElementById("newAppRoom").value;
     const watts = parseFloat(document.getElementById("newAppWatts").value) || 28;
+    const isBldc = preset === "fan_bldc";
 
     devices.push({
       id: "custom_" + Date.now(),
@@ -2771,8 +3319,10 @@
       name,
       room,
       icon: iconMap[preset] || "🔌",
-      isAtomberg: preset === "fan_bldc",
-      fanSpeed: 4,
+      isAtomberg: isBldc,
+      isNativePower: isBldc,
+      powerSource: isBldc ? 'native' : 'assumed',
+      fanSpeed: isBldc ? 4 : undefined,
       ratedWatts: watts,
       currentLevelPercent: 100,
       isOn: true,
@@ -2807,12 +3357,15 @@
 
   function exportExcelReportNow() {
     haptic(30);
-    let csv = "Appliance Name,Room,Type,State,Current_Watts,Runtime_Today,Energy_Today_Wh,Cost_Today_INR\n";
+    const costCol = isTariffEnabled ? `Cost_Today_${currencyCode}` : "Units_Today_kWh";
+    let csv = `Appliance Name,Room,Type,Power_Source,State,Current_Watts,Runtime_Today,Energy_Today_Wh,${costCol}\n`;
     devices.forEach(d => {
       const w = computeDeviceWatts(d);
       const wh = (d.todayWh || 0).toFixed(1);
-      const rs = (((d.todayWh || 0) / 1000.0) * tariffPerKwh).toFixed(2);
-      csv += `"${d.name}","${d.room}","${d.isAtomberg ? 'BLDC Fan' : 'Switch'}","${d.isOn ? 'ON' : 'OFF'}",${w.toFixed(1)},"${formatDuration(d.todaySeconds)}",${wh},${rs}\n`;
+      const kwh = (d.todayWh || 0) / 1000.0;
+      const costOrUnits = isTariffEnabled ? (kwh * tariffPerKwh).toFixed(2) : kwh.toFixed(3);
+      const srcText = d.isNativePower ? "Native Telemetry" : `Calculated Assumption (${d.ratedWatts}W)`;
+      csv += `"${d.name}","${d.room}","${d.isAtomberg ? 'BLDC Fan' : 'Switch'}","${srcText}","${d.isOn ? 'ON' : 'OFF'}",${w.toFixed(1)},"${formatDuration(d.todaySeconds)}",${wh},${costOrUnits}\n`;
     });
 
     if (hasNativeBridge() && window.OmniaNative.exportEnergyReportCsv) {
@@ -2826,12 +3379,17 @@
     const s = computeHomeSummary();
     const monthlyRs = Math.round(s.todaySpentInr * 30);
     const ctStatus = s.hasCt ? `CT Meter: ${s.pCt.toFixed(1)} W` : `Sum of Switches: ${s.pCt.toFixed(1)} W`;
-    const msg =
+    let msg =
       `🏡 *OmniaEnergy Home Report*\n` +
       `⚡ Whole Home Power: ${ctStatus}\n` +
       `🔌 Active Switches: ${s.activeCount} ON\n` +
-      `💰 Today's Spend: ₹${Math.round(s.todaySpentInr)} (${s.todayTotalKwh.toFixed(2)} kWh)\n` +
-      `📅 Projected Monthly Bill: ₹${monthlyRs}`;
+      `📊 Today's Energy: ${s.todayTotalKwh.toFixed(2)} kWh\n`;
+    if (isTariffEnabled) {
+      msg += `💰 Today's Spend: ${currencySymbol}${Math.round(s.todaySpentInr)}\n` +
+             `📅 Projected Monthly Bill: ${currencySymbol}${monthlyRs}`;
+    } else {
+      msg += `📅 Projected Monthly Energy: ${Math.round(s.todayTotalKwh * 30)} units (kWh)`;
+    }
 
     if (hasNativeBridge() && window.OmniaNative.shareEnergySummaryText) {
       window.OmniaNative.shareEnergySummaryText(msg);

@@ -125,6 +125,18 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getSystemCountryCode() {
+            try {
+                java.util.Locale loc = java.util.Locale.getDefault();
+                if (loc != null && loc.getCountry() != null && !loc.getCountry().isEmpty()) {
+                    return loc.getCountry().toUpperCase();
+                }
+            } catch (Exception ignored) {
+            }
+            return "";
+        }
+
+        @JavascriptInterface
         public long insertTelemetryRecord(
                 double pCtWatts,
                 double pNativeSumWatts,
