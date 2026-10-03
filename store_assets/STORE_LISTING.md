@@ -28,7 +28,8 @@ OmniaEnergy is a privacy-first, serverless smart home energy monitor and intelli
 • Ask natural questions about your home in plain English: "Which switches are turned on right now?", "Which device is consuming the most power?", "Is my TV running or in standby?"
 • 100% On-Device Inference: Operates completely offline without sending your home telemetry or questions to external cloud LLMs. Zero latency, zero token costs.
 
-🎯 CT CLAMP APPLIANCE WATTAGE LEARNER
+🎯 CT CLAMP APPLIANCE WATTAGE LEARNER & AUTONOMOUS AUTO-SWEEP
+• Autonomous Whole-Home Auto-Sweep: Sequentially switches and measures every connected circuit against live CT clamp deltas, with full pre-sweep House State Guard restoration.
 • Guided 2-step calibration wizard: measures real delta wattage by comparing baseline CT load before and after turning on a switch.
 • Locks physical wattage ratings into local memory, replacing generic assumptions with real-world electrical measurements.
 
@@ -97,6 +98,7 @@ OmniaEnergy is an independent home energy management and calculation tool. It is
 Initial production release of OmniaEnergy:
 • Live CT clamp disaggregation & real-time home burn rate tracking.
 • "Ask Omnia" On-Device Edge AI assistant for natural language queries.
+• Autonomous Whole-Home CT Auto-Sweep & Calibration Engine with House State Guard.
 • CT Smart Appliance Training & Wattage Learner.
 • Electricity Bill Auditor & Meter Scanner with Karnataka 60-unit subsidy support.
 • 100% serverless, private architecture.
