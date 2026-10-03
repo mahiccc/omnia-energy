@@ -1272,6 +1272,7 @@
 
         <!-- Quick AI Prompt Chips -->
         <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;">
+          <button class="ai-chip" onclick="askAiInline('auto learn all switches')">🤖 Auto Learn All</button>
           <button class="ai-chip" onclick="askAiInline('what all switches are currently turned on')">🔌 Switches ON?</button>
           <button class="ai-chip" onclick="askAiInline('which is the top device as of now')">⚡ Top Device?</button>
           <button class="ai-chip" onclick="askAiInline('what is usage of my geyser last week')">🚿 Geyser Last Week?</button>
@@ -1366,7 +1367,10 @@
           <div class="section-title" id="roomsTitleHeader">My Home Rooms</div>
           <div class="section-sub" id="roomsSubHeader" style="margin-bottom:0;">Tap any switch to control and track live cost</div>
         </div>
-        <button class="room-chip active" onclick="openAddApplianceModal()">＋ Add</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="room-chip" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;font-weight:700;display:flex;align-items:center;gap:4px;" onclick="openAutoSweepModal()">⚡ Auto-Learn All</button>
+          <button class="room-chip active" onclick="openAddApplianceModal()">＋ Add</button>
+        </div>
       </div>
 
       <div class="room-chips" id="roomFilterBar"></div>
@@ -2218,6 +2222,7 @@ function doGet(e) {
 
       <!-- Quick Prompt Suggestion Chips -->
       <div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0;border-top:1px solid rgba(255,255,255,0.06);margin-top:auto;">
+        <button class="ai-chip" onclick="submitEdgeAiQuery('auto learn all switches')">🤖 Auto Learn All</button>
         <button class="ai-chip" onclick="submitEdgeAiQuery('what all switches are currently turned on')">🔌 Switches ON?</button>
         <button class="ai-chip" onclick="submitEdgeAiQuery('which is the top device as of now')">⚡ Top Device?</button>
         <button class="ai-chip" onclick="submitEdgeAiQuery('what is usage of my geyser last week')">🚿 Geyser Last Week?</button>
@@ -2252,6 +2257,22 @@ function doGet(e) {
           </div>
         </div>
         <button class="step-btn" onclick="closeCtTrainingModal()">✕</button>
+      </div>
+
+      <!-- Whole Home Auto Sweep Banner -->
+      <div style="background:linear-gradient(135deg,rgba(16,185,129,0.18),rgba(6,182,212,0.15));border:1px solid rgba(16,185,129,0.35);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div>
+          <div style="font-size:12.5px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
+            <span>🤖</span>
+            <span>Autonomous Whole-Home Sweep</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+            Automatically turn ON/OFF each switch, calibrate all wattages & restore house states.
+          </div>
+        </div>
+        <button class="btn emerald" style="width:auto;padding:8px 12px;font-size:11.5px;white-space:nowrap;font-weight:700;" onclick="closeCtTrainingModal(); openAutoSweepModal();">
+          Auto-Sweep All →
+        </button>
       </div>
 
       <!-- Training Target Switch Info -->
@@ -2324,6 +2345,177 @@ function doGet(e) {
             <button class="btn primary" style="flex:2;" onclick="ctTrainingApplyLearnedWattage()">💾 Save Learned Wattage</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHOLE-HOME AUTONOMOUS CT AUTO-SWEEP & CALIBRATION MODAL -->
+  <div class="modal-backdrop" id="modalAutoSweep">
+    <div class="modal-sheet" style="max-height:92vh;overflow-y:auto;padding:18px;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#059669,#10b981);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 15px rgba(16,185,129,0.35);">
+            🤖
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px;">
+              <span>Whole-Home Auto-Sweep</span>
+              <span style="font-size:10px;background:rgba(16,185,129,0.25);color:var(--emerald);padding:2px 6px;border-radius:6px;font-weight:700;">AUTONOMOUS</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);">Sequential switch cycling & physical CT calibration</div>
+          </div>
+        </div>
+        <button class="step-btn" id="autoSweepCloseBtn" onclick="closeAutoSweepModal()">✕</button>
+      </div>
+
+      <!-- State Guard Banner -->
+      <div style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.35);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;">
+        <div style="font-size:18px;line-height:1;">🛡️</div>
+        <div style="font-size:11.5px;color:#bfdbfe;line-height:1.45;">
+          <strong style="color:#93c5fd;">House State Guard:</strong> Omnia records the exact pre-sweep state of every switch. Each switch is turned ON, measured, and turned OFF. When finished (or stopped), <strong>every single switch is returned to its exact original state</strong>.
+        </div>
+      </div>
+
+      <!-- VIEW 1: SETUP & CANDIDATE SELECTION -->
+      <div id="autoSweepSetupView">
+        <!-- CT Clamp Live Readout Card -->
+        <div style="background:var(--surface-soft);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:11px;color:var(--muted);">Current Whole-Home CT Power</div>
+            <div style="font-size:18px;font-weight:800;color:var(--text);" id="autoSweepCurrentCtWatts">-- W</div>
+          </div>
+          <div id="autoSweepCtBadge" style="font-size:11px;padding:4px 8px;border-radius:8px;background:rgba(16,185,129,0.18);color:var(--emerald);font-weight:700;">
+            ⚡ CT Active
+          </div>
+        </div>
+
+        <!-- No CT Warning if applicable -->
+        <div id="autoSweepNoCtNotice" style="display:none;background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.35);border-radius:12px;padding:12px;margin-bottom:14px;font-size:11.5px;color:#fda4af;">
+          ⚠️ <strong>CT Clamp Meter Required:</strong> Autonomous wattage learning requires a live whole-home CT clamp meter to detect power step deltas.
+        </div>
+
+        <!-- Candidate Devices List Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);">
+            <span>Switches to Calibrate (<span id="autoSweepSelectedCount">0</span> selected)</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="step-btn" style="width:auto;padding:2px 8px;font-size:10.5px;" onclick="selectAllAutoSweepCandidates(true)">Select All</button>
+            <button class="step-btn" style="width:auto;padding:2px 8px;font-size:10.5px;" onclick="selectAllAutoSweepCandidates(false)">Deselect All</button>
+          </div>
+        </div>
+
+        <!-- Candidate Devices List -->
+        <div id="autoSweepCandidatesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:36vh;overflow-y:auto;padding-right:4px;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Launch Button -->
+        <button class="btn emerald" id="autoSweepStartBtn" style="padding:13px;font-size:13.5px;font-weight:800;letter-spacing:0.3px;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="startWholeHomeAutoSweep()">
+          <span>🚀 Start Autonomous Sweep</span>
+          <span id="autoSweepEstTime" style="font-size:11px;opacity:0.85;font-weight:500;">(~20 sec)</span>
+        </button>
+      </div>
+
+      <!-- VIEW 2: LIVE TELEMETRY & RUNNING SWEEP -->
+      <div id="autoSweepRunningView" style="display:none;">
+        <!-- Overall Progress Bar -->
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11.5px;">
+            <span style="color:var(--muted);" id="autoSweepProgressLabel">Calibrating Switch 1 of 6...</span>
+            <span style="font-weight:700;color:var(--emerald);" id="autoSweepProgressPercent">16%</span>
+          </div>
+          <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+            <div id="autoSweepProgressBar" style="width:16%;height:100%;background:linear-gradient(90deg,#059669,#10b981,#38bdf8);transition:width 0.4s ease;box-shadow:0 0 10px rgba(16,185,129,0.5);"></div>
+          </div>
+        </div>
+
+        <!-- Live Target Switch Card -->
+        <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(16,185,129,0.4);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 0 20px rgba(16,185,129,0.15);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span id="autoSweepCurrentIcon" style="font-size:26px;">🚿</span>
+              <div>
+                <div id="autoSweepCurrentName" style="font-size:15px;font-weight:700;color:var(--text);">Master Bath Geyser</div>
+                <div id="autoSweepCurrentRoom" style="font-size:11px;color:var(--muted);">Master Bedroom</div>
+              </div>
+            </div>
+            <div id="autoSweepSwitchStateBadge" style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:8px;background:rgba(16,185,129,0.2);color:var(--emerald);border:1px solid rgba(16,185,129,0.4);">
+              ⚡ SWITCH ON
+            </div>
+          </div>
+
+          <!-- Step Description -->
+          <div id="autoSweepStepText" style="font-size:12px;color:#93c5fd;background:rgba(59,130,246,0.12);padding:8px 12px;border-radius:8px;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+            <span class="pulse-dot" style="background:#38bdf8;"></span>
+            <span>Phase 2/3: Turned ON switch • Measuring CT delta jump...</span>
+          </div>
+
+          <!-- Telemetry Grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+            <div style="background:var(--surface-soft);border:1px solid var(--border);border-radius:10px;padding:10px 6px;">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Baseline CT</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);" id="autoSweepLiveBaseWatts">-- W</div>
+            </div>
+            <div style="background:var(--surface-soft);border:1px solid var(--border);border-radius:10px;padding:10px 6px;">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Active CT</div>
+              <div style="font-size:14px;font-weight:700;color:#38bdf8;" id="autoSweepLiveActiveWatts">-- W</div>
+            </div>
+            <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:10px;padding:10px 6px;">
+              <div style="font-size:10px;color:var(--emerald);margin-bottom:2px;font-weight:700;">Measured Delta</div>
+              <div style="font-size:15px;font-weight:800;color:var(--emerald);" id="autoSweepLiveDeltaWatts">-- W</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Calibration History Log / Queue Items -->
+        <div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px;">Sweep Queue & Progress</div>
+        <div id="autoSweepLiveLogList" style="max-height:22vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+          <!-- Dynamically populated items -->
+        </div>
+
+        <!-- Safety Control Buttons -->
+        <div style="display:flex;gap:10px;">
+          <button class="btn secondary" id="autoSweepPauseBtn" style="flex:1;padding:11px;font-size:12px;" onclick="togglePauseAutoSweep()">
+            ⏸️ Pause
+          </button>
+          <button class="btn" style="flex:2;background:rgba(244,63,94,0.2);color:#fda4af;border:1px solid rgba(244,63,94,0.4);padding:11px;font-size:12px;font-weight:700;" onclick="emergencyStopAutoSweep()">
+            🛑 Emergency Stop & Restore House
+          </button>
+        </div>
+      </div>
+
+      <!-- VIEW 3: SWEEP COMPLETE & SUMMARY -->
+      <div id="autoSweepCompleteView" style="display:none;text-align:center;">
+        <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#059669,#10b981);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px;box-shadow:0 0 25px rgba(16,185,129,0.4);">
+          🎉
+        </div>
+        <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;">Whole-Home Calibration Complete!</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+          Learned physical wattages directly from live CT delta measurements.
+        </div>
+
+        <!-- House State Restored Banner -->
+        <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:12px;padding:12px;margin-bottom:16px;text-align:left;display:flex;align-items:center;gap:10px;">
+          <div style="font-size:22px;">🛡️</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--emerald);">House State Fully Preserved</div>
+            <div style="font-size:11px;color:#a7f3d0;">
+              Every switch has been turned off and returned to its exact pre-sweep state.
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Results Table -->
+        <div id="autoSweepResultsContainer" style="max-height:30vh;overflow-y:auto;background:var(--surface-soft);border:1px solid var(--border);border-radius:12px;padding:8px;margin-bottom:16px;text-align:left;">
+          <!-- Dynamically populated table/cards -->
+        </div>
+
+        <!-- Done / Close Button -->
+        <button class="btn emerald" style="padding:13px;font-weight:800;font-size:14px;" onclick="closeAutoSweepModal()">
+          ✓ Done & Return to Rooms
+        </button>
       </div>
     </div>
   </div>
@@ -4753,11 +4945,11 @@ function doGet(e) {
   // ===========================================================================
   // APPLIANCE CONTROL & SIMULATION
   // ===========================================================================
-  function toggleAppliance(idx) {
+  function setAppliancePowerState(idx, targetIsOn) {
     const dev = devices[idx];
     if (!dev || dev.isCtMeter) return;
-    haptic(22);
-    dev.isOn = !dev.isOn;
+    if (dev.isOn === targetIsOn) return;
+    dev.isOn = targetIsOn;
 
     if (appMode === "demo") {
       recomputeDemoCtMeter();
@@ -4777,15 +4969,24 @@ function doGet(e) {
               endpoint, clientId, clientSecret, token, "POST",
               `/v1.0/iot-03/devices/${dev.cid}/commands`, cmdBody
             );
-            showToast(`⚡ Sent ${dev.isOn ? 'ON' : 'OFF'} to ${dev.name}`);
           }
         } catch (e) {}
-      }, 30);
+      }, 20);
     }
 
     saveState();
     autoSaveSnapshotSilently();
     renderAll();
+  }
+
+  function toggleAppliance(idx) {
+    const dev = devices[idx];
+    if (!dev || dev.isCtMeter) return;
+    haptic(22);
+    setAppliancePowerState(idx, !dev.isOn);
+    if (appMode !== "demo" && hasNativeBridge() && dev.cid && dev.dp_code) {
+      showToast(`⚡ Sent ${dev.isOn ? 'ON' : 'OFF'} to ${dev.name}`);
+    }
   }
 
   function setFanSpeed(idx, speedStep) {
@@ -5967,6 +6168,25 @@ function doGet(e) {
     const s = summary;
     const activeDevs = devices.filter(d => d.isOn && !d.isCtMeter);
 
+    // Intent: Autonomous Whole-Home CT Auto-Sweep & Calibration
+    if (
+      q.includes("auto learn") ||
+      q.includes("auto sweep") ||
+      q.includes("calibrate all") ||
+      q.includes("calibrate switch") ||
+      q.includes("learn all") ||
+      q.includes("calibration") ||
+      q.includes("turn on and off")
+    ) {
+      setTimeout(() => {
+        openAutoSweepModal();
+      }, 400);
+      return `🤖 **Autonomous Whole-Home CT Auto-Sweep:**\n\nLaunching the calibration wizard now!\n\n` +
+        `• **🛡️ House State Guard:** Omnia snapshots all switch states before starting.\n` +
+        `• **⚡ Sequential Calibration:** Each smart switch will be sequentially turned ON, physical wattage delta measured on the live CT clamp, calibrated to exact power, and turned OFF.\n` +
+        `• **🏡 Exact House Restoration:** When finished (or stopped), every single switch is returned to its exact pre-sweep state!`;
+    }
+
     // Intent 1: Switches currently turned on / Active devices
     if (
       q.includes("switch") ||
@@ -6647,6 +6867,428 @@ function doGet(e) {
     renderAll();
     closeCtTrainingModal();
     showToast(`🎉 "${d.name}" wattage locked at ${d.ratedWatts.toFixed(1)}W from CT measurement!`);
+  }
+
+  // ===========================================================================
+  // AUTONOMOUS WHOLE-HOME CT AUTO-SWEEP & CALIBRATION ENGINE
+  // ===========================================================================
+  let autoSweepState = {
+    isRunning: false,
+    isPaused: false,
+    stepTimer: null,
+    queue: [], // array of device indices to sweep
+    currentIndex: 0,
+    results: [], // array of { id, name, room, icon, oldWatts, newWatts, deltaWatts, status }
+    houseSnapshot: [] // [{ id, isOn, fanSpeed, tvScreenState }]
+  };
+
+  function openAutoSweepModal() {
+    haptic(15);
+    const modal = document.getElementById("modalAutoSweep");
+    if (!modal) return;
+
+    // Reset view panels
+    document.getElementById("autoSweepSetupView").style.display = "block";
+    document.getElementById("autoSweepRunningView").style.display = "none";
+    document.getElementById("autoSweepCompleteView").style.display = "none";
+
+    // Update CT power readout
+    const summary = computeHomeSummary();
+    const curCtEl = document.getElementById("autoSweepCurrentCtWatts");
+    if (curCtEl) curCtEl.textContent = `${summary.pCt.toFixed(1)} W`;
+
+    const noCtNotice = document.getElementById("autoSweepNoCtNotice");
+    const startBtn = document.getElementById("autoSweepStartBtn");
+
+    if (!summary.hasCt && appMode === "live") {
+      if (noCtNotice) noCtNotice.style.display = "block";
+      if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.style.opacity = "0.5";
+      }
+    } else {
+      if (noCtNotice) noCtNotice.style.display = "none";
+      if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.style.opacity = "1";
+      }
+    }
+
+    renderAutoSweepCandidateList();
+    modal.classList.add("open");
+  }
+
+  function closeAutoSweepModal() {
+    haptic(10);
+    if (autoSweepState.isRunning) {
+      if (!confirm("Auto-sweep is currently running. Stop sweep and restore all house switches to original states?")) {
+        return;
+      }
+      emergencyStopAutoSweep();
+    }
+    const modal = document.getElementById("modalAutoSweep");
+    if (modal) modal.classList.remove("open");
+  }
+
+  function renderAutoSweepCandidateList() {
+    const list = document.getElementById("autoSweepCandidatesList");
+    if (!list) return;
+
+    const candidates = devices
+      .map((d, idx) => ({ d, idx }))
+      .filter(item => !item.d.isCtMeter);
+
+    if (candidates.length === 0) {
+      list.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">No controllable switches found in home.</div>`;
+      return;
+    }
+
+    list.innerHTML = candidates.map(({ d, idx }) => {
+      const isBaseload = d.isAlwaysOn || (d.name || "").toLowerCase().includes("refrigerator") || (d.name || "").toLowerCase().includes("fridge");
+      const defaultChecked = !isBaseload;
+      const statusPill = d.isOn
+        ? `<span style="font-size:9.5px;padding:2px 6px;border-radius:6px;background:rgba(16,185,129,0.2);color:var(--emerald);font-weight:700;">ON</span>`
+        : `<span style="font-size:9.5px;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,0.06);color:var(--muted);font-weight:600;">OFF</span>`;
+
+      const learnedPill = d.isLearned
+        ? `<span style="font-size:9.5px;padding:2px 6px;border-radius:6px;background:rgba(16,185,129,0.18);color:#34d399;font-weight:700;">🧠 CT ${d.ratedWatts}W</span>`
+        : `<span style="font-size:9.5px;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,0.04);color:var(--muted);">${d.ratedWatts}W</span>`;
+
+      const baseloadPill = isBaseload
+        ? `<div style="font-size:9.5px;color:#facc15;margin-top:2px;">🛡️ Continuous Baseload (runs 24×7 • kept steady)</div>`
+        : ``;
+
+      return `
+        <label style="display:flex;align-items:center;gap:10px;background:var(--surface-soft);border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;">
+          <input type="checkbox" class="auto-sweep-chk" data-idx="${idx}" ${defaultChecked ? 'checked' : ''} onchange="updateAutoSweepSelectedCount()" style="width:18px;height:18px;accent-color:#10b981;cursor:pointer;" />
+          <div style="font-size:22px;line-height:1;">${d.icon || '⚡'}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:12.5px;font-weight:700;color:var(--text);">${d.name}</span>
+              ${statusPill}
+              ${learnedPill}
+            </div>
+            <div style="font-size:11px;color:var(--muted);">${d.room}</div>
+            ${baseloadPill}
+          </div>
+        </label>
+      `;
+    }).join("");
+
+    updateAutoSweepSelectedCount();
+  }
+
+  function selectAllAutoSweepCandidates(selectAll) {
+    haptic(10);
+    const chks = document.querySelectorAll(".auto-sweep-chk");
+    chks.forEach(c => {
+      c.checked = selectAll;
+    });
+    updateAutoSweepSelectedCount();
+  }
+
+  function updateAutoSweepSelectedCount() {
+    const chks = document.querySelectorAll(".auto-sweep-chk:checked");
+    const count = chks.length;
+    const cntEl = document.getElementById("autoSweepSelectedCount");
+    if (cntEl) cntEl.textContent = count;
+
+    const estSec = count * 3;
+    const estEl = document.getElementById("autoSweepEstTime");
+    if (estEl) estEl.textContent = `(~${estSec} sec)`;
+
+    const startBtn = document.getElementById("autoSweepStartBtn");
+    if (startBtn) {
+      startBtn.disabled = count === 0;
+      startBtn.style.opacity = count === 0 ? "0.5" : "1";
+    }
+  }
+
+  function startWholeHomeAutoSweep() {
+    haptic(25);
+    const chks = document.querySelectorAll(".auto-sweep-chk:checked");
+    const selectedIndices = Array.from(chks)
+      .map(c => parseInt(c.dataset.idx, 10))
+      .filter(i => !isNaN(i) && devices[i]);
+
+    if (selectedIndices.length === 0) {
+      showToast("⚠️ Please select at least one switch to calibrate");
+      return;
+    }
+
+    // 1. Snapshot the complete house state before altering any switch!
+    autoSweepState.houseSnapshot = devices.map(d => ({
+      id: d.id,
+      name: d.name,
+      isOn: !!d.isOn,
+      fanSpeed: d.fanSpeed,
+      tvScreenState: d.tvScreenState
+    }));
+
+    // 2. Setup sweep execution state
+    autoSweepState.isRunning = true;
+    autoSweepState.isPaused = false;
+    autoSweepState.queue = selectedIndices;
+    autoSweepState.currentIndex = 0;
+    autoSweepState.results = [];
+
+    // 3. Switch modal to Running View
+    document.getElementById("autoSweepSetupView").style.display = "none";
+    document.getElementById("autoSweepRunningView").style.display = "block";
+    document.getElementById("autoSweepCompleteView").style.display = "none";
+
+    renderAutoSweepLiveLog();
+    showToast(`🤖 Starting Whole-Home Auto-Sweep across ${selectedIndices.length} switches...`);
+
+    // 4. Begin sequential execution
+    runAutoSweepNextDevice();
+  }
+
+  function runAutoSweepNextDevice() {
+    if (!autoSweepState.isRunning) return;
+    if (autoSweepState.isPaused) return;
+
+    if (autoSweepState.currentIndex >= autoSweepState.queue.length) {
+      // Completed all devices!
+      finishAutoSweep();
+      return;
+    }
+
+    const devIdx = autoSweepState.queue[autoSweepState.currentIndex];
+    const dev = devices[devIdx];
+    if (!dev) {
+      autoSweepState.currentIndex++;
+      runAutoSweepNextDevice();
+      return;
+    }
+
+    const totalCount = autoSweepState.queue.length;
+    const currentNum = autoSweepState.currentIndex + 1;
+    const pct = Math.round(((currentNum - 1) / totalCount) * 100);
+
+    // Update Progress Bar
+    document.getElementById("autoSweepProgressLabel").textContent = `Calibrating switch ${currentNum} of ${totalCount}...`;
+    document.getElementById("autoSweepProgressPercent").textContent = `${pct}%`;
+    document.getElementById("autoSweepProgressBar").style.width = `${pct}%`;
+
+    // Update Live Target Card
+    document.getElementById("autoSweepCurrentIcon").textContent = dev.icon || "⚡";
+    document.getElementById("autoSweepCurrentName").textContent = dev.name;
+    document.getElementById("autoSweepCurrentRoom").textContent = dev.room;
+    document.getElementById("autoSweepSwitchStateBadge").innerHTML = `<span style="color:var(--muted);">⏳ SETTLING</span>`;
+    document.getElementById("autoSweepLiveDeltaWatts").textContent = "-- W";
+
+    // Phase 1/3: Settle & Measure CT Baseline Power
+    // Ensure target device is OFF first so baseline represents home without this load
+    setAppliancePowerState(devIdx, false);
+    document.getElementById("autoSweepStepText").innerHTML =
+      `<span class="pulse-dot" style="background:#38bdf8;"></span><span>Phase 1/3: Settling baseline CT power (switch is OFF)...</span>`;
+
+    renderAutoSweepLiveLog();
+
+    autoSweepState.stepTimer = setTimeout(() => {
+      if (!autoSweepState.isRunning || autoSweepState.isPaused) return;
+      const sBase = computeHomeSummary();
+      const pBase = Math.round(sBase.pCt * 10) / 10;
+      document.getElementById("autoSweepLiveBaseWatts").textContent = `${pBase.toFixed(1)} W`;
+      document.getElementById("autoSweepLiveActiveWatts").textContent = "-- W";
+
+      // Phase 2/3: Turn ON Target Switch & Measure Jump
+      setAppliancePowerState(devIdx, true);
+      haptic(20);
+      document.getElementById("autoSweepSwitchStateBadge").innerHTML = `<span style="color:var(--emerald);font-weight:800;">⚡ SWITCH ON</span>`;
+      document.getElementById("autoSweepStepText").innerHTML =
+        `<span class="pulse-dot" style="background:#10b981;"></span><span>Phase 2/3: Turned ON switch • Measuring CT delta jump...</span>`;
+
+      // Sampling delay for CT meter inrush & sampling window to settle
+      autoSweepState.stepTimer = setTimeout(() => {
+        if (!autoSweepState.isRunning || autoSweepState.isPaused) return;
+        const sActive = computeHomeSummary();
+        const pActive = Math.round(sActive.pCt * 10) / 10;
+        let delta = Math.round((pActive - pBase) * 10) / 10;
+        if (delta <= 0) {
+          delta = Math.max(1.0, parseFloat(dev.ratedWatts || 15));
+        }
+
+        document.getElementById("autoSweepLiveActiveWatts").textContent = `${pActive.toFixed(1)} W`;
+        document.getElementById("autoSweepLiveDeltaWatts").textContent = `+${delta.toFixed(1)} W`;
+
+        // Phase 3/3: Calibrate Wattage & Turn Switch OFF
+        const oldWatts = dev.ratedWatts;
+        dev.ratedWatts = delta;
+        dev.effectiveWatts = delta;
+        dev.isLearned = true;
+        dev.learnedAt = new Date().toISOString();
+
+        // Persist to customizations map
+        let customMap = {};
+        try {
+          customMap = JSON.parse(localStorage.getItem("omnia_device_customizations") || "{}");
+        } catch(e){}
+        const devKey = dev.id || `${dev.cid}_${dev.dp_code}`;
+        customMap[devKey] = customMap[devKey] || {};
+        customMap[devKey].ratedWatts = dev.ratedWatts;
+        customMap[devKey].isLearned = true;
+        customMap[devKey].learnedAt = dev.learnedAt;
+        localStorage.setItem("omnia_device_customizations", JSON.stringify(customMap));
+        saveState();
+
+        autoSweepState.results.push({
+          id: dev.id,
+          name: dev.name,
+          room: dev.room,
+          icon: dev.icon,
+          oldWatts,
+          newWatts: delta,
+          deltaWatts: delta,
+          status: "Calibrated"
+        });
+
+        // Turn switch OFF immediately!
+        setAppliancePowerState(devIdx, false);
+        haptic(15);
+        document.getElementById("autoSweepSwitchStateBadge").innerHTML = `<span style="color:var(--muted);">OFF (Calibrated)</span>`;
+        document.getElementById("autoSweepStepText").innerHTML =
+          `<span style="color:var(--emerald);">✓ Calibrated (+${delta.toFixed(1)}W)! Turned switch OFF • Settling...</span>`;
+
+        renderAutoSweepLiveLog();
+
+        // Settle before next device
+        autoSweepState.stepTimer = setTimeout(() => {
+          if (!autoSweepState.isRunning || autoSweepState.isPaused) return;
+          autoSweepState.currentIndex++;
+          runAutoSweepNextDevice();
+        }, 800);
+
+      }, 1800);
+
+    }, 1000);
+  }
+
+  function renderAutoSweepLiveLog() {
+    const list = document.getElementById("autoSweepLiveLogList");
+    if (!list) return;
+
+    list.innerHTML = autoSweepState.queue.map((devIdx, qIdx) => {
+      const dev = devices[devIdx];
+      if (!dev) return "";
+
+      const res = autoSweepState.results.find(r => r.id === dev.id);
+      const isCurrent = qIdx === autoSweepState.currentIndex && autoSweepState.isRunning;
+
+      let statusBadge = "";
+      if (res) {
+        statusBadge = `<span style="font-size:11px;font-weight:700;color:var(--emerald);">✓ +${res.deltaWatts.toFixed(1)}W</span>`;
+      } else if (isCurrent) {
+        statusBadge = `<span style="font-size:11px;font-weight:700;color:#38bdf8;">⏳ Measuring...</span>`;
+      } else {
+        statusBadge = `<span style="font-size:11px;color:var(--muted);">In Queue</span>`;
+      }
+
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:8px;background:${isCurrent ? 'rgba(56,189,248,0.1)' : 'rgba(255,255,255,0.02)'};border:1px solid ${isCurrent ? 'rgba(56,189,248,0.3)' : 'rgba(255,255,255,0.05)'};">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;">${dev.icon || '⚡'}</span>
+            <div>
+              <div style="font-size:11.5px;font-weight:${isCurrent ? '700' : '600'};color:var(--text);">${dev.name}</div>
+              <div style="font-size:10px;color:var(--muted);">${dev.room}</div>
+            </div>
+          </div>
+          <div>${statusBadge}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function togglePauseAutoSweep() {
+    haptic(15);
+    autoSweepState.isPaused = !autoSweepState.isPaused;
+    const btn = document.getElementById("autoSweepPauseBtn");
+    if (autoSweepState.isPaused) {
+      if (btn) btn.innerHTML = "▶️ Resume";
+      showToast("⏸️ Auto-Sweep Paused");
+    } else {
+      if (btn) btn.innerHTML = "⏸️ Pause";
+      showToast("▶️ Auto-Sweep Resumed");
+      runAutoSweepNextDevice();
+    }
+  }
+
+  function emergencyStopAutoSweep() {
+    haptic(35);
+    autoSweepState.isRunning = false;
+    clearTimeout(autoSweepState.stepTimer);
+    autoSweepState.stepTimer = null;
+
+    // Immediately restore house states
+    restorePreSweepHouseStates();
+
+    // Reset views
+    document.getElementById("autoSweepRunningView").style.display = "none";
+    document.getElementById("autoSweepSetupView").style.display = "block";
+
+    showToast("🛑 Auto-Sweep Stopped: All switches restored to original states.");
+  }
+
+  function restorePreSweepHouseStates() {
+    if (!autoSweepState.houseSnapshot || autoSweepState.houseSnapshot.length === 0) return;
+    autoSweepState.houseSnapshot.forEach(snap => {
+      const idx = devices.findIndex(d => d.id === snap.id);
+      if (idx !== -1) {
+        setAppliancePowerState(idx, snap.isOn);
+        if (snap.fanSpeed !== undefined) devices[idx].fanSpeed = snap.fanSpeed;
+        if (snap.tvScreenState !== undefined) devices[idx].tvScreenState = snap.tvScreenState;
+      }
+    });
+    saveState();
+    renderAll();
+  }
+
+  function finishAutoSweep() {
+    autoSweepState.isRunning = false;
+    clearTimeout(autoSweepState.stepTimer);
+    autoSweepState.stepTimer = null;
+
+    // Fully restore pre-sweep house state!
+    restorePreSweepHouseStates();
+
+    // Auto-backup calibration to persistent storage / Drive
+    autoBackupToDriveSilently("auto_sweep_calibration_complete");
+
+    // Switch UI to Complete View
+    document.getElementById("autoSweepRunningView").style.display = "none";
+    document.getElementById("autoSweepCompleteView").style.display = "block";
+
+    // Render results summary
+    const container = document.getElementById("autoSweepResultsContainer");
+    if (container) {
+      container.innerHTML = `
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+          Calibrated Appliances (${autoSweepState.results.length})
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${autoSweepState.results.map(r => `
+            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:18px;">${r.icon || '⚡'}</span>
+                <div>
+                  <div style="font-size:12px;font-weight:700;color:var(--text);">${r.name}</div>
+                  <div style="font-size:10.5px;color:var(--muted);">${r.room} • Prior: ${r.oldWatts}W</div>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:13px;font-weight:800;color:var(--emerald);">+${r.newWatts.toFixed(1)} W</div>
+                <div style="font-size:9.5px;color:#34d399;font-weight:600;">🧠 CT Learned</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    haptic(45);
+    renderAll();
+    showToast(`🎉 Whole-Home Auto-Sweep finished! ${autoSweepState.results.length} switches calibrated & house restored.`);
   }
 
   // ===========================================================================

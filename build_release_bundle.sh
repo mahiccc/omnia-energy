@@ -69,6 +69,7 @@ cp "$OUT_DIR/dex/classes.dex" "$OUT_DIR/base_module/dex/"
 
 RELEASE_AAB="$RELEASE_DIR/OmniaEnergy-v${VERSION}.aab"
 LATEST_AAB="$PROJECT_DIR/OmniaEnergy.aab"
+rm -f "$RELEASE_AAB" "$LATEST_AAB"
 
 echo "[6/7] Building Android App Bundle with bundletool..."
 "$JAVA_BIN/java" -jar "$BUNDLETOOL" build-bundle \
