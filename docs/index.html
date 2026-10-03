@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - OmniaEnergy</title>
+  <style>
+    :root {
+      --bg: #0b101b;
+      --surface: #131c2e;
+      --border: #1e293b;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --emerald: #10b981;
+      --sky: #38bdf8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 32px 18px;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px 28px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .brand-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    h1 { font-size: 24px; font-weight: 800; color: #fff; }
+    .effective-date { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    h2 { font-size: 18px; color: var(--emerald); margin-top: 28px; margin-bottom: 10px; }
+    p { margin-bottom: 14px; color: #cbd5e1; font-size: 14.5px; }
+    ul { margin-left: 22px; margin-bottom: 14px; color: #cbd5e1; font-size: 14.5px; }
+    li { margin-bottom: 6px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      background: rgba(16,185,129,0.15);
+      color: #34d399;
+      margin-bottom: 12px;
+    }
+    .disclaimer-box {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 24px;
+      font-size: 13.5px;
+      color: #fde68a;
+    }
+    a { color: var(--sky); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand-header">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <h1>Privacy Policy for OmniaEnergy</h1>
+        <div class="effective-date">Effective Date: October 3, 2026 • Version 1.0.0</div>
+      </div>
+    </div>
+
+    <span class="badge">🔒 Zero-Cloud & 100% Serverless Architecture</span>
+
+    <p>
+      At <strong>OmniaEnergy</strong>, your privacy and smart home data sovereignty are our fundamental principles. OmniaEnergy is built on a <strong>zero-backend, serverless architecture</strong>. We do not operate remote application servers, databases, or user telemetry collectors.
+    </p>
+
+    <h2>1. Data Collection & Storage</h2>
+    <p>
+      All smart home configurations, device profiles, electricity tariff calculations, and API access keys remain strictly confined to your physical device:
+    </p>
+    <ul>
+      <li><strong>Local Storage:</strong> Your switch pairings, appliance wattage ratings, room configurations, and local SQLite data are stored exclusively in private sandbox application storage.</li>
+      <li><strong>Direct Device & Cloud Connectors:</strong> When connecting to Tuya, Smart Life, Home Assistant, or local CT clamp energy meters, API calls are dispatched directly between your smartphone and the official provider endpoint (e.g., Tuya OpenAPI or your local LAN subnet). No intermediary servers ever intercept or log your credentials.</li>
+    </ul>
+
+    <h2>2. Edge AI Assistant ("Ask Omnia")</h2>
+    <p>
+      The "Ask Omnia" natural language assistant operates <strong>100% on-device (Edge AI)</strong>. Queries such as <em>"what switches are on"</em> or <em>"what is my geyser usage"</em> evaluate telemetry directly in local memory. Zero prompt text or smart home states are transmitted to external AI servers or commercial LLM APIs.
+    </p>
+
+    <h2>3. Camera & Meter Scanning (OCR)</h2>
+    <p>
+      The Electricity Bill Auditor feature allows taking photos of physical utility meters or paper bills to assist with reading numerical digits:
+    </p>
+    <ul>
+      <li>Images captured via the camera or selected from the gallery are processed ephemerally on your device.</li>
+      <li>Captured images are never uploaded, stored on remote servers, or shared with third parties.</li>
+    </ul>
+
+    <h2>4. Network & Location Permissions</h2>
+    <p>
+      OmniaEnergy requests specific Android operating system permissions solely for local device discovery and direct API synchronization:
+    </p>
+    <ul>
+      <li><strong>Internet & Network State:</strong> To communicate directly with your local LAN energy meters (Shelly, ESPHome) and cloud device APIs.</li>
+      <li><strong>Bluetooth LE:</strong> Used solely to discover nearby local smart energy meters. Under Android 12+ (API 31+), OmniaEnergy declares the <code>neverForLocation</code> flag, guaranteeing that Bluetooth scanning is never utilized to track your physical geographical location.</li>
+    </ul>
+
+    <h2>5. Third-Party Services & Links</h2>
+    <p>
+      OmniaEnergy connects directly to manufacturer APIs selected by the user (such as Tuya Global Cloud or Home Assistant). Your interactions with these respective platforms are governed by their individual privacy terms and developer security agreements.
+    </p>
+
+    <h2>6. Data Deletion & User Sovereignty</h2>
+    <p>
+      Because all data is retained on your device, you have complete and irreversible control:
+    </p>
+    <ul>
+      <li>You can clear all stored devices and tokens at any time using the in-app <strong>Reset App Data</strong> button.</li>
+      <li>Uninstalling OmniaEnergy immediately purges all application sandbox storage and cached records from your device.</li>
+    </ul>
+
+    <div class="disclaimer-box">
+      <strong>⚠️ Government Scheme & DISCOM Disclaimer:</strong><br>
+      OmniaEnergy is an independent energy management and home automation utility. OmniaEnergy is not affiliated with, authorized, or endorsed by BESCOM, KPTCL, or any state or central government department. Subsidy calculations (including Karnataka Gruha Lakshmi / Gruha Jyothi) are educational estimates based on publicly available tariff notifications.
+    </div>
+
+    <h2 style="margin-top: 24px;">7. Contact Us</h2>
+    <p>
+      If you have questions, feedback, or concerns regarding this Privacy Policy, please open an issue or contact the project repository at:
+      <br>
+      <a href="https://github.com/mahiccc/omnia-energy" target="_blank" rel="noopener">https://github.com/mahiccc/omnia-energy</a>
+    </p>
+  </div>
+</body>
+</html>

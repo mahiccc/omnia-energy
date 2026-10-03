@@ -59,3 +59,4 @@ apk-build/out/
 tuya_devices_dump.json
 releases/
 
+apk-build/out-bundle/
