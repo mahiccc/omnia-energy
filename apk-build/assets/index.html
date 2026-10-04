@@ -1273,6 +1273,7 @@
         <!-- Quick AI Prompt Chips -->
         <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;">
           <button class="ai-chip" onclick="askAiInline('auto learn all switches')">🤖 Auto Learn All</button>
+          <button class="ai-chip" onclick="askAiInline('what is in my misc power load')">🔌 Misc Loads?</button>
           <button class="ai-chip" onclick="askAiInline('what all switches are currently turned on')">🔌 Switches ON?</button>
           <button class="ai-chip" onclick="askAiInline('which is the top device as of now')">⚡ Top Device?</button>
           <button class="ai-chip" onclick="askAiInline('what is usage of my geyser last week')">🚿 Geyser Last Week?</button>
@@ -1330,12 +1331,15 @@
           </div>
         </div>
 
-        <div class="cat-item" id="catResidualItem">
+        <div class="cat-item" id="catResidualItem" onclick="openMiscLoadsModal()" style="cursor:pointer;" title="Tap to select what is included in miscellaneous unmonitored power">
           <div class="cat-left">
-            <div class="cat-icon" style="background:var(--amber-glow);">🏠</div>
+            <div class="cat-icon" style="background:var(--amber-glow);">🔌</div>
             <div>
-              <div class="cat-name" id="catResidualName">Fridge & Wall Sockets (Residual)</div>
-              <div class="cat-desc" id="catResidualDesc">Unmonitored base load = Total CT - Tracked Loads</div>
+              <div class="cat-name" id="catResidualName" style="display:flex;align-items:center;gap:6px;">
+                <span>Misc Loads</span>
+                <span class="badge" style="background:rgba(245,158,11,0.2);color:#f59e0b;font-size:9.5px;padding:2px 6px;border-radius:6px;font-weight:700;">⚙️ Select</span>
+              </div>
+              <div class="cat-desc" id="catResidualDesc">Wi-Fi Router, RO Purifier, TV Standby, Sockets (Tap to customize)</div>
             </div>
           </div>
           <div class="cat-right">
@@ -2076,7 +2080,7 @@ function doGet(e) {
 
       <div class="field">
         <label>Appliance / Circuit Name</label>
-        <input type="text" id="editDeviceName" placeholder="e.g. TV Power, Captain Fan, MBR Main Light" />
+        <input type="text" id="editDeviceName" placeholder="e.g. TV Power, Living Room Fan, Master Bedroom Light" />
       </div>
 
       <div class="field">
@@ -2223,6 +2227,7 @@ function doGet(e) {
       <!-- Quick Prompt Suggestion Chips -->
       <div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0;border-top:1px solid rgba(255,255,255,0.06);margin-top:auto;">
         <button class="ai-chip" onclick="submitEdgeAiQuery('auto learn all switches')">🤖 Auto Learn All</button>
+        <button class="ai-chip" onclick="submitEdgeAiQuery('what is in my misc power load')">🔌 Misc Loads?</button>
         <button class="ai-chip" onclick="submitEdgeAiQuery('what all switches are currently turned on')">🔌 Switches ON?</button>
         <button class="ai-chip" onclick="submitEdgeAiQuery('which is the top device as of now')">⚡ Top Device?</button>
         <button class="ai-chip" onclick="submitEdgeAiQuery('what is usage of my geyser last week')">🚿 Geyser Last Week?</button>
@@ -2520,6 +2525,79 @@ function doGet(e) {
     </div>
   </div>
 
+  <!-- MISCELLANEOUS & BASELOAD LOADS CONFIGURATOR MODAL -->
+  <div class="modal-backdrop" id="modalMiscLoads">
+    <div class="modal-sheet" style="max-height:90vh;display:flex;flex-direction:column;padding:16px;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-size:18px;">🔌</div>
+          <div>
+            <div style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px;">
+              <span>Configure Misc Loads</span>
+              <span class="badge" style="background:rgba(245,158,11,0.2);color:#f59e0b;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:700;">BASELOAD</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);">Select & customize all unmonitored devices included in your home</div>
+          </div>
+        </div>
+        <button class="step-btn" onclick="closeMiscLoadsModal()">✕</button>
+      </div>
+
+      <!-- Telemetry Comparison Card -->
+      <div style="background:var(--surface-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0 10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;margin-bottom:8px;">
+          <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:8px 6px;">
+            <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:2px;">Configured Misc Sum</div>
+            <div style="font-size:16px;font-weight:800;color:#f59e0b;" id="miscModalConfiguredWatts">0.0 W</div>
+          </div>
+          <div style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:8px 6px;">
+            <div style="font-size:10px;color:#38bdf8;font-weight:700;margin-bottom:2px;" id="miscModalCtHeaderLbl">CT Unmonitored Delta</div>
+            <div style="font-size:16px;font-weight:800;color:#38bdf8;" id="miscModalCtResidualWatts">0.0 W</div>
+          </div>
+        </div>
+        <div id="miscModalReconcileBar" style="font-size:11px;color:var(--muted);background:var(--surface);border-radius:8px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;">
+          <span id="miscModalReconcileText">Reconciliation: --</span>
+          <span id="miscModalReconcilePct" style="font-weight:700;color:var(--emerald);">--%</span>
+        </div>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:6px;flex-wrap:wrap;">
+        <div style="font-size:11.5px;font-weight:700;color:var(--muted);" id="miscItemsCountLabel">Included Loads (0 items)</div>
+        <div style="display:flex;gap:6px;">
+          <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;" onclick="selectAllMiscLoads(true)">Select All</button>
+          <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;" onclick="selectAllMiscLoads(false)">Deselect</button>
+          <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;background:rgba(168,85,247,0.18);color:#c084fc;border:none;" onclick="toggleAddCustomMiscDrawer()">+ Custom Item</button>
+        </div>
+      </div>
+
+      <!-- Custom Item Add Drawer (collapsible) -->
+      <div id="miscAddCustomDrawer" style="display:none;background:var(--surface);border:1px solid rgba(168,85,247,0.4);border-radius:12px;padding:10px;margin-bottom:10px;">
+        <div style="font-size:11.5px;font-weight:700;color:#c084fc;margin-bottom:6px;">Add Custom Misc Load</div>
+        <div style="display:flex;gap:8px;margin-bottom:6px;">
+          <input type="text" id="customMiscName" placeholder="e.g. CCTV NVR / DVR" style="flex:2;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11.5px;color:var(--text);" />
+          <input type="number" id="customMiscWatts" placeholder="Watts" min="1" max="2000" style="width:70px;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11.5px;color:var(--text);" />
+          <input type="text" id="customMiscIcon" value="🔌" style="width:42px;text-align:center;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 4px;font-size:13px;" />
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:6px;">
+          <button class="step-btn" style="width:auto;padding:4px 10px;font-size:10.5px;" onclick="toggleAddCustomMiscDrawer()">Cancel</button>
+          <button class="step-btn" style="width:auto;padding:4px 12px;font-size:10.5px;background:#a855f7;color:#fff;font-weight:700;border:none;" onclick="addCustomMiscLoadItem()">Add to Misc</button>
+        </div>
+      </div>
+
+      <!-- Checklist of Miscellaneous Items (Scrollable) -->
+      <div id="miscLoadItemsList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding-right:2px;max-height:42vh;">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Footer Actions -->
+      <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border);">
+        <button class="btn secondary" style="flex:1;padding:11px;font-size:11.5px;" onclick="resetMiscLoadsToDefault()">↺ Reset Defaults</button>
+        <button class="btn emerald" style="flex:2;padding:11px;font-size:12px;font-weight:700;" onclick="closeMiscLoadsModal()">💾 Done & Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAVIGATION -->
   <nav class="bottom-nav">
     <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">
@@ -2587,7 +2665,7 @@ function doGet(e) {
     { id: "demo_mbr_fan", cid: "", dp_code: "demo", name: "MBR Atomberg BLDC Fan", room: "Master Bedroom", icon: "🌀", isAtomberg: true, isNativePower: true, fanSpeed: 3, ratedWatts: 28, currentLevelPercent: 100, isOn: true, todaySeconds: 21600, todayWh: 237.6 },
     { id: "demo_mbr_light", cid: "", dp_code: "demo", name: "MBR Reading Lamp", room: "Master Bedroom", icon: "💡", isAtomberg: false, isNativePower: false, ratedWatts: 20, currentLevelPercent: 100, isOn: false, todaySeconds: 3600, todayWh: 20.0 },
     { id: "demo_mbr_geyser", cid: "", dp_code: "demo", name: "Master Bath Geyser", room: "Master Bedroom", icon: "🚿", isAtomberg: false, isNativePower: false, ratedWatts: 2000, currentLevelPercent: 100, isOn: false, todaySeconds: 2400, todayWh: 1333.3 },
-    { id: "demo_kit_fridge", cid: "", dp_code: "demo", name: "Double-Door Refrigerator", room: "Kitchen", icon: "🧊", isAtomberg: false, isNativePower: false, ratedWatts: 160, currentLevelPercent: 100, isOn: true, todaySeconds: 43200, todayWh: 1920.0 },
+    { id: "demo_kit_fridge", cid: "always_on", dp_code: "fridge", name: "Kitchen Refrigerator", room: "Kitchen", icon: "🧊", category: "fridge", isAlwaysOn: true, dutyCyclePercent: 35, isAtomberg: false, isNativePower: false, ratedWatts: 160, effectiveWatts: 56.0, currentLevelPercent: 100, isOn: true, todaySeconds: 43200, todayWh: 672.0 },
     { id: "demo_kit_chimney", cid: "", dp_code: "demo", name: "Kitchen Exhaust Chimney", room: "Kitchen", icon: "🍳", isAtomberg: false, isNativePower: false, ratedWatts: 180, currentLevelPercent: 100, isOn: false, todaySeconds: 1800, todayWh: 90.0 },
     { id: "demo_din_fan", cid: "", dp_code: "demo", name: "Dining Atomberg BLDC Fan", room: "Dining", icon: "🌀", isAtomberg: true, isNativePower: true, fanSpeed: 2, ratedWatts: 28, currentLevelPercent: 100, isOn: true, todaySeconds: 7200, todayWh: 50.4 },
     { id: "demo_din_light", cid: "", dp_code: "demo", name: "Dining Chandelier", room: "Dining", icon: "💡", isAtomberg: false, isNativePower: false, ratedWatts: 40, currentLevelPercent: 100, isOn: false, todaySeconds: 1800, todayWh: 20.0 }
@@ -4075,13 +4153,13 @@ function doGet(e) {
 
       let needsSaveAfterMigration = false;
 
-      // 1. Auto-map kids room switch_1 to Captain Fan (Atomberg BLDC) if still default
+      // 1. Auto-map kids room switch_1 to Smart BLDC Fan (Atomberg BLDC) if still default
       const captDev = devices.find(d =>
         d && (d.id === "d7445ccfc6da215112azo4_switch_1" ||
              (d.name && d.name.toLowerCase().includes("kids room") && d.dp_code === "switch_1" && d.name.includes("Main Light")))
       );
       if (captDev && (!captDev.fanVendor || captDev.name.includes("Main Light"))) {
-        captDev.name = "Captain Fan";
+        captDev.name = "Smart BLDC Fan";
         captDev.room = "Kids Room";
         captDev.icon = "🌀";
         captDev.isAtomberg = true;
@@ -4156,9 +4234,24 @@ function doGet(e) {
         }
       });
 
-      // 3. Auto-add Kitchen Refrigerator as Always-On baseline load if not present
-      const hasFridge = devices.some(d => (d.name && d.name.toLowerCase().includes("fridge")) || d.category === "fridge");
-      if (!hasFridge) {
+      // 3. Deduplicate and ensure strictly ONE Kitchen Refrigerator exists
+      const isFridgeItem = d => (d && ((d.category === "fridge") || (d.name && (d.name.toLowerCase().includes("fridge") || d.name.toLowerCase().includes("refrigerator")))));
+      const fridgeDevs = devices.filter(isFridgeItem);
+      if (fridgeDevs.length > 1) {
+        const bestFridge = fridgeDevs.find(d => d.isAlwaysOn) || fridgeDevs.find(d => d.id === "demo_kit_fridge") || fridgeDevs[0];
+        bestFridge.name = "Kitchen Refrigerator";
+        bestFridge.room = "Kitchen";
+        bestFridge.icon = "🧊";
+        bestFridge.category = "fridge";
+        bestFridge.connectionType = "always_on";
+        bestFridge.isAlwaysOn = true;
+        bestFridge.dutyCyclePercent = 35;
+        bestFridge.ratedWatts = 160;
+        bestFridge.effectiveWatts = 56.0;
+        bestFridge.isOn = true;
+        devices = devices.filter(d => !isFridgeItem(d) || d.id === bestFridge.id);
+        needsSaveAfterMigration = true;
+      } else if (fridgeDevs.length === 0) {
         devices.push({
           id: "appliance_fridge_always_on",
           cid: "always_on",
@@ -4179,6 +4272,15 @@ function doGet(e) {
           isOnline: true
         });
         needsSaveAfterMigration = true;
+      } else {
+        const singleFridge = fridgeDevs[0];
+        singleFridge.name = "Kitchen Refrigerator";
+        singleFridge.category = "fridge";
+        singleFridge.room = singleFridge.room || "Kitchen";
+        singleFridge.isAlwaysOn = true;
+        singleFridge.dutyCyclePercent = 35;
+        singleFridge.effectiveWatts = 56.0;
+        singleFridge.isOn = true;
       }
 
       // 4. Auto-map or add Bathroom Geyser (2000W with AI Cutoff) if not present
@@ -4505,9 +4607,9 @@ function doGet(e) {
             }
           }
 
-          // Hardware-level mapping for Captain Fan (Kids Room switch_1)
+          // Hardware-level mapping for Smart BLDC Fan (Kids Room switch_1)
           if (!cust && d.id === "d7445ccfc6da215112azo4" && dp.code === "switch_1") {
-            appName = "Captain Fan";
+            appName = "Smart BLDC Fan";
             appRoom = "Kids Room";
             appIcon = "🌀";
             isAt = true;
@@ -5210,11 +5312,11 @@ function doGet(e) {
     devices.forEach(d => {
       if (d.isOn) activeW += computeDeviceWatts(d);
     });
-    // Base unmonitored home load (Fridge, Wi-Fi 6 router, smart standby)
-    const baseLoad = 145.0;
-    let total = activeW + baseLoad;
+    // Base unmonitored home load (User-configured Misc Loads e.g. Wi-Fi router, TV standby, chargers, purifier)
+    const miscBaseLoad = getSelectedMiscWattsTotal();
+    let total = activeW + miscBaseLoad;
     if (demoSimulatedThermostatDrop) {
-      total = Math.max(145.0, total - 2000.0);
+      total = Math.max(miscBaseLoad, total - 2000.0);
     }
     ctMeterState.mainPhaseAWatts = Math.round(total * 0.58 * 10) / 10;
     ctMeterState.mainPhaseBWatts = Math.round(total * 0.42 * 10) / 10;
@@ -5297,6 +5399,7 @@ function doGet(e) {
     });
 
     const trackedSum = pNativeFans + pVirtualSwitches + pAlwaysOnBaseload;
+    const miscSum = getSelectedMiscWattsTotal();
 
     let pCt = 0.0;
     let pResidual = 0.0;
@@ -5306,9 +5409,9 @@ function doGet(e) {
       pCt = Math.round((pCtRaw * (ctClampScaleFactor || 1.0)) * 10) / 10;
       pResidual = Math.max(0.0, pCt - trackedSum);
     } else {
-      // Sum up all active switches, fans, and always-on baseload
-      pCt = trackedSum;
-      pResidual = 0.0;
+      // Non-CT Mode: Sum up switches, fans, fridge, plus user's configured misc loads
+      pResidual = miscSum;
+      pCt = trackedSum + pResidual;
     }
 
     const todayTotalKwh = (totalTodayWh + (hasCt ? 1800.0 : 0.0)) / 1000.0;
@@ -5448,23 +5551,25 @@ function doGet(e) {
     const insightEl = document.getElementById("friendlyInsightText");
     const tvDev = devices.find(d => (d.isTv || d.category === "tv") && d.isOn);
     const tvNote = tvDev ? (tvDev.tvScreenState === "standby" ? ` • 📺 TV in Standby (0.5W)` : ` • 📺 TV Active (${tvDev.effectiveWatts}W)`) : "";
-    const fridgeDev = devices.find(d => d.isAlwaysOn);
-    const fridgeNote = fridgeDev ? ` • 🧊 Refrigerator base (${fridgeDev.effectiveWatts}W)` : "";
+    const fridgeDev = devices.find(d => (d.category === "fridge") || (d.name && (d.name.toLowerCase().includes("fridge") || d.name.toLowerCase().includes("refrigerator"))));
+    const fridgeNote = fridgeDev ? ` • 🧊 Refrigerator base (${fridgeDev.effectiveWatts || 56}W)` : "";
     const subsidyNote = (subsidyConfig.enabled && subsidyConfig.freeUnits > 0) ? ` • 🏛️ ${subsidyConfig.freeUnits}u Free Quota` : "";
+    const miscSummary = getMiscLoadSummaryText();
+    const countActiveMisc = getMiscLoadItems().filter(it => it.selected).length;
 
     if (hasCt) {
       if (s.biggestAppliance && s.biggestWatts > 0) {
         const hrCost = formatRatePerHour(s.biggestWatts);
-        insightEl.innerHTML = `Main CT reading: <strong>${s.pCt.toFixed(0)}W</strong>. Highest load: <strong>${s.biggestAppliance.name}</strong> (${s.biggestWatts.toFixed(0)}W • ${hrCost}) + <strong>${Math.round(s.pResidual)}W</strong> unmonitored socket load${tvNote}${fridgeNote}${subsidyNote}.`;
+        insightEl.innerHTML = `Main CT reading: <strong>${s.pCt.toFixed(0)}W</strong>. Highest load: <strong>${s.biggestAppliance.name}</strong> (${s.biggestWatts.toFixed(0)}W • ${hrCost}) + <strong>${Math.round(s.pResidual)}W</strong> misc loads (${miscSummary})${tvNote}${fridgeNote}${subsidyNote}.`;
       } else {
-        insightEl.innerHTML = `All smart switches are OFF. Base home load measured by CT clamp is <strong>${Math.round(s.pResidual)}W</strong>${tvNote}${fridgeNote}${subsidyNote}.`;
+        insightEl.innerHTML = `All smart switches are OFF. Base home load measured by CT clamp is <strong>${Math.round(s.pResidual)}W</strong> misc loads (${miscSummary})${tvNote}${fridgeNote}${subsidyNote}.`;
       }
     } else {
       if (s.activeCount > 0) {
         const hrCost = formatRatePerHour(s.pCt);
-        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of all <strong>${s.activeCount} active loads</strong> • ${hrCost})${tvNote}${fridgeNote}${subsidyNote}.`;
+        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of ${s.activeCount} active loads • ${hrCost})${fridgeNote} • 🔌 Misc (${Math.round(s.pResidual)}W)${tvNote}${subsidyNote}.`;
       } else {
-        insightEl.innerHTML = `All ${devices.length} smart switches and fans are currently OFF (0 W tracked load)${subsidyNote}.`;
+        insightEl.innerHTML = `All smart switches are currently OFF. Continuous base is <strong>${Math.round(s.pCt)}W</strong> (${fridgeNote ? 'fridge + ' : ''}misc loads)${subsidyNote}.`;
       }
     }
 
@@ -5474,9 +5579,9 @@ function doGet(e) {
     const activeArcLen = Math.min(maxLen, (s.pCt / gaugeCap) * maxLen);
 
     const trackedVirtualAndAlwaysOn = s.pVirtualSwitches + s.pAlwaysOnBaseload;
-    const natShare = s.pNativeFans / total;
-    const virtShare = trackedVirtualAndAlwaysOn / total;
-    const resShare = s.pResidual / total;
+    const natShare = total > 0 ? (s.pNativeFans / total) : 0;
+    const virtShare = total > 0 ? (trackedVirtualAndAlwaysOn / total) : 0;
+    const resShare = total > 0 ? (s.pResidual / total) : 0;
 
     const natLen = activeArcLen * natShare;
     const virtLen = activeArcLen * virtShare;
@@ -5494,7 +5599,7 @@ function doGet(e) {
     // 4. Breakdown Bar & Category Cards
     document.getElementById("barNative").style.width = `${(natShare * 100).toFixed(1)}%`;
     document.getElementById("barVirtual").style.width = `${(virtShare * 100).toFixed(1)}%`;
-    document.getElementById("barResidual").style.width = hasCt ? `${(resShare * 100).toFixed(1)}%` : `0%`;
+    document.getElementById("barResidual").style.width = `${(resShare * 100).toFixed(1)}%`;
 
     document.getElementById("catNativeWatts").textContent = `${s.pNativeFans.toFixed(1)} W`;
     document.getElementById("catNativeCost").textContent = formatRatePerHour(s.pNativeFans);
@@ -5503,13 +5608,15 @@ function doGet(e) {
     document.getElementById("catVirtualCost").textContent = formatRatePerHour(trackedVirtualAndAlwaysOn);
 
     const resCard = document.getElementById("catResidualItem");
-    if (hasCt) {
+    if (resCard) {
       resCard.style.display = "flex";
+      document.getElementById("catResidualName").innerHTML = `
+        <span>Misc Loads</span>
+        <span class="badge" style="background:rgba(245,158,11,0.2);color:#f59e0b;font-size:9.5px;padding:2px 6px;border-radius:6px;font-weight:700;">⚙️ ${countActiveMisc} Active</span>
+      `;
       document.getElementById("catResidualWatts").textContent = `${s.pResidual.toFixed(1)} W`;
       document.getElementById("catResidualCost").textContent = formatRatePerHour(s.pResidual);
-      document.getElementById("catResidualDesc").textContent = "Unmonitored socket load = Total CT - Tracked Loads";
-    } else {
-      resCard.style.display = "none";
+      document.getElementById("catResidualDesc").textContent = `${miscSummary} • Tap to customize`;
     }
 
     // 5. Quick Controls on Home Tab
@@ -5788,6 +5895,38 @@ function doGet(e) {
         </div>
       `;
     }).join("");
+
+    const s = computeHomeSummary();
+    const activeMiscWatts = s.pResidual > 0 ? s.pResidual : getSelectedMiscWattsTotal();
+    const countActive = getMiscLoadItems().filter(it => it.selected).length;
+    const miscSummary = getMiscLoadSummaryText();
+
+    if (selectedRoom === "All Rooms" || selectedRoom === "Kitchen") {
+      listEl.innerHTML += `
+        <div class="app-card" style="border:1px dashed rgba(245,158,11,0.5);background:rgba(245,158,11,0.06);cursor:pointer;margin-top:10px;" onclick="openMiscLoadsModal()">
+          <div class="app-row">
+            <div class="app-info">
+              <div class="app-avatar" style="background:rgba(245,158,11,0.2);color:#f59e0b;font-size:22px;">🔌</div>
+              <div>
+                <div class="app-title" style="display:flex;align-items:center;gap:6px;">
+                  <span>Misc & Baseload Loads</span>
+                  <span class="source-badge assumed" style="background:rgba(245,158,11,0.2);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);">⚙️ ${countActive} Selected</span>
+                </div>
+                <div class="app-room">${miscSummary} • Tap to customize</div>
+                <div class="runtime-pill">⚡ Always-on unmetered household power</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="text-align:right;">
+                <div class="app-power-tag" style="color:#f59e0b;">${activeMiscWatts.toFixed(1)} W</div>
+                <div class="app-cost-tag">${formatRatePerHour(activeMiscWatts)}</div>
+              </div>
+              <button class="step-btn" style="width:auto;padding:5px 9px;font-size:10px;background:rgba(245,158,11,0.2);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);border-radius:12px;font-weight:700;">⚙️ Configure</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
   }
 
   function selectRoom(room) {
@@ -6185,6 +6324,47 @@ function doGet(e) {
         `• **🛡️ House State Guard:** Omnia snapshots all switch states before starting.\n` +
         `• **⚡ Sequential Calibration:** Each smart switch will be sequentially turned ON, physical wattage delta measured on the live CT clamp, calibrated to exact power, and turned OFF.\n` +
         `• **🏡 Exact House Restoration:** When finished (or stopped), every single switch is returned to its exact pre-sweep state!`;
+    }
+
+    // Intent: Miscellaneous & Baseload Loads
+    if (
+      q.includes("misc") ||
+      q.includes("additional") ||
+      q.includes("extra power") ||
+      q.includes("unmonitored") ||
+      q.includes("residual") ||
+      q.includes("socket load") ||
+      q.includes("phantom")
+    ) {
+      const items = getMiscLoadItems();
+      const activeItems = items.filter(it => it.selected);
+      const miscSum = getSelectedMiscWattsTotal();
+      const lines = activeItems.map(it => `• **${it.icon || '🔌'} ${it.name}:** ~${it.watts} W *(${it.note || 'Unmonitored baseload'})*`);
+
+      let res = `🔌 **Miscellaneous & Always-On Loads (${activeItems.length} items configured):**\n\n` +
+        `${lines.join("\n")}\n\n` +
+        `📊 **Total Configured Misc Baseload:** **${miscSum.toFixed(1)} W** (${currencySymbol}${((miscSum / 1000) * tariffPerKwh).toFixed(2)}/hr)\n`;
+      if (s.hasCt) {
+        const ctDiff = s.pResidual - miscSum;
+        res += `⚡ **CT Measured Extra Power:** **${s.pResidual.toFixed(1)} W**\n` +
+          `🎯 **Reconciliation:** **${Math.min(100, Math.round((miscSum / (s.pResidual || 1)) * 100))}% accounted for**` +
+          (ctDiff > 5 ? ` (~${ctDiff.toFixed(0)}W unallocated wall socket / phantom draw)` : ``) +
+          `\n\n💡 *Tip: Tap '⚙️ Select' on the Misc Loads card to add or modify items.*`;
+      }
+      return res;
+    }
+
+    // Intent: Refrigerator Status (Single Refrigerator check)
+    if (q.includes("fridge") || q.includes("refrigerator")) {
+      const fridgeDev = devices.find(d => (d.category === "fridge") || (d.name && (d.name.toLowerCase().includes("fridge") || d.name.toLowerCase().includes("refrigerator"))));
+      if (fridgeDev) {
+        const w = computeDeviceWatts(fridgeDev);
+        return `🧊 **Kitchen Refrigerator:**\n\n` +
+          `• **Status:** Running 24×7 Always-On\n` +
+          `• **Continuous Baseload:** **${w.toFixed(1)} W** (160W compressor with 35% duty cycle)\n` +
+          `• **Estimated Cost:** ~${currencySymbol}${((w / 1000) * tariffPerKwh).toFixed(2)}/hr (${currencySymbol}${((w * 24 / 1000) * tariffPerKwh).toFixed(1)}/day)\n` +
+          `• **Household Note:** Configured as the single primary refrigerator in your home. All other unmonitored power (Wi-Fi, purifier, chargers) is categorized under **Misc Loads**.`;
+      }
     }
 
     // Intent 1: Switches currently turned on / Active devices
@@ -7289,6 +7469,238 @@ function doGet(e) {
     haptic(45);
     renderAll();
     showToast(`🎉 Whole-Home Auto-Sweep finished! ${autoSweepState.results.length} switches calibrated & house restored.`);
+  }
+
+  // ===========================================================================
+  // MISCELLANEOUS & BASELOAD LOADS ENGINE
+  // ===========================================================================
+  const DEFAULT_MISC_LOAD_ITEMS = [
+    { id: "misc_wifi_router", name: "Wi-Fi Router & Fiber ONT", watts: 12.0, icon: "📶", selected: true, note: "Always-on network baseload" },
+    { id: "misc_tv_standby", name: "Smart TV Standby (Living Room)", watts: 4.0, icon: "📺", selected: true, note: "Standby quiescent draw" },
+    { id: "misc_ro_purifier", name: "Water Purifier (RO) Standby", watts: 8.0, icon: "💧", selected: true, note: "UV lamp & booster standby" },
+    { id: "misc_chargers", name: "Phone & Tablet Chargers", watts: 10.0, icon: "🔋", selected: true, note: "Trickle & standby chargers" },
+    { id: "misc_smart_hub", name: "Smart Hub, Doorbell & CCTV", watts: 15.0, icon: "📹", selected: true, note: "Security cameras & smart hub" },
+    { id: "misc_mosquito_rep", name: "Mosquito Vaporizers", watts: 6.0, icon: "🦟", selected: false, note: "Overnight vaporizers" },
+    { id: "misc_microwave_clock", name: "Microwave Clock & Standby", watts: 3.0, icon: "⏲️", selected: true, note: "Kitchen appliance standby" },
+    { id: "misc_settop_box", name: "Set-Top Box Standby", watts: 5.0, icon: "📡", selected: false, note: "DTH / Streaming box idle" },
+    { id: "misc_alexa_google", name: "Smart Speakers (Echo / Nest)", watts: 4.0, icon: "🔊", selected: true, note: "Always-listening smart audio" }
+  ];
+
+  function getMiscLoadItems() {
+    try {
+      const raw = localStorage.getItem("omnia_misc_load_items");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn("Failed to load misc load items from storage:", e);
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_MISC_LOAD_ITEMS));
+  }
+
+  function saveMiscLoadItems(items) {
+    try {
+      localStorage.setItem("omnia_misc_load_items", JSON.stringify(items));
+    } catch (e) {
+      console.warn("Failed to save misc load items:", e);
+    }
+  }
+
+  function getSelectedMiscWattsTotal() {
+    const items = getMiscLoadItems();
+    return items.filter(it => it.selected).reduce((sum, it) => sum + (Number(it.watts) || 0), 0);
+  }
+
+  function getMiscLoadSummaryText() {
+    const items = getMiscLoadItems().filter(it => it.selected);
+    if (items.length === 0) return "None selected (0W)";
+    const names = items.slice(0, 2).map(it => it.name.split(" ")[0]);
+    const rem = items.length - 2;
+    if (rem > 0) {
+      return `${names.join(", ")} (+${rem} more)`;
+    }
+    return names.join(", ");
+  }
+
+  function openMiscLoadsModal() {
+    haptic(15);
+    renderMiscLoadsModalContent();
+    const modal = document.getElementById("modalMiscLoads");
+    if (modal) modal.classList.add("open");
+  }
+
+  function closeMiscLoadsModal() {
+    haptic(10);
+    const modal = document.getElementById("modalMiscLoads");
+    if (modal) modal.classList.remove("open");
+    renderAll();
+  }
+
+  function renderMiscLoadsModalContent() {
+    const items = getMiscLoadItems();
+    const listEl = document.getElementById("miscLoadItemsList");
+    const configuredWattsEl = document.getElementById("miscModalConfiguredWatts");
+    const ctResidualWattsEl = document.getElementById("miscModalCtResidualWatts");
+    const ctHeaderLbl = document.getElementById("miscModalCtHeaderLbl");
+    const countLabel = document.getElementById("miscItemsCountLabel");
+    const reconcileText = document.getElementById("miscModalReconcileText");
+    const reconcilePct = document.getElementById("miscModalReconcilePct");
+
+    const selectedItems = items.filter(it => it.selected);
+    const configuredSum = selectedItems.reduce((acc, it) => acc + (Number(it.watts) || 0), 0);
+    if (configuredWattsEl) configuredWattsEl.textContent = `${configuredSum.toFixed(1)} W`;
+
+    // Compute live CT Residual Delta
+    const s = computeHomeSummary();
+    const ctResidual = s.pResidual || 0;
+    if (ctResidualWattsEl) ctResidualWattsEl.textContent = `${ctResidual.toFixed(1)} W`;
+    if (ctHeaderLbl) {
+      ctHeaderLbl.textContent = ctResidual > 0 ? "CT Unmonitored Delta" : "Unmonitored Baseload";
+    }
+
+    if (countLabel) {
+      countLabel.textContent = `Included Loads (${selectedItems.length}/${items.length} selected • ${configuredSum.toFixed(1)} W)`;
+    }
+
+    if (reconcileText && reconcilePct) {
+      if (ctResidual > 0) {
+        const diff = configuredSum - ctResidual;
+        const pct = Math.min(100, Math.round((Math.min(configuredSum, ctResidual) / Math.max(configuredSum, ctResidual, 1)) * 100));
+        reconcilePct.textContent = `${pct}% Match`;
+        if (Math.abs(diff) <= 15) {
+          reconcileText.textContent = `⚖️ Well Reconciled (${diff >= 0 ? '+' : ''}${diff.toFixed(0)}W delta)`;
+          reconcilePct.style.color = "var(--emerald)";
+        } else if (configuredSum < ctResidual) {
+          reconcileText.textContent = `⚠️ Unexplained residual: ${(ctResidual - configuredSum).toFixed(0)}W extra`;
+          reconcilePct.style.color = "#f59e0b";
+        } else {
+          reconcileText.textContent = `ℹ️ Configured misc exceeds CT residual by ${(configuredSum - ctResidual).toFixed(0)}W`;
+          reconcilePct.style.color = "#38bdf8";
+        }
+      } else {
+        reconcileText.textContent = "Estimated standalone baseload";
+        reconcilePct.textContent = `${configuredSum.toFixed(0)} W`;
+        reconcilePct.style.color = "var(--emerald)";
+      }
+    }
+
+    if (!listEl) return;
+    listEl.innerHTML = items.map(it => `
+      <div style="background:${it.selected ? 'rgba(245,158,11,0.08)' : 'var(--surface)'};border:1px solid ${it.selected ? 'rgba(245,158,11,0.35)' : 'var(--border)'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all 0.15s ease;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;" onclick="toggleMiscLoadItem('${it.id}')">
+          <input type="checkbox" ${it.selected ? 'checked' : ''} style="width:18px;height:18px;accent-color:#f59e0b;cursor:pointer;" onclick="event.stopPropagation(); toggleMiscLoadItem('${it.id}')" />
+          <div style="font-size:20px;line-height:1;">${it.icon || '🔌'}</div>
+          <div>
+            <div style="font-size:12.5px;font-weight:${it.selected ? '700' : '500'};color:${it.selected ? 'var(--text)' : 'var(--muted)'};">${it.name}</div>
+            <div style="font-size:10.5px;color:var(--muted);">${it.note || 'Unmonitored appliance'}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="number" value="${it.watts}" min="1" max="3000" step="0.5" style="width:58px;background:var(--surface-soft);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;font-weight:700;color:#f59e0b;text-align:right;" onchange="updateMiscLoadItemWatts('${it.id}', this.value)" />
+          <span style="font-size:11px;color:var(--muted);font-weight:600;">W</span>
+          ${it.isCustom ? `<button class="step-btn" style="width:24px;height:24px;padding:0;font-size:11px;color:#ef4444;border-color:rgba(239,68,68,0.3);" onclick="deleteMiscLoadItem('${it.id}')" title="Delete custom item">🗑️</button>` : ''}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function toggleMiscLoadItem(id) {
+    haptic(10);
+    const items = getMiscLoadItems();
+    const idx = items.findIndex(it => it.id === id);
+    if (idx >= 0) {
+      items[idx].selected = !items[idx].selected;
+      saveMiscLoadItems(items);
+      renderMiscLoadsModalContent();
+    }
+  }
+
+  function updateMiscLoadItemWatts(id, wattsVal) {
+    const w = parseFloat(wattsVal);
+    if (isNaN(w) || w <= 0) return;
+    const items = getMiscLoadItems();
+    const idx = items.findIndex(it => it.id === id);
+    if (idx >= 0) {
+      items[idx].watts = Math.round(w * 10) / 10;
+      saveMiscLoadItems(items);
+      renderMiscLoadsModalContent();
+    }
+  }
+
+  function selectAllMiscLoads(selected) {
+    haptic(12);
+    const items = getMiscLoadItems().map(it => ({ ...it, selected }));
+    saveMiscLoadItems(items);
+    renderMiscLoadsModalContent();
+  }
+
+  function resetMiscLoadsToDefault() {
+    haptic(25);
+    saveMiscLoadItems(DEFAULT_MISC_LOAD_ITEMS);
+    renderMiscLoadsModalContent();
+    showToast("↺ Misc Loads reset to default baseload items");
+  }
+
+  function toggleAddCustomMiscDrawer() {
+    haptic(10);
+    const el = document.getElementById("miscAddCustomDrawer");
+    if (el) {
+      const isShowing = el.style.display === "block";
+      el.style.display = isShowing ? "none" : "block";
+      if (!isShowing) {
+        const input = document.getElementById("customMiscName");
+        if (input) input.focus();
+      }
+    }
+  }
+
+  function addCustomMiscLoadItem() {
+    const nameInput = document.getElementById("customMiscName");
+    const wattsInput = document.getElementById("customMiscWatts");
+    const iconInput = document.getElementById("customMiscIcon");
+
+    const name = nameInput.value.trim();
+    const watts = parseFloat(wattsInput.value);
+    const icon = iconInput.value.trim() || "🔌";
+
+    if (!name) {
+      showToast("⚠️ Please enter a load name (e.g. CCTV DVR)");
+      return;
+    }
+    if (isNaN(watts) || watts <= 0) {
+      showToast("⚠️ Please enter valid watts (e.g. 15)");
+      return;
+    }
+
+    const items = getMiscLoadItems();
+    const id = "misc_custom_" + Date.now();
+    items.push({
+      id,
+      name,
+      watts: Math.round(watts * 10) / 10,
+      icon,
+      selected: true,
+      isCustom: true,
+      note: "User defined misc load"
+    });
+
+    saveMiscLoadItems(items);
+    nameInput.value = "";
+    wattsInput.value = "";
+    toggleAddCustomMiscDrawer();
+    renderMiscLoadsModalContent();
+    haptic(30);
+    showToast(`✅ Added "${name}" (${watts}W) to Misc Loads`);
+  }
+
+  function deleteMiscLoadItem(id) {
+    haptic(20);
+    let items = getMiscLoadItems();
+    items = items.filter(it => it.id !== id);
+    saveMiscLoadItems(items);
+    renderMiscLoadsModalContent();
+    showToast("🗑️ Removed custom item from Misc Loads");
   }
 
   // ===========================================================================
