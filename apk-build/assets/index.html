@@ -7983,24 +7983,26 @@ function saveOnboardCreds() {
       const explicitMeter = discoveredMeters.find(m => m.id === savedCtId);
       if (explicitMeter) allMetersToPoll.push(explicitMeter);
     } else if (savedCtId === "auto") {
-      allMetersToPoll = [...discoveredMeters];
+      allMetersToPoll = discoveredMeters.filter(m => m.category === "zndb" || (m.name && m.name.toLowerCase().includes("meter")));
+      if (allMetersToPoll.length === 0) allMetersToPoll = [...discoveredMeters];
     }
     
     if (allMetersToPoll.length === 0) return;
     
-    const mIds = allMetersToPoll.map(m => m.id).join(",");
-    try {
-      const mDevsRes = window.OmniaNative.tuyaSignedRequest(
-        endpoint, clientId, clientSecret, token, "GET",
-        `/v1.0/devices?device_ids=${mIds}`, ""
-      );
-      const devsObj = JSON.parse(mDevsRes);
-      if (devsObj.success && Array.isArray(devsObj.result)) {
-        let totalPhaseA = 0.0;
-        let totalPhaseB = 0.0;
-        devsObj.result.forEach(m => {
-          let pA = 0, pB = 0, pTot = 0, fwdKwh = 0;
-          m.status.forEach(p => {
+    let totalPhaseA = 0.0;
+    let totalPhaseB = 0.0;
+
+    allMetersToPoll.forEach(m => {
+      try {
+        let pA = 0, pB = 0, pTot = 0;
+        // Priority 1: High-precision shadow properties (Tuya updates this in real-time)
+        const spRaw = window.OmniaNative.tuyaSignedRequest(
+          endpoint, clientId, clientSecret, token, "GET",
+          `/v2.0/cloud/thing/${m.id}/shadow/properties`, ""
+        );
+        const sp = JSON.parse(spRaw);
+        if (sp.success && sp.result && Array.isArray(sp.result.properties)) {
+          sp.result.properties.forEach(p => {
             if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
             if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
             if (p.code === "total_power" || p.dp_id === 115) {
@@ -8008,17 +8010,40 @@ function saveOnboardCreds() {
               pTot = tv > 500 ? tv / 10.0 : tv;
             }
           });
-          if (pA > 0 || pB > 0) {
-            totalPhaseA += pA;
-            totalPhaseB += pB;
-          } else if (pTot > 0) {
-            totalPhaseA += pTot;
+        }
+
+        // Priority 2: Fallback to device query if shadow was empty
+        if (pA === 0 && pB === 0 && pTot === 0) {
+          const mDevsRes = window.OmniaNative.tuyaSignedRequest(
+            endpoint, clientId, clientSecret, token, "GET",
+            `/v1.0/devices/${m.id}/status`, ""
+          );
+          const stObj = JSON.parse(mDevsRes);
+          if (stObj.success && Array.isArray(stObj.result)) {
+            stObj.result.forEach(p => {
+              if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
+              if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
+              if (p.code === "total_power" || p.dp_id === 115) {
+                const tv = parseFloat(p.value);
+                pTot = tv > 500 ? tv / 10.0 : tv;
+              }
+            });
           }
-        });
-        ctMeterState.mainPhaseAWatts = totalPhaseA;
-        ctMeterState.mainPhaseBWatts = totalPhaseB;
-      }
-    } catch(e) {}
+        }
+
+        if (pA > 0 || pB > 0) {
+          totalPhaseA += pA;
+          totalPhaseB += pB;
+        } else if (pTot > 0) {
+          totalPhaseA += pTot;
+        }
+      } catch(e) {}
+    });
+
+    if (totalPhaseA > 0 || totalPhaseB > 0) {
+      ctMeterState.mainPhaseAWatts = totalPhaseA;
+      ctMeterState.mainPhaseBWatts = totalPhaseB;
+    }
   }
 
   function startWholeHomeAutoSweep() {
@@ -8099,7 +8124,7 @@ function saveOnboardCreds() {
     // Ensure target device is OFF first so baseline represents home without this load
     setAppliancePowerState(devIdx, false);
     document.getElementById("autoSweepStepText").innerHTML =
-      `<span class="pulse-dot" style="background:#38bdf8;"></span><span>Phase 1/3: Settling baseline CT power (switch is OFF)... (5s)</span>`;
+      `<span class="pulse-dot" style="background:#38bdf8;"></span><span>Phase 1/3: Settling baseline CT power (switch is OFF)... (8s)</span>`;
 
     renderAutoSweepLiveLog();
 
@@ -8119,7 +8144,7 @@ function saveOnboardCreds() {
       haptic(20);
       document.getElementById("autoSweepSwitchStateBadge").innerHTML = `<span style="color:var(--emerald);font-weight:800;">⚡ SWITCH ON</span>`;
       document.getElementById("autoSweepStepText").innerHTML =
-        `<span class="pulse-dot" style="background:#10b981;"></span><span>Phase 2/3: Turned ON switch • Waiting for CT hardware jump... (15s)</span>`;
+        `<span class="pulse-dot" style="background:#10b981;"></span><span>Phase 2/3: Turned ON switch • Waiting for CT hardware jump... (18s)</span>`;
 
       // 15-second delay to let the physical CT meter register the power jump and report to Tuya
       autoSweepState.stepTimer = setTimeout(() => {
@@ -8187,9 +8212,9 @@ function saveOnboardCreds() {
           runAutoSweepNextDevice();
         }, 5000);
 
-      }, 15000);
+      }, 18000);
 
-    }, 5000);
+    }, 8000);
   }
 
   function renderAutoSweepLiveLog() {
