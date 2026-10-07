@@ -1354,7 +1354,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <div>
             <div class="section-title" style="margin-bottom:2px;">Currently Active & Favourites</div>
-            <div class="section-sub" style="margin-bottom:0;">Tap to toggle appliance load in real time</div>
+            <div class="section-sub" style="margin-bottom:0;">Tap tile to open room & configure controls</div>
           </div>
           <button class="room-chip" onclick="switchTab('rooms')">All Rooms →</button>
         </div>
@@ -6447,7 +6447,7 @@ function saveOnboardCreds() {
       const todayCostOrUnits = isTariffEnabled ? `${currencySymbol}${(todayKwh * tariffPerKwh).toFixed(1)}` : `${todayKwh.toFixed(2)}u`;
       const sourceTag = (d.isAlwaysOn || d.isHomeConnect) ? '🧊' : (d.isNativePower ? '⚡' : '📐');
       const stateLbl = d.isCtMeter ? 'METER' : (d.isAlwaysOn ? '24×7' : (d.isOn ? 'ON' : 'OFF'));
-      const clickAction = (d.isCtMeter || d.isAlwaysOn) ? '' : `toggleAppliance(${idx})`;
+      const clickAction = `navigateToApplianceRoom('${(d.room || "All Rooms").replace(/'/g, "\\'")}', ${idx})`;
       const isHotIdle = d.isOn && d.thermostatState === 'idle_hot';
       let quickSub = `${d.room} • ${todayCostOrUnits} today`;
       if (d.isOn) {
@@ -6614,7 +6614,7 @@ function saveOnboardCreds() {
       ` : "";
 
       return `
-        <div class="app-card ${d.isOn ? 'active-load' : ''}">
+        <div class="app-card ${d.isOn ? 'active-load' : ''}" id="roomAppCard_${idx}">
           <div class="app-row">
             <div class="app-info" onclick="openDeviceConfigModal(${idx}, event)" style="cursor:pointer;">
               <div class="app-avatar">${d.icon || '🔌'}</div>
@@ -6694,6 +6694,28 @@ function saveOnboardCreds() {
     haptic(12);
     selectedRoom = room;
     renderRoomsTab();
+  }
+
+  function navigateToApplianceRoom(room, idx) {
+    haptic(16);
+    selectedRoom = room || "All Rooms";
+    switchTab("rooms");
+    renderRoomsTab();
+    
+    // Highlight the target appliance card in that room
+    setTimeout(() => {
+      const card = document.getElementById(`roomAppCard_${idx}`);
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.style.transition = "all 0.3s ease";
+        card.style.outline = "2px solid var(--emerald)";
+        card.style.boxShadow = "0 0 16px rgba(16,185,129,0.4)";
+        setTimeout(() => {
+          card.style.outline = "none";
+          card.style.boxShadow = "none";
+        }, 1800);
+      }
+    }, 150);
   }
 
   function renderBillCharts(todayRs, currentMonthEstRs) {
