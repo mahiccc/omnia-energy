@@ -4898,102 +4898,6 @@ function saveOnboardCreds() {
         needsSaveAfterMigration = true;
       }
 
-      // 2. Auto-map 3CH Zigbee Switch Module to individual appliances: 1 TV, 1 Show Light, Showlight 2
-      devices.forEach(d => {
-        if (!d) return;
-        if (d.cid === "d76253e070e8452f5flcjy" || (d.id && d.id.startsWith("d76253e070e8452f5flcjy"))) {
-          if (d.dp_code === "switch_2") {
-            d.name = "TV Power";
-            d.room = "Living Room";
-            d.icon = "📺";
-            d.category = "tv";
-            d.isTv = true;
-            d.tvBrand = d.tvBrand || "Samsung";
-            d.tvSize = d.tvSize || "55_qled";
-            d.tvModel = d.tvModel || "Smart TV 55\"";
-            d.ratedWatts = d.ratedWatts || 110;
-            d.tvActiveWatts = d.tvActiveWatts || d.ratedWatts || 110;
-            d.tvStandbyWatts = d.tvStandbyWatts || 0.5;
-            if (d.tvScreenState === undefined) {
-              d.tvScreenState = "standby";
-              d.effectiveWatts = 0.5;
-              needsSaveAfterMigration = true;
-            }
-            d.isAtomberg = false;
-            d.isNativePower = false;
-            d.powerSource = "assumed";
-            needsSaveAfterMigration = true;
-          } else if (d.dp_code === "switch_1" && d.name !== "Show Light") {
-            d.name = "Show Light";
-            d.room = "Living Room";
-            d.icon = "💡";
-            d.ratedWatts = 15;
-            d.effectiveWatts = 15;
-            d.isAtomberg = false;
-            d.isNativePower = false;
-            d.powerSource = "assumed";
-            needsSaveAfterMigration = true;
-          } else if (d.dp_code === "switch_3" && d.name !== "Showlight 2") {
-            d.name = "Showlight 2";
-            d.room = "Living Room";
-            d.icon = "💡";
-            d.ratedWatts = 15;
-            d.effectiveWatts = 15;
-            d.isAtomberg = false;
-            d.isNativePower = false;
-            d.powerSource = "assumed";
-            needsSaveAfterMigration = true;
-          }
-        }
-        if (d.cid === "d709a5c7d939120fdcnk4j" || (d.id && d.id.startsWith("d709a5c7d939120fdcnk4j"))) {
-          if (d.dp_code === "switch_1" && (!d.name || d.name.includes("2CH Zigbee") || d.name.includes("Main Light"))) {
-            d.name = "2CH Switch 1";
-            d.room = "Living Room";
-            d.icon = "💡";
-            needsSaveAfterMigration = true;
-          } else if (d.dp_code === "switch_2" && (!d.name || d.name.includes("2CH Zigbee") || d.name.includes("Profile Light"))) {
-            d.name = "2CH Switch 2";
-            d.room = "Living Room";
-            d.icon = "💡";
-            needsSaveAfterMigration = true;
-          }
-        }
-      });
-
-
-      // 4. Auto-map or add Bathroom Geyser (2000W with AI Cutoff) if not present
-      const hasGeyser = devices.some(d => (d.name && (d.name.toLowerCase().includes("geyser") || d.name.toLowerCase().includes("water heater"))) || d.category === "geyser");
-      if (!hasGeyser) {
-        devices.push({
-          id: "appliance_geyser_15l",
-          cid: "smart_switch_geyser",
-          dp_code: "geyser_1",
-          name: "Bathroom Geyser 15L",
-          room: "Bathroom",
-          icon: "🚿",
-          category: "geyser",
-          connectionType: "smart_switch",
-          ratedWatts: 2000,
-          effectiveWatts: 0.0,
-          currentLevelPercent: 100,
-          isOn: false,
-          todaySeconds: 1800,
-          todayWh: 1000.0,
-          pastWeekKwh: 13.5,
-          pastWeekHours: 6.75,
-          isOnline: true,
-          powerSource: "assumed"
-        });
-        needsSaveAfterMigration = true;
-      }
-
-      // Legacy Cleanup: Remove old hardcoded fridge from localStorage (v1.0.8 migration)
-      const oldLen = devices.length;
-      devices = devices.filter(d => d.id !== "demo_kit_fridge" && d.id !== "appliance_fridge_always_on");
-      if (devices.length < oldLen) {
-        needsSaveAfterMigration = true;
-      }
-
       // Restore CT Calibration Factor
       const savedCtFactor = localStorage.getItem("omnia_ct_calibration_factor");
       if (savedCtFactor && !isNaN(parseFloat(savedCtFactor))) {
@@ -5090,41 +4994,53 @@ function saveOnboardCreds() {
     return "Main Home";
   }
 
-  function inferApplianceMeta(devName, dpCode, totalGangs, gangIdx) {
-    const n = (devName || "").toLowerCase();
-    const gangNum = dpCode.replace(/\D/g, '') || String(gangIdx + 1);
+  function inferApplianceMeta(devName, dpCode, totalGangs, gangIdx, customDpName) {
+    // If Tuya cloud stored a custom name for this gang, prioritize it!
+    let label = customDpName && customDpName.trim() ? customDpName.trim() : "";
+    let finalName = "";
 
-    if (n.includes("geyser") || n.includes("water heater") || n.includes("boiler")) {
-      return { name: devName, ratedWatts: 2000, icon: "🚿", isAtomberg: false };
-    }
-    if (n.includes("ac") || n.includes("air con") || n.includes("hvac") || n.includes("cooler")) {
-      return { name: devName, ratedWatts: 1400, icon: "❄️", isAtomberg: false };
-    }
-    if (n.includes("chimney")) {
-      return { name: devName, ratedWatts: 180, icon: "🍳", isAtomberg: false };
-    }
-    if (n.includes("fridge") || n.includes("refrigerator")) {
-      return { name: devName, ratedWatts: 160, icon: "🧊", isAtomberg: false };
-    }
-    if (n.includes("socket") || n.includes("plug") || n.includes("heavy")) {
-      return { name: devName, ratedWatts: 800, icon: "🔌", isAtomberg: false };
-    }
-    if (n.includes("fan") || n.includes("bldc") || n.includes("atomberg")) {
-      return { name: devName, ratedWatts: 28, icon: "🌀", isAtomberg: true, fanVendor: "atomberg" };
+    if (label) {
+      // If the parent device name is already in the label (e.g. "Parents room Fan"), use label directly
+      if (label.toLowerCase().includes(devName.toLowerCase())) {
+        finalName = label;
+      } else {
+        finalName = `${devName} — ${label}`;
+      }
+    } else if (totalGangs > 1) {
+      const gangNum = dpCode.replace(/\D/g, '') || String(gangIdx + 1);
+      finalName = `${devName} — Switch ${gangNum}`;
+    } else {
+      finalName = devName;
     }
 
-    if (totalGangs > 1) {
-      const gangLabels = ["Main Light", "Profile Light", "Accent Lamp", "Spot Light", "Cove Strip", "Fan/Switch"];
-      const lbl = gangLabels[gangIdx] || `Gang ${gangNum}`;
-      return {
-        name: `${devName} — ${lbl}`,
-        ratedWatts: lbl.includes("Profile") ? 18 : 20,
-        icon: lbl.includes("Profile") ? "✨" : "💡",
-        isAtomberg: false
-      };
+    const checkStr = (finalName + " " + label).toLowerCase();
+
+    if (checkStr.includes("geyser") || checkStr.includes("water heater") || checkStr.includes("boiler")) {
+      return { name: finalName, ratedWatts: 2000, icon: "🚿", isAtomberg: false };
+    }
+    if (/(ac|air con|aircon|hvac|cooler)/i.test(checkStr)) {
+      return { name: finalName, ratedWatts: 1400, icon: "❄️", isAtomberg: false };
+    }
+    if (checkStr.includes("chimney")) {
+      return { name: finalName, ratedWatts: 180, icon: "🍳", isAtomberg: false };
+    }
+    if (checkStr.includes("fridge") || checkStr.includes("refrigerator")) {
+      return { name: finalName, ratedWatts: 160, icon: "🧊", isAtomberg: false };
+    }
+    if (checkStr.includes("tv")) {
+      return { name: finalName, ratedWatts: 110, icon: "📺", isAtomberg: false };
+    }
+    if (checkStr.includes("socket") || checkStr.includes("plug") || checkStr.includes("heavy")) {
+      return { name: finalName, ratedWatts: 800, icon: "🔌", isAtomberg: false };
+    }
+    if (checkStr.includes("fan") || checkStr.includes("bldc") || checkStr.includes("atomberg") || checkStr.includes("captain")) {
+      return { name: finalName, ratedWatts: 28, icon: "🌀", isAtomberg: true, fanVendor: "atomberg" };
+    }
+    if (checkStr.includes("profile") || checkStr.includes("strip") || checkStr.includes("cove") || checkStr.includes("zero")) {
+      return { name: finalName, ratedWatts: 20, icon: "✨", isAtomberg: false };
     }
 
-    return { name: devName, ratedWatts: 25, icon: "💡", isAtomberg: false };
+    return { name: finalName, ratedWatts: 20, icon: "💡", isAtomberg: false };
   }
 
   function discoverUserHomeLogic(endpoint, clientId, clientSecret, uid, logBox, onSuccess, onError) {
@@ -5269,6 +5185,23 @@ function saveOnboardCreds() {
         const curPowerDp = statusList.find(s => s && (s.code === "cur_power" || s.code === "power" || s.code === "cur_power_1"));
         const hasNativeMeter = Boolean(curPowerDp);
 
+        // Fetch custom gang names directly from Tuya Cloud device shadow
+        const cloudGangNames = {};
+        try {
+          const shRaw = window.OmniaNative.tuyaSignedRequest(
+            endpoint, clientId, clientSecret, token, "GET",
+            `/v2.0/cloud/thing/${d.id}/shadow/properties`, ""
+          );
+          const shObj = JSON.parse(shRaw);
+          if (shObj.success && shObj.result && Array.isArray(shObj.result.properties)) {
+            shObj.result.properties.forEach(p => {
+              if (p && p.code && p.custom_name && p.custom_name.trim()) {
+                cloudGangNames[p.code] = p.custom_name.trim();
+              }
+            });
+          }
+        } catch(e) {}
+
         let customMap = {};
         try {
           customMap = JSON.parse(localStorage.getItem("omnia_device_customizations") || "{}");
@@ -5277,7 +5210,8 @@ function saveOnboardCreds() {
         switchDps.forEach((dp, gIdx) => {
           const devKey = `${d.id}_${dp.code}`;
           const cust = customMap[devKey];
-          const meta = inferApplianceMeta(dName, dp.code, switchDps.length, gIdx);
+          const cloudName = cloudGangNames[dp.code] || "";
+          const meta = inferApplianceMeta(dName, dp.code, switchDps.length, gIdx, cloudName);
 
           let appName = (cust && cust.name) ? cust.name : meta.name;
           let appRoom = (cust && cust.room) ? cust.room : roomName;
@@ -5287,79 +5221,6 @@ function saveOnboardCreds() {
           let fSpd = (cust && cust.fanSpeed !== undefined) ? cust.fanSpeed : (isAt ? 4 : undefined);
           let rWatts = (cust && cust.ratedWatts !== undefined) ? cust.ratedWatts : meta.ratedWatts;
           let isNat = hasNativeMeter || isAt;
-
-          // Hardware-level mapping for user's 3CH Zigbee Switch Module
-          if (!cust && d.id === "d76253e070e8452f5flcjy") {
-            if (dp.code === "switch_2") {
-              appName = "TV Power";
-              appRoom = "Living Room";
-              appIcon = "📺";
-              rWatts = 110;
-              isAt = false;
-              isNat = false;
-            } else if (dp.code === "switch_1") {
-              appName = "Show Light";
-              appRoom = "Living Room";
-              appIcon = "💡";
-              rWatts = 15;
-              isAt = false;
-              isNat = false;
-            } else if (dp.code === "switch_3") {
-              appName = "Showlight 2";
-              appRoom = "Living Room";
-              appIcon = "💡";
-              rWatts = 15;
-              isAt = false;
-              isNat = false;
-            }
-          }
-
-          // Hardware-level mapping for Smart BLDC Fan (Kids Room switch_1)
-          if (!cust && d.id === "d7445ccfc6da215112azo4" && dp.code === "switch_1") {
-            appName = "Smart BLDC Fan";
-            appRoom = "Kids Room";
-            appIcon = "🌀";
-            isAt = true;
-            fanV = "atomberg";
-            fSpd = 4;
-            rWatts = 28;
-            isNat = true;
-          }
-
-          // Hardware-level mapping for MBR 3CH Switch Module
-          if (!cust && d.id === "d7ddaef9cdcaa3b245jzwm") {
-            if (dp.code === "switch_1") {
-              appName = "MBR Fan";
-              appRoom = "Master Bedroom";
-              appIcon = "🌀";
-              isAt = true;
-              fanV = "atomberg";
-              rWatts = 28;
-            } else if (dp.code === "switch_2") {
-              appName = "MBR Light 1";
-              appRoom = "Master Bedroom";
-              appIcon = "💡";
-              rWatts = 20;
-            } else if (dp.code === "switch_3") {
-              appName = "MBR Light 2";
-              appRoom = "Master Bedroom";
-              appIcon = "💡";
-              rWatts = 20;
-            }
-          }
-
-          // Hardware-level mapping for 2CH Zigbee Switch Module
-          if (!cust && d.id === "d709a5c7d939120fdcnk4j") {
-            if (dp.code === "switch_1") {
-              appName = "2CH Switch 1";
-              appRoom = "Living Room";
-              appIcon = "💡";
-            } else if (dp.code === "switch_2") {
-              appName = "2CH Switch 2";
-              appRoom = "Living Room";
-              appIcon = "💡";
-            }
-          }
 
           uniqueRoomsSet.add(appRoom);
 
