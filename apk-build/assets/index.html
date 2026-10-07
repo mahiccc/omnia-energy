@@ -4138,10 +4138,14 @@ function saveOnboardCreds() {
     if (newRoom) d.room = newRoom;
     d.category = cat;
 
-    if (cat === "fan") {
+    const enteredNameLower = (d.name || "").toLowerCase();
+    const isExplicitAtomberg = enteredNameLower.includes("atomberg") || (cat === "fan" && vendor === "atomberg") || enteredNameLower.includes("bldc");
+
+    if (cat === "fan" || isExplicitAtomberg) {
+      d.category = "fan";
       d.icon = "🌀";
       d.isTv = false;
-      if (vendor === "atomberg") {
+      if (isExplicitAtomberg || vendor === "atomberg") {
         d.isAtomberg = true;
         d.fanVendor = "atomberg";
         d.isNativePower = true;
@@ -5105,8 +5109,8 @@ function saveOnboardCreds() {
     if (n.includes("socket") || n.includes("plug") || n.includes("heavy")) {
       return { name: devName, ratedWatts: 800, icon: "🔌", isAtomberg: false };
     }
-    if (n.includes("fan") || n.includes("bldc")) {
-      return { name: devName, ratedWatts: 28, icon: "🌀", isAtomberg: true };
+    if (n.includes("fan") || n.includes("bldc") || n.includes("atomberg")) {
+      return { name: devName, ratedWatts: 28, icon: "🌀", isAtomberg: true, fanVendor: "atomberg" };
     }
 
     if (totalGangs > 1) {
