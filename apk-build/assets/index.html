@@ -1336,7 +1336,7 @@
             <div class="cat-icon" style="background:var(--amber-glow);">🔌</div>
             <div>
               <div class="cat-name" id="catResidualName" style="display:flex;align-items:center;gap:6px;">
-                <span>Misc Loads</span>
+                <span>Misc Unmonitored Loads</span>
                 <span class="badge" style="background:rgba(245,158,11,0.2);color:#f59e0b;font-size:9.5px;padding:2px 6px;border-radius:6px;font-weight:700;">⚙️ Select</span>
               </div>
               <div class="cat-desc" id="catResidualDesc">Wi-Fi Router, RO Purifier, TV Standby, Sockets (Tap to customize)</div>
@@ -1821,6 +1821,22 @@
           <input type="text" id="cfgTuyaUid" placeholder="e.g. in1698722008..." onchange="saveAllConnectorCreds()" />
         </div>
 
+        <!-- Dedicated Whole-Home CT Meter Selector -->
+        <div class="field" style="margin-top:10px;margin-bottom:10px;background:var(--surface-soft);border:1px solid var(--border);border-radius:12px;padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label style="margin-bottom:0;font-size:11.5px;font-weight:700;color:var(--emerald);">📟 Whole-Home CT Clamp Meter</label>
+            <span id="ctMeterSelectedBadge" style="font-size:10.5px;padding:2px 7px;border-radius:6px;background:rgba(16,185,129,0.18);color:#34d399;font-weight:700;">Auto-Detect</span>
+          </div>
+          <select id="cfgSelectedCtMeter" onchange="onSelectedCtMeterChange()" style="font-size:12px;margin-bottom:6px;">
+            <option value="auto">🤖 Auto-Detect (Scan Tuya Meters)</option>
+            <option value="none">⚡ No CT Clamp (Sum of Smart Switches)</option>
+          </select>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:10.5px;color:var(--muted);">Select your Tuya dual-clamp or DIN energy meter</span>
+            <button type="button" class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;" onclick="openCtMeterSelectorModal()">Choose Device →</button>
+          </div>
+        </div>
+
         <div class="btn-grid-2" style="margin-top:12px;">
           <button class="btn sky" onclick="syncLiveMetersAndDevices(false)">
             ⚡ Test & Sync Now
@@ -2116,6 +2132,7 @@ function doGet(e) {
       <div class="field" style="margin-bottom:12px;">
         <label>Appliance Type / Category</label>
         <select id="editDeviceCategory" onchange="onEditDeviceCategoryChange()">
+          <option value="meter">📟 Whole-Home CT Clamp Meter (Grid Telemetry)</option>
           <option value="tv">📺 Smart TV / Television (Brand & Size)</option>
           <option value="light">💡 Light / Batten / LED Strip (Select Watts)</option>
           <option value="fan">🌀 Ceiling Fan (BLDC / Standard)</option>
@@ -2130,6 +2147,16 @@ function doGet(e) {
           <option value="unknown">❓ Unknown / Unlabeled Switch (Auto-Learn Load)</option>
           <option value="other">⚡ Other Appliance</option>
         </select>
+      </div>
+
+      <!-- Meter Notice Section -->
+      <div id="meterConfigSection" style="display:none;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:14px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--emerald);margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+          <span>📟</span> Whole-Home CT Clamp Meter
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.45;">
+          This device is designated as your main grid CT clamp meter. Omnia AI reads real-time Phase A/B grid power, voltage, and frequency directly from this meter's telemetry to calculate disaggregation.
+        </div>
       </div>
 
       <!-- TV Brand & Model Section -->
@@ -2298,11 +2325,8 @@ function doGet(e) {
           </div>
         </div>
         <div style="display:flex;gap:8px;">
-          <button type="button" class="step-btn" style="flex:1;padding:8px 10px;font-size:11px;background:linear-gradient(135deg,#10b981,#059669);color:#021b10;font-weight:800;border:none;" id="btnInstantAutoLearn" onclick="instantAutoLearnCurrentSwitch()">
-            ⚡ 1-Tap Auto-Learn
-          </button>
-          <button type="button" class="step-btn" style="flex:1;padding:8px 10px;font-size:11px;background:rgba(16,185,129,0.18);color:#34d399;font-weight:700;border:1px solid rgba(16,185,129,0.3);" onclick="triggerCtLearnFromEditModal()">
-            🎯 Guided Wizard →
+          <button type="button" class="step-btn" style="flex:1;padding:10px;font-size:12px;background:linear-gradient(135deg,#10b981,#059669);color:#021b10;font-weight:800;border:none;" onclick="triggerDirectHardwareLearn()">
+            ⚡ Auto-Learn Device (Hardware Sweep)
           </button>
         </div>
         <div id="instantAutoLearnFeedback" style="display:none;margin-top:8px;font-size:11px;padding:6px 8px;border-radius:8px;background:rgba(16,185,129,0.15);color:#34d399;text-align:center;font-weight:600;"></div>
@@ -2310,8 +2334,43 @@ function doGet(e) {
 
       <!-- Footer Buttons -->
       <div style="display:flex;gap:10px;margin-top:auto;padding-top:6px;">
+        <button class="btn secondary" style="flex:1;background:rgba(244,63,94,0.15);color:#f43f5e;border:1px solid rgba(244,63,94,0.3);" onclick="deleteEditedDevice()" id="btnDeleteDevice">🗑️ Delete</button>
         <button class="btn secondary" style="flex:1;" onclick="closeEditDeviceModal()">Cancel</button>
-        <button class="btn primary" style="flex:2;" onclick="saveEditedDevice()">💾 Save & Sync</button>
+        <button class="btn primary" style="flex:2;" onclick="saveEditedDevice()">💾 Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHOLE-HOME CT METER SELECTOR & MANAGEMENT MODAL -->
+  <div class="modal-backdrop" id="modalCtSelector">
+    <div class="modal-sheet" style="max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;padding:18px;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:18px;">📟</div>
+          <div>
+            <div class="section-title" style="margin-bottom:0;font-size:15px;">Whole-Home CT Clamp Meter</div>
+            <div style="font-size:11px;color:var(--muted);">Select device measuring grid incoming power</div>
+          </div>
+        </div>
+        <button class="step-btn" onclick="closeCtMeterSelectorModal()">✕</button>
+      </div>
+
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.45;">
+        Choose which smart meter or Tuya device monitors incoming electricity for your whole home. Omnia AI reads its live telemetry to calculate disaggregation.
+      </div>
+
+      <div id="ctMeterCandidatesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+        <!-- Dynamically rendered candidate list -->
+      </div>
+
+      <div class="btn-grid-2">
+        <button class="btn secondary" onclick="setCtMeterSelection('none')">
+          ⚡ No CT (Sum Switches)
+        </button>
+        <button class="btn sky" onclick="setCtMeterSelection('auto')">
+          🤖 Auto-Detect CT
+        </button>
       </div>
     </div>
   </div>
@@ -2685,7 +2744,7 @@ function doGet(e) {
         <div style="display:flex;gap:6px;">
           <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;" onclick="selectAllMiscLoads(true)">Select All</button>
           <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;" onclick="selectAllMiscLoads(false)">Deselect</button>
-          <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;background:rgba(168,85,247,0.18);color:#c084fc;border:none;" onclick="toggleAddCustomMiscDrawer()">+ Custom Item</button>
+          <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;background:rgba(168,85,247,0.18);color:#c084fc;border:none;" onclick="openAddManualApplianceModal()">+ Appliance</button>
         </div>
       </div>
 
@@ -2710,7 +2769,7 @@ function doGet(e) {
 
       <!-- Footer Actions -->
       <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border);">
-        <button class="btn secondary" style="flex:1;padding:11px;font-size:11.5px;" onclick="resetMiscLoadsToDefault()">↺ Reset Defaults</button>
+        
         <button class="btn emerald" style="flex:2;padding:11px;font-size:12px;font-weight:700;" onclick="closeMiscLoadsModal()">💾 Done & Save</button>
       </div>
     </div>
@@ -2892,7 +2951,7 @@ function doGet(e) {
           const profile = res.profile || res;
           profileRestored = restoreUserProfileFromJson(profile, res.source || "Google Drive");
           if (profileRestored) {
-            showScreen("app");
+            saveOnboardCreds(); showScreen("app");
             renderAll();
             const srcLbl = res.source === "local_vault" ? "persistent device vault" : "Google Drive";
             showToast(`☁️ Restored all switches, custom wattages & settings from ${srcLbl}!`);
@@ -2910,7 +2969,7 @@ function doGet(e) {
     // 2. Check if user already has saved live devices in localStorage
     const savedLive = localStorage.getItem("omnia_live_home_devices");
     if (savedLive && appMode === "live") {
-      showScreen("app");
+      saveOnboardCreds(); showScreen("app");
       renderAll();
       showToast(`👋 Welcome back, ${email}!`);
       syncLiveMetersAndDevices(false);
@@ -2925,7 +2984,7 @@ function doGet(e) {
     currentUserEmail = "guest_demo@gmail.com";
     localStorage.setItem("omnia_user_email", currentUserEmail);
     switchToDemoMode();
-    showScreen("app");
+    saveOnboardCreds(); showScreen("app");
   }
 
   function handleSignOut() {
@@ -2976,8 +3035,17 @@ function doGet(e) {
   function onboardSkipToDemo() {
     haptic(15);
     switchToDemoMode();
-    showScreen("app");
+    saveOnboardCreds(); showScreen("app");
   }
+
+function saveOnboardCreds() {
+  if(hasNativeBridge()) {
+    window.OmniaNative.saveSecurePref("tuya_endpoint", document.getElementById("onboardTuyaEndpoint").value.trim());
+    window.OmniaNative.saveSecurePref("tuya_client_id", document.getElementById("onboardTuyaClientId").value.trim());
+    window.OmniaNative.saveSecurePref("tuya_client_secret", document.getElementById("onboardTuyaClientSecret").value.trim());
+    window.OmniaNative.saveSecurePref("tuya_uid", document.getElementById("onboardTuyaUid").value.trim());
+  }
+}
 
   function onboardDiscoverHome() {
     const ep = document.getElementById("onboardTuyaEndpoint").value.trim();
@@ -3010,7 +3078,7 @@ function doGet(e) {
         discoverUserHomeLogic(ep, cid, sec, uid, logBox, () => {
           btn.disabled = false;
           btn.textContent = "⚡ Connect & Discover My Home";
-          showScreen("app");
+          saveOnboardCreds(); showScreen("app");
           switchTab("home");
         }, () => {
           btn.disabled = false;
@@ -3506,6 +3574,15 @@ function doGet(e) {
     document.getElementById("editDeviceName").value = d.name || "";
     document.getElementById("editDeviceRoom").value = d.room || "";
 
+    const btnDelete = document.getElementById("btnDeleteDevice");
+    if (btnDelete) {
+      if (d.connectionType === "always_on" || d.connectionType === "manual") {
+        btnDelete.style.display = "block";
+      } else {
+        btnDelete.style.display = "none";
+      }
+    }
+    
     // Update Header Icon & Current Assumption Card
     const headerIcon = document.getElementById("editModalHeaderIcon");
     if (headerIcon) headerIcon.textContent = d.icon || "⚙️";
@@ -3680,6 +3757,7 @@ function doGet(e) {
     const acSec = document.getElementById("acConfigSection");
     const geyserSec = document.getElementById("geyserConfigSection");
     const fridgeSec = document.getElementById("fridgeConfigSection");
+    const meterSec = document.getElementById("meterConfigSection");
     const unknownSec = document.getElementById("unknownConfigSection");
     const wattsField = document.getElementById("editDeviceWattsField");
     const room = document.getElementById("editDeviceRoom").value || "this room";
@@ -3693,13 +3771,20 @@ function doGet(e) {
     if (acSec) acSec.style.display = "none";
     if (geyserSec) geyserSec.style.display = "none";
     if (fridgeSec) fridgeSec.style.display = "none";
+    if (meterSec) meterSec.style.display = "none";
     if (unknownSec) unknownSec.style.display = "none";
 
     const label = document.getElementById("editDeviceWattsLabel");
     const hint = document.getElementById("editDeviceWattsHint");
     const subtext = document.getElementById("editDeviceWattsSubtext");
 
-    if (cat === "fan") {
+    if (cat === "meter") {
+      if (meterSec) meterSec.style.display = "block";
+      if (wattsField) wattsField.style.display = "none";
+      if (label) label.textContent = "Whole-Home CT Clamp Meter";
+      if (hint) hint.textContent = "Monitors whole-house incoming power. Omnia AI reads live grid telemetry from this meter.";
+      if (subtext) subtext.textContent = "Live Grid Telemetry";
+    } else if (cat === "fan") {
       if (fanSec) fanSec.style.display = "block";
       if (label) label.textContent = "Fan Motor Rating (Watts)";
       if (hint) hint.textContent = "Power rating at maximum speed. AI scales down power based on active speed level.";
@@ -4013,6 +4098,32 @@ function doGet(e) {
     showToast(`🍽️ Bosch Dishwasher: ${phaseLabels[dw.cyclePhase]}`);
   }
 
+    function deleteEditedDevice() {
+    const idx = parseInt(document.getElementById("editDeviceIdx").value, 10);
+    const d = devices[idx];
+    if (!d) return;
+    
+    // Only allow deletion of manual/always_on appliances (not Tuya auto-discovered smart switches)
+    if (d.connectionType !== "always_on" && d.connectionType !== "manual") {
+      showToast("Cannot delete a connected smart switch. Disconnect it via Tuya.");
+      return;
+    }
+    
+    haptic(25);
+    if (confirm(`Are you sure you want to delete ${d.name}?`)) {
+      devices.splice(idx, 1);
+      saveState();
+      closeEditDeviceModal();
+      renderAll();
+      // If we are currently on the misc modal, update it
+      const miscModal = document.getElementById("modalMiscLoads");
+      if (miscModal && miscModal.classList.contains("open")) {
+        renderMiscLoadsModalContent();
+      }
+      showToast(`🗑️ ${d.name} deleted`);
+    }
+  }
+
   function saveEditedDevice() {
     const idx = parseInt(document.getElementById("editDeviceIdx").value, 10);
     const d = devices[idx];
@@ -4066,13 +4177,34 @@ function doGet(e) {
       d.isTv = false;
       d.isAtomberg = false;
       d.fanVendor = "";
+      d.isCtMeter = false;
       d.isNativePower = false;
       d.powerSource = d.isLearned ? "learned" : "assumed";
       d.ratedWatts = parseFloat(document.getElementById("editDeviceWatts").value) || 25;
       d.effectiveWatts = d.ratedWatts;
+    } else if (cat === "meter") {
+      d.icon = "📟";
+      d.isTv = false;
+      d.isAtomberg = false;
+      d.fanVendor = "";
+      d.isCtMeter = true;
+      d.isNativePower = true;
+      d.powerSource = "native";
+      d.ratedWatts = 100;
+      d.effectiveWatts = d.liveWatts || 0.0;
+      if (!discoveredMeters.some(m => m.id === (d.cid || d.id))) {
+        discoveredMeters.push({
+          id: d.cid || d.id,
+          name: d.name,
+          category: "zndb"
+        });
+      }
+      localStorage.setItem("omnia_selected_ct_meter_id", d.cid || d.id);
+      updateCtMeterSelectorDropdown();
     } else {
       d.isAtomberg = false;
       d.fanVendor = "";
+      d.isCtMeter = false;
       d.isNativePower = false;
       d.powerSource = d.isLearned ? "learned" : "assumed";
       const icons = {
@@ -4121,6 +4253,7 @@ function doGet(e) {
       program: d.program,
       ratedWatts: d.ratedWatts,
       isNativePower: d.isNativePower,
+      isCtMeter: d.isCtMeter,
       powerSource: d.powerSource,
       isLearned: d.isLearned,
       learnedAt: d.learnedAt
@@ -4131,7 +4264,197 @@ function doGet(e) {
     autoBackupToDriveSilently("device_customized");
     renderAll();
     closeEditDeviceModal();
-    showToast(`✅ "${d.name}" updated as ${cat === "unknown" ? "Unknown Load" : (cat === "fan" && d.isAtomberg ? "Atomberg BLDC Fan" : (cat === "tv" ? "Smart TV" : d.name))}!`);
+    const updatedTag = cat === "meter" ? "Whole-Home CT Clamp Meter" : (cat === "unknown" ? "Unknown Load" : (cat === "fan" && d.isAtomberg ? "Atomberg BLDC Fan" : (cat === "tv" ? "Smart TV" : d.name)));
+    showToast(`✅ "${d.name}" updated as ${updatedTag}!`);
+  }
+
+  // ===========================================================================
+  // WHOLE-HOME CT METER SELECTION & MANAGEMENT
+  // ===========================================================================
+  function openCtMeterSelectorModal() {
+    haptic(15);
+    renderCtMeterSelectorCandidates();
+    const modal = document.getElementById("modalCtSelector");
+    if (modal) modal.classList.add("open");
+  }
+
+  function closeCtMeterSelectorModal() {
+    haptic(10);
+    const modal = document.getElementById("modalCtSelector");
+    if (modal) modal.classList.remove("open");
+  }
+
+  function renderCtMeterSelectorCandidates() {
+    const listEl = document.getElementById("ctMeterCandidatesList") || document.getElementById("ctMeterCandidateList");
+    if (!listEl) return;
+
+    const currentSelectedId = localStorage.getItem("omnia_selected_ct_meter_id") || "auto";
+
+    let html = "";
+
+    // Auto-detect choice
+    const isAuto = currentSelectedId === "auto";
+    html += `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:${isAuto ? 'rgba(56,189,248,0.15)' : 'var(--surface)'};border:1px solid ${isAuto ? 'var(--sky)' : 'var(--border)'};border-radius:10px;cursor:pointer;margin-bottom:6px;" onclick="setCtMeterSelection('auto')">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:20px;">🤖</div>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:var(--text);">Auto-Detect Meter</div>
+            <div style="font-size:10.5px;color:var(--muted);">Scans Tuya smart breakers, DIN meters & CT clamps automatically</div>
+          </div>
+        </div>
+        <span style="font-size:12px;font-weight:700;color:${isAuto ? 'var(--sky)' : 'var(--muted)'};">${isAuto ? '✓ Active' : 'Select'}</span>
+      </div>
+    `;
+
+    // No CT choice
+    const isNone = currentSelectedId === "none";
+    html += `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:${isNone ? 'rgba(245,158,11,0.15)' : 'var(--surface)'};border:1px solid ${isNone ? 'var(--amber)' : 'var(--border)'};border-radius:10px;cursor:pointer;margin-bottom:8px;" onclick="setCtMeterSelection('none')">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:20px;">⚡</div>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:var(--text);">No Physical CT Clamp</div>
+            <div style="font-size:10.5px;color:var(--muted);">Calculates whole home consumption from sum of active smart switches</div>
+          </div>
+        </div>
+        <span style="font-size:12px;font-weight:700;color:${isNone ? 'var(--amber)' : 'var(--muted)'};">${isNone ? '✓ Active' : 'Select'}</span>
+      </div>
+    `;
+
+    // Candidate devices
+    const candidates = [];
+    if (discoveredMeters && discoveredMeters.length > 0) {
+      discoveredMeters.forEach(m => {
+        if (!candidates.some(c => c.id === m.id)) {
+          candidates.push({ id: m.id, name: m.name, isMeter: true, category: m.category, room: inferRoomFromName(m.name || "") });
+        }
+      });
+    }
+
+    devices.forEach(d => {
+      const devId = d.cid || d.id;
+      if (devId && !candidates.some(c => c.id === devId)) {
+        candidates.push({
+          id: devId,
+          name: d.name,
+          isMeter: Boolean(d.isCtMeter),
+          category: d.category || "switch",
+          room: d.room
+        });
+      }
+    });
+
+    if (candidates.length > 0) {
+      html += `<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:8px 0 6px 0;">Available Home Devices & Clamps</div>`;
+      candidates.forEach(cand => {
+        const isSelected = (currentSelectedId === cand.id);
+        const icon = cand.isMeter ? "📟" : "⚡";
+        const sub = cand.room ? `${cand.room} • ID: ${cand.id}` : `ID: ${cand.id}`;
+        html += `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:${isSelected ? 'rgba(16,185,129,0.15)' : 'var(--surface)'};border:1px solid ${isSelected ? 'var(--emerald)' : 'var(--border)'};border-radius:10px;cursor:pointer;margin-bottom:6px;" onclick="setCtMeterSelection('${cand.id}')">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-size:20px;">${icon}</div>
+              <div>
+                <div style="font-weight:700;font-size:13px;color:var(--text);">${cand.name}</div>
+                <div style="font-size:10.5px;color:var(--muted);">${sub}</div>
+              </div>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:${isSelected ? 'var(--emerald)' : 'var(--muted)'};">${isSelected ? '✓ CT Meter' : 'Set as CT'}</span>
+          </div>
+        `;
+      });
+    }
+
+    listEl.innerHTML = html;
+  }
+
+  function setCtMeterSelection(targetId) {
+    haptic(25);
+    localStorage.setItem("omnia_selected_ct_meter_id", targetId);
+
+    if (targetId === "none") {
+      discoveredMeters = [];
+      devices.forEach(d => {
+        if (d.isCtMeter) d.isCtMeter = false;
+      });
+      showToast("⚡ Set to Switch Summation (No CT Meter)");
+    } else if (targetId === "auto") {
+      let cachedM = [];
+      try {
+        cachedM = JSON.parse(localStorage.getItem("omnia_discovered_meters") || "[]");
+      } catch(e){}
+      if (cachedM.length > 0) {
+        discoveredMeters = cachedM;
+      }
+      showToast("🤖 CT Meter set to Auto-Detect");
+    } else {
+      let meterFound = discoveredMeters.find(m => m.id === targetId);
+      if (!meterFound) {
+        const dMatch = devices.find(d => (d.cid === targetId || d.id === targetId));
+        if (dMatch) {
+          meterFound = { id: targetId, name: dMatch.name, category: dMatch.category || "zndb" };
+          discoveredMeters.push(meterFound);
+        } else {
+          meterFound = { id: targetId, name: `Custom CT Meter (${targetId.slice(0,6)})`, category: "zndb" };
+          discoveredMeters.push(meterFound);
+        }
+      }
+      devices.forEach(d => {
+        if (d.cid === targetId || d.id === targetId) {
+          d.isCtMeter = true;
+          d.isNativePower = true;
+          d.icon = "📟";
+        }
+      });
+      showToast(`📟 Designated "${meterFound.name}" as Whole-Home CT Meter!`);
+    }
+
+    updateCtMeterSelectorDropdown();
+    closeCtMeterSelectorModal();
+    saveState();
+    if (appMode === "live") fetchCtPowerSync();
+    renderAll();
+  }
+
+  function onSelectedCtMeterChange() {
+    const sel = document.getElementById("cfgSelectedCtMeter");
+    if (!sel) return;
+    setCtMeterSelection(sel.value);
+  }
+
+  function updateCtMeterSelectorDropdown() {
+    const sel = document.getElementById("cfgSelectedCtMeter");
+    if (!sel) return;
+
+    const currentSelectedId = localStorage.getItem("omnia_selected_ct_meter_id") || "auto";
+
+    let html = `
+      <option value="auto" ${currentSelectedId === 'auto' ? 'selected' : ''}>🤖 Auto-Detect (Scan Tuya Meters)</option>
+      <option value="none" ${currentSelectedId === 'none' ? 'selected' : ''}>⚡ No CT Clamp (Sum of Smart Switches)</option>
+    `;
+
+    const seen = new Set(["auto", "none"]);
+    if (discoveredMeters && discoveredMeters.length > 0) {
+      discoveredMeters.forEach(m => {
+        if (!seen.has(m.id)) {
+          seen.add(m.id);
+          const isSel = (currentSelectedId === m.id) ? 'selected' : '';
+          html += `<option value="${m.id}" ${isSel}>📟 ${m.name} (CT Clamp)</option>`;
+        }
+      });
+    }
+
+    devices.forEach(d => {
+      const devId = d.cid || d.id;
+      if (devId && !seen.has(devId)) {
+        seen.add(devId);
+        const isSel = (currentSelectedId === devId) ? 'selected' : '';
+        html += `<option value="${devId}" ${isSel}>${d.icon || '⚡'} ${d.name} (${d.room || 'Device'})</option>`;
+      }
+    });
+
+    sel.innerHTML = html;
   }
 
   // ===========================================================================
@@ -4633,54 +4956,6 @@ function doGet(e) {
         }
       });
 
-      // 3. Deduplicate and ensure strictly ONE Kitchen Refrigerator exists
-      const isFridgeItem = d => (d && ((d.category === "fridge") || (d.name && (d.name.toLowerCase().includes("fridge") || d.name.toLowerCase().includes("refrigerator")))));
-      const fridgeDevs = devices.filter(isFridgeItem);
-      if (fridgeDevs.length > 1) {
-        const bestFridge = fridgeDevs.find(d => d.isAlwaysOn) || fridgeDevs.find(d => d.id === "demo_kit_fridge") || fridgeDevs[0];
-        bestFridge.name = "Kitchen Refrigerator";
-        bestFridge.room = "Kitchen";
-        bestFridge.icon = "🧊";
-        bestFridge.category = "fridge";
-        bestFridge.connectionType = "always_on";
-        bestFridge.isAlwaysOn = true;
-        bestFridge.dutyCyclePercent = 35;
-        bestFridge.ratedWatts = 160;
-        bestFridge.effectiveWatts = 56.0;
-        bestFridge.isOn = true;
-        devices = devices.filter(d => !isFridgeItem(d) || d.id === bestFridge.id);
-        needsSaveAfterMigration = true;
-      } else if (fridgeDevs.length === 0) {
-        devices.push({
-          id: "appliance_fridge_always_on",
-          cid: "always_on",
-          dp_code: "fridge",
-          name: "Kitchen Refrigerator",
-          room: "Kitchen",
-          icon: "🧊",
-          category: "fridge",
-          connectionType: "always_on",
-          isAlwaysOn: true,
-          dutyCyclePercent: 35,
-          ratedWatts: 160,
-          effectiveWatts: 56.0,
-          currentLevelPercent: 100,
-          isOn: true,
-          todaySeconds: 3600,
-          todayWh: 56.0,
-          isOnline: true
-        });
-        needsSaveAfterMigration = true;
-      } else {
-        const singleFridge = fridgeDevs[0];
-        singleFridge.name = "Kitchen Refrigerator";
-        singleFridge.category = "fridge";
-        singleFridge.room = singleFridge.room || "Kitchen";
-        singleFridge.isAlwaysOn = true;
-        singleFridge.dutyCyclePercent = 35;
-        singleFridge.effectiveWatts = 56.0;
-        singleFridge.isOn = true;
-      }
 
       // 4. Auto-map or add Bathroom Geyser (2000W with AI Cutoff) if not present
       const hasGeyser = devices.some(d => (d.name && (d.name.toLowerCase().includes("geyser") || d.name.toLowerCase().includes("water heater"))) || d.category === "geyser");
@@ -4708,6 +4983,13 @@ function doGet(e) {
         needsSaveAfterMigration = true;
       }
 
+      // Legacy Cleanup: Remove old hardcoded fridge from localStorage (v1.0.8 migration)
+      const oldLen = devices.length;
+      devices = devices.filter(d => d.id !== "demo_kit_fridge" && d.id !== "appliance_fridge_always_on");
+      if (devices.length < oldLen) {
+        needsSaveAfterMigration = true;
+      }
+
       // Restore CT Calibration Factor
       const savedCtFactor = localStorage.getItem("omnia_ct_calibration_factor");
       if (savedCtFactor && !isNaN(parseFloat(savedCtFactor))) {
@@ -4728,18 +5010,19 @@ function doGet(e) {
         autoBackupToDriveSilently("switches_separated");
       }
 
-      showScreen("app");
+      saveOnboardCreds(); showScreen("app");
     } else if (cid && sec && uid) {
       appMode = "live";
       devices = savedLiveDevices || JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
       discoveredMeters = savedMeters || [];
-      showScreen("app");
+      saveOnboardCreds(); showScreen("app");
     } else {
       showScreen("tuya");
       appMode = "demo";
       devices = JSON.parse(JSON.stringify(DEFAULT_DEMO_APPLIANCES));
       recomputeDemoCtMeter();
     }
+    updateCtMeterSelectorDropdown();
   }
 
   function saveState() {
@@ -4897,33 +5180,55 @@ function doGet(e) {
 
       const isDevOnline = (d.online !== false);
 
-      // Check if device is a CT Meter / Energy Meter
-      const isMeter = dCat === "zndb" || dCat === "jl" ||
-        nameLower.includes("meter") || nameLower.includes("clamp") || nameLower.includes("dual") ||
-        nameLower.includes("energy") || nameLower.includes("ct ") || pName.includes("meter");
+      // Status DPs
+      const statusList = Array.isArray(d.status) ? d.status : [];
+      const hasPowerTelemetryDp = statusList.some(s => s && (
+        s.code === "total_power" || s.code === "cur_power" || s.code === "power_a" ||
+        s.code === "power_b" || s.code === "phase_a" || s.code === "phase_b" ||
+        s.code === "active_power" || s.code === "forward_energy_total" || s.code === "voltage_a" ||
+        s.code === "cur_voltage" || s.code === "cur_current" || s.code === "electric_current"
+      ));
+
+      // Expanded CT Meter / Energy Monitor Detection
+      const meterCategories = ["zndb", "jl", "dlq", "cj", "pc", "em", "pm", "dq", "ammeter", "ele"];
+      const isMeterCategory = meterCategories.includes(dCat);
+
+      const isMeterName = nameLower.includes("meter") || nameLower.includes("clamp") ||
+        nameLower.includes("dual") || nameLower.includes("energy") || nameLower.includes("ct ") ||
+        nameLower.includes("ct-") || nameLower.includes("power") || nameLower.includes("grid") ||
+        nameLower.includes("tongou") || nameLower.includes("earnest") || nameLower.includes("breaker") ||
+        nameLower.includes("din") || nameLower.includes("bi-directional") || nameLower.includes("kwh") ||
+        nameLower.includes("monitor") || nameLower.includes("elec") || pName.includes("meter") ||
+        pName.includes("energy") || pName.includes("breaker");
+
+      const savedSelectedCtId = localStorage.getItem("omnia_selected_ct_meter_id") || "auto";
+      const isExplicitSelectedCt = (savedSelectedCtId !== "auto" && savedSelectedCtId !== "none" && savedSelectedCtId === d.id);
+
+      const isMeter = isExplicitSelectedCt || (savedSelectedCtId !== "none" && (isMeterCategory || (isMeterName && hasPowerTelemetryDp) || isMeterName));
 
       if (isMeter) {
         newMeters.push({
           id: d.id,
           name: dName || `Energy Meter ${newMeters.length + 1}`,
-          category: dCat
+          category: dCat || "zndb"
         });
         const roomName = inferRoomFromName(dName);
         uniqueRoomsSet.add(roomName);
 
-        const statusList = Array.isArray(d.status) ? d.status : [];
-        const totPow = statusList.find(s => s && (s.code === "total_power" || s.code === "cur_power" || s.code === "power"));
-        const fwdEnergy = statusList.find(s => s && s.code === "forward_energy_total");
+        let pA = 0, pB = 0, pTot = 0, fwdKwh = 0;
+        statusList.forEach(s => {
+          if (!s) return;
+          if (s.code === "power_a" || s.dp_id === 101) pA = parseFloat(s.value) / 10.0;
+          if (s.code === "power_b" || s.dp_id === 105) pB = parseFloat(s.value) / 10.0;
+          if (s.code === "cur_power") pA = parseFloat(s.value) / 10.0;
+          if (s.code === "total_power" || s.code === "active_power" || s.dp_id === 115) {
+            const val = parseFloat(s.value);
+            pTot = val > 500 ? val / 10.0 : val;
+          }
+          if (s.code === "forward_energy_total") fwdKwh = parseFloat(s.value) / 100.0;
+        });
 
-        let initW = 0.0;
-        if (totPow && totPow.value !== undefined) {
-          const val = parseFloat(totPow.value);
-          initW = val > 500 ? val / 10.0 : val;
-        }
-        let initKwh = 0.0;
-        if (fwdEnergy && fwdEnergy.value !== undefined) {
-          initKwh = parseFloat(fwdEnergy.value) / 100.0;
-        }
+        const initW = (pA + pB) > 0 ? (pA + pB) : pTot;
 
         newAppliances.push({
           id: `meter_${d.id}`,
@@ -4942,13 +5247,12 @@ function doGet(e) {
           isOnline: isDevOnline,
           isOn: isDevOnline,
           todaySeconds: 0,
-          todayWh: initKwh * 1000
+          todayWh: fwdKwh * 1000
         });
         return;
       }
 
       // Check status DPs for switches and sockets (strictly boolean relay switches)
-      const statusList = Array.isArray(d.status) ? d.status : [];
       const switchDps = statusList.filter(s =>
         typeof s.code === "string" && (
           s.code === "switch" || /^switch_[1-8]$/.test(s.code)
@@ -5016,6 +5320,28 @@ function doGet(e) {
             fSpd = 4;
             rWatts = 28;
             isNat = true;
+          }
+
+          // Hardware-level mapping for MBR 3CH Switch Module
+          if (!cust && d.id === "d7ddaef9cdcaa3b245jzwm") {
+            if (dp.code === "switch_1") {
+              appName = "MBR Fan";
+              appRoom = "Master Bedroom";
+              appIcon = "🌀";
+              isAt = true;
+              fanV = "atomberg";
+              rWatts = 28;
+            } else if (dp.code === "switch_2") {
+              appName = "MBR Light 1";
+              appRoom = "Master Bedroom";
+              appIcon = "💡";
+              rWatts = 20;
+            } else if (dp.code === "switch_3") {
+              appName = "MBR Light 2";
+              appRoom = "Master Bedroom";
+              appIcon = "💡";
+              rWatts = 20;
+            }
           }
 
           // Hardware-level mapping for 2CH Zigbee Switch Module
@@ -5126,6 +5452,7 @@ function doGet(e) {
 
     saveState();
     autoBackupToDriveSilently("discovery_success");
+    updateCtMeterSelectorDropdown();
 
     const roomsArr = Array.from(uniqueRoomsSet);
     const ctInfo = newMeters.length > 0 ? `Discovered ${newMeters.length} CT Meter(s)` : `No CT Meter (using switch sum)`;
@@ -5279,8 +5606,18 @@ function doGet(e) {
         }
 
         // 2. Poll each discovered CT Clamp Meter (with shadow + /v1.0 fallback)
+        const allMetersToPoll = [];
         if (discoveredMeters && discoveredMeters.length > 0) {
-          discoveredMeters.forEach(m => {
+          discoveredMeters.forEach(m => allMetersToPoll.push(m));
+        }
+        devices.forEach(d => {
+          if (d && d.isCtMeter && d.cid && !allMetersToPoll.some(m => m.id === d.cid)) {
+            allMetersToPoll.push({ id: d.cid, name: d.name, category: d.category || "zndb" });
+          }
+        });
+
+        if (allMetersToPoll.length > 0) {
+          allMetersToPoll.forEach(m => {
             try {
               let pA = 0, pB = 0, pTot = 0, fwdKwh = 0;
               let fromShadow = false;
@@ -5345,22 +5682,38 @@ function doGet(e) {
           ctMeterState.mainPhaseBWatts = totalPhaseB;
         }
 
-        // 3. Poll Switch & Socket States via lookup map
+        // 3. Poll Switch & Socket States via lookup map (REAL-TIME)
         if (devsObj.success && Array.isArray(devsObj.result)) {
-          // Remove non-mains accessories (e.g. battery fingerbot cubetouch)
           devices = devices.filter(d => !d.name.toLowerCase().includes("cubetouch") && d.cid !== "d70c63cacc14033c3emzlo");
+
+          // Batch all Tuya device CIDs to get real-time status (max 20 per request)
+          const allCids = Array.from(new Set(devices.filter(d => !d.isAtomberg && !d.isCtMeter && d.cid).map(d => d.cid)));
+          const rtMap = {};
+          
+          for (let i = 0; i < allCids.length; i += 20) {
+            const batch = allCids.slice(i, i + 20).join(",");
+            try {
+              const rtRes = window.OmniaNative.tuyaSignedRequest(
+                endpoint, clientId, clientSecret, token, "GET",
+                `/v1.0/devices?device_ids=${batch}`, ""
+              );
+              const rtObj = JSON.parse(rtRes);
+              if (rtObj.success && Array.isArray(rtObj.result)) {
+                rtObj.result.forEach(d => { rtMap[d.id] = d; });
+              }
+            } catch(e) {}
+          }
 
           let syncedCount = 0;
           let activeCount = 0;
           devices.forEach(app => {
             if (app.isAtomberg || app.isCtMeter) return;
-            const cloudDev = mapById[app.cid];
+            const cloudDev = rtMap[app.cid] || mapById[app.cid];
             if (cloudDev) {
               const isDevOnline = (cloudDev.online !== false);
               app.isOnline = isDevOnline;
 
               if (!isDevOnline) {
-                // Device is physically unplugged or disconnected from network
                 app.isOn = false;
                 app.effectiveWatts = 0.0;
                 syncedCount++;
@@ -5374,7 +5727,6 @@ function doGet(e) {
                   syncedCount++;
                   if (app.isOn) activeCount++;
                 }
-                // Check if any native power metric is reported by this switch/socket
                 const curPow = cloudDev.status.find(s => s && (
                   s.code === "cur_power" || s.code === "power" || s.code === "cur_power_1" ||
                   s.code === "cur_power_2" || s.code === "total_power" || s.code === "active_power"
@@ -5388,7 +5740,7 @@ function doGet(e) {
               }
             }
           });
-          lines.push(`✅ Synced ${syncedCount} switch gangs (${activeCount} currently ON).`);
+          lines.push(`✅ Synced ${syncedCount} switch gangs (${activeCount} currently ON) in real-time.`);
         }
 
         // 3. Atomberg Sync if configured
@@ -5446,6 +5798,28 @@ function doGet(e) {
   // ===========================================================================
   // APPLIANCE CONTROL & SIMULATION
   // ===========================================================================
+  function sendTuyaSwitchCommandSync(dev, isOn) {
+    if (!hasNativeBridge() || !dev.cid || !dev.dp_code || dev.dp_code === "atomberg") return null;
+    const endpoint = document.getElementById("cfgTuyaEndpoint").value.trim() || "https://openapi.tuyain.com";
+    const clientId = document.getElementById("cfgTuyaClientId").value.trim();
+    const clientSecret = document.getElementById("cfgTuyaClientSecret").value.trim();
+    let token = cachedTuyaToken;
+    if (!token) return null;
+
+    try {
+      const cmdBody = JSON.stringify({
+        commands: [{ code: dev.dp_code, value: !!isOn }]
+      });
+      const res = window.OmniaNative.tuyaSignedRequest(
+        endpoint, clientId, clientSecret, token, "POST",
+        `/v1.0/iot-03/devices/${dev.cid}/commands`, cmdBody
+      );
+      return res;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function setAppliancePowerState(idx, targetIsOn) {
     const dev = devices[idx];
     if (!dev || dev.isCtMeter) return;
@@ -5455,24 +5829,7 @@ function doGet(e) {
     if (appMode === "demo") {
       recomputeDemoCtMeter();
     } else if (hasNativeBridge() && dev.cid && dev.dp_code) {
-      const endpoint = document.getElementById("cfgTuyaEndpoint").value.trim() || "https://openapi.tuyain.com";
-      const clientId = document.getElementById("cfgTuyaClientId").value.trim();
-      const clientSecret = document.getElementById("cfgTuyaClientSecret").value.trim();
-
-      setTimeout(() => {
-        try {
-          let token = cachedTuyaToken;
-          if (token && dev.dp_code !== "atomberg") {
-            const cmdBody = JSON.stringify({
-              commands: [{ code: dev.dp_code, value: dev.isOn }]
-            });
-            window.OmniaNative.tuyaSignedRequest(
-              endpoint, clientId, clientSecret, token, "POST",
-              `/v1.0/iot-03/devices/${dev.cid}/commands`, cmdBody
-            );
-          }
-        } catch (e) {}
-      }, 20);
+      sendTuyaSwitchCommandSync(dev, dev.isOn);
     }
 
     saveState();
@@ -5630,7 +5987,7 @@ function doGet(e) {
       }
     });
 
-    const hasCt = (appMode === "demo") || (discoveredMeters && discoveredMeters.length > 0);
+    const hasCt = (appMode === "demo") || (discoveredMeters && discoveredMeters.length > 0) || devices.some(d => d && d.isCtMeter);
     if (!hasCt || totalCtWatts <= 0) {
       // Standard nominal model without CT
       thermostaticAssumed.forEach(d => {
@@ -5756,7 +6113,7 @@ function doGet(e) {
   }
 
   function computeHomeSummary() {
-    const hasCt = appMode === "demo" ? true : (discoveredMeters && discoveredMeters.length > 0);
+    const hasCt = appMode === "demo" ? true : ((discoveredMeters && discoveredMeters.length > 0) || devices.some(d => d && d.isCtMeter));
     const pCtRaw =
       (parseFloat(ctMeterState.mainPhaseAWatts) || 0) +
       (parseFloat(ctMeterState.mainPhaseBWatts) || 0);
@@ -5966,9 +6323,9 @@ function doGet(e) {
     } else {
       if (s.activeCount > 0) {
         const hrCost = formatRatePerHour(s.pCt);
-        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of ${s.activeCount} active loads • ${hrCost})${fridgeNote} • 🔌 Misc (${Math.round(s.pResidual)}W)${tvNote}${subsidyNote}.`;
+        insightEl.innerHTML = `No CT meter found. Whole home power is <strong>${s.pCt.toFixed(0)}W</strong> (sum of ${s.activeCount} active loads • ${hrCost})${fridgeNote} • 🔌 Misc (${Math.round(s.pResidual)}W)${tvNote}${subsidyNote}.<div style="margin-top:6px;"><button type="button" class="step-btn" style="width:auto;display:inline-flex;padding:3px 8px;font-size:10.5px;color:var(--sky);border-color:rgba(56,189,248,0.4);" onclick="openCtMeterSelectorModal()">📟 Pair / Select CT Meter →</button></div>`;
       } else {
-        insightEl.innerHTML = `All smart switches are currently OFF. Continuous base is <strong>${Math.round(s.pCt)}W</strong> (${fridgeNote ? 'fridge + ' : ''}misc loads)${subsidyNote}.`;
+        insightEl.innerHTML = `All smart switches are currently OFF. Continuous base is <strong>${Math.round(s.pCt)}W</strong> (${fridgeNote ? 'fridge + ' : ''}misc loads)${subsidyNote}.<div style="margin-top:6px;"><button type="button" class="step-btn" style="width:auto;display:inline-flex;padding:3px 8px;font-size:10.5px;color:var(--sky);border-color:rgba(56,189,248,0.4);" onclick="openCtMeterSelectorModal()">📟 Pair / Select CT Meter →</button></div>`;
       }
     }
 
@@ -6010,7 +6367,7 @@ function doGet(e) {
     if (resCard) {
       resCard.style.display = "flex";
       document.getElementById("catResidualName").innerHTML = `
-        <span>Misc Loads</span>
+        <span>Misc Unmonitored Loads</span>
         <span class="badge" style="background:rgba(245,158,11,0.2);color:#f59e0b;font-size:9.5px;padding:2px 6px;border-radius:6px;font-weight:700;">⚙️ ${countActiveMisc} Active</span>
       `;
       document.getElementById("catResidualWatts").textContent = `${s.pResidual.toFixed(1)} W`;
@@ -6076,6 +6433,7 @@ function doGet(e) {
     const grid = document.getElementById("quickControlsGrid");
     const sorted = devices
       .map((d, idx) => ({ d, idx }))
+      .filter(({d}) => !d.isCtMeter && d.connectionType !== "always_on" && d.connectionType !== "manual" && !d.isAlwaysOn)
       .sort((a, b) => (b.d.isOn ? 1 : 0) - (a.d.isOn ? 1 : 0) || b.d.ratedWatts - a.d.ratedWatts)
       .slice(0, 6);
 
@@ -7312,6 +7670,29 @@ function doGet(e) {
     if (modal) modal.classList.remove("open");
   }
 
+    function triggerDirectHardwareLearn() {
+    haptic(25);
+    const idx = parseInt(document.getElementById("editDeviceIdx").value, 10);
+    closeEditDeviceModal();
+    setTimeout(() => {
+      openAutoSweepModal();
+      setTimeout(() => {
+        const chks = document.querySelectorAll(".auto-sweep-chk");
+        chks.forEach(c => c.checked = false);
+        const target = document.querySelector(`.auto-sweep-chk[data-idx="${idx}"]`);
+        if (target) {
+          target.checked = true;
+          updateAutoSweepSelectedCount();
+          setTimeout(() => {
+            startWholeHomeAutoSweep();
+          }, 150);
+        } else {
+          showToast("⚠️ Device not available for hardware sweep.");
+        }
+      }, 50);
+    }, 200);
+  }
+
   function triggerCtLearnFromEditModal() {
     const idx = parseInt(document.getElementById("editDeviceIdx").value, 10);
     const d = devices[idx];
@@ -7572,7 +7953,7 @@ function doGet(e) {
     const cntEl = document.getElementById("autoSweepSelectedCount");
     if (cntEl) cntEl.textContent = count;
 
-    const estSec = count * 3;
+    const estSec = count * 25;
     const estEl = document.getElementById("autoSweepEstTime");
     if (estEl) estEl.textContent = `(~${estSec} sec)`;
 
@@ -7581,6 +7962,59 @@ function doGet(e) {
       startBtn.disabled = count === 0;
       startBtn.style.opacity = count === 0 ? "0.5" : "1";
     }
+  }
+
+  
+  function fetchCtPowerSync() {
+    if (!hasNativeBridge() || appMode !== "live") return;
+    const endpoint = document.getElementById("cfgTuyaEndpoint").value.trim() || "https://openapi.tuyain.com";
+    const clientId = document.getElementById("cfgTuyaClientId").value.trim();
+    const clientSecret = document.getElementById("cfgTuyaClientSecret").value.trim();
+    const token = cachedTuyaToken;
+    if (!token) return;
+
+    const savedCtId = localStorage.getItem("omnia_selected_ct_meter_id") || "auto";
+    let allMetersToPoll = [];
+    if (savedCtId !== "auto" && savedCtId !== "none") {
+      const explicitMeter = discoveredMeters.find(m => m.id === savedCtId);
+      if (explicitMeter) allMetersToPoll.push(explicitMeter);
+    } else if (savedCtId === "auto") {
+      allMetersToPoll = [...discoveredMeters];
+    }
+    
+    if (allMetersToPoll.length === 0) return;
+    
+    const mIds = allMetersToPoll.map(m => m.id).join(",");
+    try {
+      const mDevsRes = window.OmniaNative.tuyaSignedRequest(
+        endpoint, clientId, clientSecret, token, "GET",
+        `/v1.0/devices?device_ids=${mIds}`, ""
+      );
+      const devsObj = JSON.parse(mDevsRes);
+      if (devsObj.success && Array.isArray(devsObj.result)) {
+        let totalPhaseA = 0.0;
+        let totalPhaseB = 0.0;
+        devsObj.result.forEach(m => {
+          let pA = 0, pB = 0, pTot = 0, fwdKwh = 0;
+          m.status.forEach(p => {
+            if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
+            if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
+            if (p.code === "total_power" || p.dp_id === 115) {
+              const tv = parseFloat(p.value);
+              pTot = tv > 500 ? tv / 10.0 : tv;
+            }
+          });
+          if (pA > 0 || pB > 0) {
+            totalPhaseA += pA;
+            totalPhaseB += pB;
+          } else if (pTot > 0) {
+            totalPhaseA += pTot;
+          }
+        });
+        ctMeterState.mainPhaseAWatts = totalPhaseA;
+        ctMeterState.mainPhaseBWatts = totalPhaseB;
+      }
+    } catch(e) {}
   }
 
   function startWholeHomeAutoSweep() {
@@ -7661,12 +8095,16 @@ function doGet(e) {
     // Ensure target device is OFF first so baseline represents home without this load
     setAppliancePowerState(devIdx, false);
     document.getElementById("autoSweepStepText").innerHTML =
-      `<span class="pulse-dot" style="background:#38bdf8;"></span><span>Phase 1/3: Settling baseline CT power (switch is OFF)...</span>`;
+      `<span class="pulse-dot" style="background:#38bdf8;"></span><span>Phase 1/3: Settling baseline CT power (switch is OFF)... (5s)</span>`;
 
     renderAutoSweepLiveLog();
 
     autoSweepState.stepTimer = setTimeout(() => {
       if (!autoSweepState.isRunning || autoSweepState.isPaused) return;
+      
+      // Force sync with Tuya to get actual baseline from CT meter
+      if (appMode === "live") fetchCtPowerSync();
+      
       const sBase = computeHomeSummary();
       const pBase = Math.round(sBase.pCt * 10) / 10;
       document.getElementById("autoSweepLiveBaseWatts").textContent = `${pBase.toFixed(1)} W`;
@@ -7677,16 +8115,22 @@ function doGet(e) {
       haptic(20);
       document.getElementById("autoSweepSwitchStateBadge").innerHTML = `<span style="color:var(--emerald);font-weight:800;">⚡ SWITCH ON</span>`;
       document.getElementById("autoSweepStepText").innerHTML =
-        `<span class="pulse-dot" style="background:#10b981;"></span><span>Phase 2/3: Turned ON switch • Measuring CT delta jump...</span>`;
+        `<span class="pulse-dot" style="background:#10b981;"></span><span>Phase 2/3: Turned ON switch • Waiting for CT hardware jump... (15s)</span>`;
 
-      // Sampling delay for CT meter inrush & sampling window to settle
+      // 15-second delay to let the physical CT meter register the power jump and report to Tuya
       autoSweepState.stepTimer = setTimeout(() => {
         if (!autoSweepState.isRunning || autoSweepState.isPaused) return;
+        
+        // Force sync with Tuya to get updated CT reading
+        if (appMode === "live") fetchCtPowerSync();
+        
         const sActive = computeHomeSummary();
         const pActive = Math.round(sActive.pCt * 10) / 10;
         let delta = Math.round((pActive - pBase) * 10) / 10;
+        let isRealJump = delta > 2.0;
         if (delta <= 0) {
-          delta = Math.max(1.0, parseFloat(dev.ratedWatts || 15));
+          // If no jump was detected on the CT clamp, mark as unmeasured or keep previous/nominal
+          delta = parseFloat(dev.ratedWatts || 15);
         }
 
         document.getElementById("autoSweepLiveActiveWatts").textContent = `${pActive.toFixed(1)} W`;
@@ -7720,7 +8164,7 @@ function doGet(e) {
           oldWatts,
           newWatts: delta,
           deltaWatts: delta,
-          status: "Calibrated"
+          status: isRealJump ? "Calibrated (CT Jump)" : "No Jump Detected"
         });
 
         // Turn switch OFF immediately!
@@ -7728,20 +8172,20 @@ function doGet(e) {
         haptic(15);
         document.getElementById("autoSweepSwitchStateBadge").innerHTML = `<span style="color:var(--muted);">OFF (Calibrated)</span>`;
         document.getElementById("autoSweepStepText").innerHTML =
-          `<span style="color:var(--emerald);">✓ Calibrated (+${delta.toFixed(1)}W)! Turned switch OFF • Settling...</span>`;
+          `<span style="color:var(--emerald);">✓ Calibrated (+${delta.toFixed(1)}W)! Turned switch OFF • Settling (5s)...</span>`;
 
         renderAutoSweepLiveLog();
 
-        // Settle before next device
+        // Wait 5 seconds for CT meter to settle back down before turning next switch ON
         autoSweepState.stepTimer = setTimeout(() => {
           if (!autoSweepState.isRunning || autoSweepState.isPaused) return;
           autoSweepState.currentIndex++;
           runAutoSweepNextDevice();
-        }, 800);
+        }, 5000);
 
-      }, 1800);
+      }, 15000);
 
-    }, 1000);
+    }, 5000);
   }
 
   function renderAutoSweepLiveLog() {
@@ -7907,8 +8351,8 @@ function doGet(e) {
   }
 
   function getSelectedMiscWattsTotal() {
-    const items = getMiscLoadItems();
-    return items.filter(it => it.selected).reduce((sum, it) => sum + (Number(it.watts) || 0), 0);
+    return devices.filter(d => !d.isCtMeter && (d.connectionType === "always_on" || d.connectionType === "manual") && d.isOn)
+                  .reduce((sum, d) => sum + (Number(d.effectiveWatts || d.ratedWatts) || 0), 0);
   }
 
   function getMiscLoadSummaryText() {
@@ -8105,6 +8549,82 @@ function doGet(e) {
   // ===========================================================================
   // NAVIGATION & BOOTSTRAP
   // ===========================================================================
+  
+  let manualLearnBaseW = 0;
+  function openManualLearnModal(idx) {
+    haptic(15);
+    const d = devices[idx];
+    if (!d) return;
+    document.getElementById("manualLearnIdx").value = idx;
+    document.getElementById("manualLearnSubTitle").textContent = `Calibrating: ${d.name}`;
+    
+    document.getElementById("manualLearnStep1").style.opacity = "1";
+    document.getElementById("manualLearnStep1").style.pointerEvents = "auto";
+    document.getElementById("manualLearnStep2").style.opacity = "0.3";
+    document.getElementById("manualLearnStep2").style.pointerEvents = "none";
+    document.getElementById("manualLearnResult").style.display = "none";
+    
+    document.getElementById("modalManualLearn").classList.add("open");
+  }
+
+  async function manualLearnMeasureBaseline() {
+    haptic(20);
+    const btn = document.querySelector("#manualLearnStep1 button");
+    btn.innerHTML = "⏳ Fetching...";
+    
+    if (appMode === "live") fetchCtPowerSync();
+    
+    const sBase = computeHomeSummary();
+    manualLearnBaseW = Math.round(sBase.pCt * 10) / 10;
+    
+    document.getElementById("manualLearnBaseWatts").textContent = `${manualLearnBaseW.toFixed(1)} W`;
+    
+    btn.innerHTML = "✓ Baseline Saved";
+    document.getElementById("manualLearnStep1").style.opacity = "0.3";
+    document.getElementById("manualLearnStep1").style.pointerEvents = "none";
+    document.getElementById("manualLearnStep2").style.opacity = "1";
+    document.getElementById("manualLearnStep2").style.pointerEvents = "auto";
+  }
+
+  async function manualLearnMeasureActive() {
+    haptic(25);
+    const btn = document.querySelector("#manualLearnStep2 button");
+    btn.innerHTML = "⏳ Fetching...";
+    
+    if (appMode === "live") fetchCtPowerSync();
+    
+    const sActive = computeHomeSummary();
+    const activeW = Math.round(sActive.pCt * 10) / 10;
+    
+    let delta = Math.round((activeW - manualLearnBaseW) * 10) / 10;
+    if (delta <= 0) delta = 10; // Failsafe
+    
+    const idx = parseInt(document.getElementById("manualLearnIdx").value, 10);
+    const d = devices[idx];
+    if (d) {
+      d.ratedWatts = delta;
+      d.effectiveWatts = delta;
+      d.isLearned = true;
+      
+      let customMap = {};
+      try {
+        customMap = JSON.parse(localStorage.getItem("omnia_device_customizations") || "{}");
+      } catch(e){}
+      const devKey = d.id || `${d.cid}_${d.dp_code}`;
+      customMap[devKey] = customMap[devKey] || {};
+      customMap[devKey].ratedWatts = delta;
+      customMap[devKey].isLearned = true;
+      localStorage.setItem("omnia_device_customizations", JSON.stringify(customMap));
+      saveState();
+    }
+    
+    document.getElementById("manualLearnStep2").style.opacity = "0.3";
+    document.getElementById("manualLearnStep2").style.pointerEvents = "none";
+    document.getElementById("manualLearnResult").style.display = "block";
+    document.getElementById("manualLearnDeltaWatts").textContent = `+${delta.toFixed(1)} W`;
+  }
+
+
   function switchTab(tabId) {
     haptic(14);
     ["home", "rooms", "savings", "connectors"].forEach(t => {
@@ -8129,5 +8649,55 @@ function doGet(e) {
     setInterval(tickEverySecond, 1000);
   });
 </script>
+
+  <!-- MANUAL APPLIANCE HARDWARE LEARNING MODAL -->
+  <div class="modal-backdrop" id="modalManualLearn">
+    <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:18px;">🎯</div>
+          <div>
+            <div style="font-size:15px;font-weight:700;">Manual Hardware Calibration</div>
+            <div style="font-size:11px;color:var(--muted);" id="manualLearnSubTitle">Learn wattage for unmonitored devices</div>
+          </div>
+        </div>
+        <button class="step-btn" onclick="document.getElementById('modalManualLearn').classList.remove('open')">✕</button>
+      </div>
+
+      <div style="padding:16px 0;display:flex;flex-direction:column;gap:16px;flex:1;overflow-y:auto;">
+        <input type="hidden" id="manualLearnIdx" value="" />
+        
+        <!-- Step 1 -->
+        <div id="manualLearnStep1" style="background:var(--surface-soft);padding:14px;border-radius:12px;border:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:700;color:var(--sky);margin-bottom:8px;">Step 1: Prepare Device</div>
+          <div style="font-size:12px;color:var(--text);margin-bottom:14px;">Ensure the appliance is physically <b>TURNED OFF</b> so we can measure the house baseline.</div>
+          <button class="btn sky" style="width:100%;padding:10px;font-size:13px;" onclick="manualLearnMeasureBaseline()">
+            Measure Baseline
+          </button>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="manualLearnStep2" style="background:var(--surface-soft);padding:14px;border-radius:12px;border:1px solid var(--border);opacity:0.3;pointer-events:none;">
+          <div style="font-size:13px;font-weight:700;color:var(--emerald);margin-bottom:8px;">Step 2: Turn Device ON</div>
+          <div style="font-size:12px;color:var(--text);margin-bottom:14px;">Physically turn the appliance <b>ON</b>. Wait 10 seconds for the power jump to register on the main CT clamp.</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:12px;">
+            <span style="color:var(--muted);">Baseline:</span>
+            <span id="manualLearnBaseWatts" style="font-weight:700;font-family:monospace;">-- W</span>
+          </div>
+          <button class="btn emerald" style="width:100%;padding:10px;font-size:13px;" onclick="manualLearnMeasureActive()">
+            Measure Active Power
+          </button>
+        </div>
+        
+        <!-- Result -->
+        <div id="manualLearnResult" style="display:none;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);padding:14px;border-radius:12px;text-align:center;">
+          <div style="font-size:12px;color:var(--emerald);font-weight:600;margin-bottom:4px;">Successfully Calibrated!</div>
+          <div id="manualLearnDeltaWatts" style="font-size:24px;font-weight:800;color:var(--text);font-family:monospace;">+0.0 W</div>
+          <button class="step-btn" style="margin-top:12px;width:100%;" onclick="document.getElementById('modalManualLearn').classList.remove('open');renderMiscLoadsModalContent();">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

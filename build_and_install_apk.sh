@@ -85,8 +85,8 @@ cp "$RELEASE_APK" "$LATEST_APK"
 
 echo "[6/6] Checking connected phone via ADB..."
 if env -u LD_LIBRARY_PATH adb get-state >/dev/null 2>&1; then
-  env -u LD_LIBRARY_PATH adb install -r "$RELEASE_APK"
-  env -u LD_LIBRARY_PATH adb shell am start -n com.omniaenergy.omnia_energy/.MainActivity
+  env -u LD_LIBRARY_PATH adb -s 1C161FDEE0054N install -r "$RELEASE_APK"
+  env -u LD_LIBRARY_PATH adb -s 1C161FDEE0054N shell am start -n com.omniaenergy.omnia_energy/.MainActivity
   echo "SUCCESS! OmniaEnergy-v${VERSION}.apk installed and launched on connected phone."
 else
   echo "APK built & signed at $RELEASE_APK"

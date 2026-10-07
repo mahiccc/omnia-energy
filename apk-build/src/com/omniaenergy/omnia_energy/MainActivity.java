@@ -58,10 +58,15 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         sqliteLocalDb = new SqliteLocalDb(this);
         securePrefs = getSharedPreferences("omnia_energy_keystore_prefs", Context.MODE_PRIVATE);
 
+        try {
+            java.lang.reflect.Method m = WebView.class.getMethod("setWebContentsDebuggingEnabled", boolean.class);
+            m.invoke(null, true);
+        } catch (Exception ignored) {}
         webView = new WebView(this);
         webView.setBackgroundColor(Color.parseColor("#070B12"));
 
@@ -74,11 +79,16 @@ public class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                Log.e("OmniaJS", "WebView Error (" + errorCode + "): " + description + " for " + failingUrl);
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onConsoleMessage(ConsoleMessage cm) {
-                Log.d("OmniaJS", cm.message() + " -- From line " + cm.lineNumber() + " of " + cm.sourceId());
+                Log.i("OmniaJS", cm.message() + " [" + cm.sourceId() + ":" + cm.lineNumber() + "]");
                 return true;
             }
         });
@@ -310,7 +320,8 @@ public class MainActivity extends Activity {
                 reader.close();
                 return sb.toString();
             } catch (Exception e) {
-                return "{\"success\":false,\"msg\":\"" + e.getMessage() + "\"}";
+                String safeMsg = e.getMessage() == null ? "Unknown error" : e.getMessage().replace("\"", "");
+                return "{\"success\":false,\"msg\":\"" + safeMsg + "\"}";
             }
         }
 
