@@ -206,6 +206,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getTuyaDeviceStatusLocal(String devId, String localKey, String ip, String version, int timeoutMs) {
+            return TuyaLocalClient.getDeviceStatusSync(devId, localKey, ip, version, timeoutMs);
+        }
+
+        @JavascriptInterface
         public String getTelemetryBufferJson(int limit) {
             return db.getRecentTelemetryRecordsJson(limit);
         }

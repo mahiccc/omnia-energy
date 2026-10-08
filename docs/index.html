@@ -5170,10 +5170,28 @@ function saveOnboardCreds() {
       const isMeter = isExplicitSelectedCt || (savedSelectedCtId !== "none" && (isMeterCategory || (isMeterName && hasPowerTelemetryDp) || isMeterName));
 
       if (isMeter) {
+        // Query detailed device info to obtain local_key and IP address for direct LAN polling
+        let meterLocalKey = d.local_key || "";
+        let meterIp = d.ip || "";
+        try {
+          const detailRaw = window.OmniaNative.tuyaSignedRequest(
+            endpoint, clientId, clientSecret, token, "GET",
+            `/v1.0/devices/${d.id}`, ""
+          );
+          const detailObj = JSON.parse(detailRaw);
+          if (detailObj.success && detailObj.result) {
+            meterLocalKey = detailObj.result.local_key || meterLocalKey;
+            meterIp = detailObj.result.ip || meterIp;
+          }
+        } catch(e) {}
+
         newMeters.push({
           id: d.id,
           name: dName || `Energy Meter ${newMeters.length + 1}`,
-          category: dCat || "zndb"
+          category: dCat || "zndb",
+          local_key: meterLocalKey,
+          ip: meterIp,
+          version: "3.4"
         });
         const roomName = inferRoomFromName(dName);
         uniqueRoomsSet.add(roomName);
@@ -5210,7 +5228,10 @@ function saveOnboardCreds() {
           isOnline: isDevOnline,
           isOn: isDevOnline,
           todaySeconds: 0,
-          todayWh: fwdKwh * 1000
+          todayWh: fwdKwh * 1000,
+          local_key: meterLocalKey,
+          ip: meterIp,
+          version: "3.4"
         });
         return;
       }
@@ -5525,45 +5546,77 @@ function saveOnboardCreds() {
         });
 
         if (allMetersToPoll.length > 0) {
+          let anyLocalMeter = false;
           allMetersToPoll.forEach(m => {
             try {
               let pA = 0, pB = 0, pTot = 0, fwdKwh = 0;
-              let fromShadow = false;
+              let fromLocal = false;
 
-              const spRaw = window.OmniaNative.tuyaSignedRequest(
-                endpoint, clientId, clientSecret, token, "GET",
-                `/v2.0/cloud/thing/${m.id}/shadow/properties`, ""
-              );
-              const sp = JSON.parse(spRaw);
-              if (sp.success && sp.result && Array.isArray(sp.result.properties)) {
-                sp.result.properties.forEach(p => {
-                  if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
-                  if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
-                  if (p.code === "cur_power") pA = parseFloat(p.value) / 10.0;
-                  if (p.code === "total_power" || p.dp_id === 115) {
-                    const tv = parseFloat(p.value);
-                    pTot = tv > 500 ? tv / 10.0 : tv;
+              // Step 1: Direct Local Tuya LAN Socket Query (<300ms)
+              if (m.local_key && m.ip && window.OmniaNative.getTuyaDeviceStatusLocal) {
+                try {
+                  const locRaw = window.OmniaNative.getTuyaDeviceStatusLocal(
+                    m.id, m.local_key, m.ip, m.version || "3.4", 1200
+                  );
+                  if (locRaw && !locRaw.includes('"error"')) {
+                    const locObj = JSON.parse(locRaw);
+                    const dps = locObj.dps || {};
+                    if (dps["101"] !== undefined) pA = parseFloat(dps["101"]) / 10.0;
+                    if (dps["105"] !== undefined) pB = parseFloat(dps["105"]) / 10.0;
+                    if (dps["115"] !== undefined) {
+                      const tv = parseFloat(dps["115"]);
+                      pTot = tv > 500 ? tv / 10.0 : tv;
+                    }
+                    if (dps["112"] !== undefined) ctMeterState.voltageVolts = parseFloat(dps["112"]) / 10.0;
+                    if (dps["111"] !== undefined) ctMeterState.freqHz = parseFloat(dps["111"]) / 100.0;
+                    if (dps["1"] !== undefined) fwdKwh = parseFloat(dps["1"]) / 100.0;
+
+                    if (pA > 0 || pB > 0 || pTot > 0) {
+                      fromLocal = true;
+                      anyLocalMeter = true;
+                    }
                   }
-                  if (p.code === "voltage_a" || p.dp_id === 112 || p.code === "voltage") {
-                    ctMeterState.voltageVolts = parseFloat(p.value) / 10.0;
-                  }
-                  if (p.code === "freq") ctMeterState.freqHz = parseFloat(p.value) / 100.0;
-                  if (p.code === "forward_energy_total") fwdKwh = parseFloat(p.value) / 100.0;
-                });
-                fromShadow = true;
+                } catch(eLocal) {}
               }
 
-              // Fallback to /v1.0/users/{uid}/devices status if shadow failed (e.g. error 40001900)
-              if ((!fromShadow || (pA === 0 && pB === 0 && pTot === 0)) && mapById[m.id]) {
-                const devStat = mapById[m.id].status || [];
-                const pTotDp = devStat.find(s => s && (s.code === "total_power" || s.code === "cur_power"));
-                const fwdDp = devStat.find(s => s && s.code === "forward_energy_total");
-                if (pTotDp && pTotDp.value !== undefined) {
-                  const tv = parseFloat(pTotDp.value);
-                  pTot = tv > 500 ? tv / 10.0 : tv;
+              // Step 2: Cloud Fallback if local socket was unreachable or empty
+              if (!fromLocal) {
+                let fromShadow = false;
+                const spRaw = window.OmniaNative.tuyaSignedRequest(
+                  endpoint, clientId, clientSecret, token, "GET",
+                  `/v2.0/cloud/thing/${m.id}/shadow/properties`, ""
+                );
+                const sp = JSON.parse(spRaw);
+                if (sp.success && sp.result && Array.isArray(sp.result.properties)) {
+                  sp.result.properties.forEach(p => {
+                    if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
+                    if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
+                    if (p.code === "cur_power") pA = parseFloat(p.value) / 10.0;
+                    if (p.code === "total_power" || p.dp_id === 115) {
+                      const tv = parseFloat(p.value);
+                      pTot = tv > 500 ? tv / 10.0 : tv;
+                    }
+                    if (p.code === "voltage_a" || p.dp_id === 112 || p.code === "voltage") {
+                      ctMeterState.voltageVolts = parseFloat(p.value) / 10.0;
+                    }
+                    if (p.code === "freq") ctMeterState.freqHz = parseFloat(p.value) / 100.0;
+                    if (p.code === "forward_energy_total") fwdKwh = parseFloat(p.value) / 100.0;
+                  });
+                  fromShadow = true;
                 }
-                if (fwdDp && fwdDp.value !== undefined) {
-                  fwdKwh = parseFloat(fwdDp.value) / 100.0;
+
+                // Fallback to /v1.0/users/{uid}/devices status if shadow failed (e.g. error 40001900)
+                if ((!fromShadow || (pA === 0 && pB === 0 && pTot === 0)) && mapById[m.id]) {
+                  const devStat = mapById[m.id].status || [];
+                  const pTotDp = devStat.find(s => s && (s.code === "total_power" || s.code === "cur_power"));
+                  const fwdDp = devStat.find(s => s && s.code === "forward_energy_total");
+                  if (pTotDp && pTotDp.value !== undefined) {
+                    const tv = parseFloat(pTotDp.value);
+                    pTot = tv > 500 ? tv / 10.0 : tv;
+                  }
+                  if (fwdDp && fwdDp.value !== undefined) {
+                    fwdKwh = parseFloat(fwdDp.value) / 100.0;
+                  }
                 }
               }
 
@@ -5583,11 +5636,13 @@ function saveOnboardCreds() {
                 if (fwdKwh > 0) meterApp.todayWh = fwdKwh * 1000;
               }
 
-              lines.push(`✅ ${m.name}: ${mWatts.toFixed(1)}W (Total: ${fwdKwh.toFixed(1)} kWh)`);
+              const srcTag = fromLocal ? "⚡ Local Wi-Fi" : "☁️ Tuya Cloud";
+              lines.push(`✅ ${m.name} (${srcTag}): ${mWatts.toFixed(1)}W (Total: ${fwdKwh.toFixed(1)} kWh)`);
             } catch (mErr) {}
           });
           ctMeterState.mainPhaseAWatts = totalPhaseA;
           ctMeterState.mainPhaseBWatts = totalPhaseB;
+          ctMeterState.source = anyLocalMeter ? "local_lan" : "cloud";
         }
 
         // 3. Poll Switch & Socket States via lookup map (REAL-TIME)
@@ -6183,12 +6238,13 @@ function saveOnboardCreds() {
 
     if (isLive) {
       bannerEl.className = "live-strip live-mode";
-      const ctTag = hasCt ? `${discoveredMeters.length} CT Meter(s)` : `Switches Summed`;
+      const isLocalCt = ctMeterState.source === "local_lan";
+      const ctTag = hasCt ? `${discoveredMeters.length} CT (${isLocalCt ? "⚡Local LAN" : "☁️Cloud"})` : `Switches Summed`;
       bannerLeft.textContent = `🟢 LIVE HOME • ${devices.length} Devices (${ctTag})`;
       bannerRight.textContent = `${ctMeterState.voltageVolts.toFixed(1)}V • ${ctMeterState.freqHz.toFixed(1)}Hz`;
-      subText.textContent = hasCt ? "Live CT Clamp Disaggregation" : "Live Smart Switch Summation";
+      subText.textContent = hasCt ? (isLocalCt ? "⚡ Direct Local Wi-Fi CT Disaggregation" : "Live CT Clamp Disaggregation") : "Live Smart Switch Summation";
       loadBadge.className = "status-pill";
-      loadBadge.textContent = hasCt ? "CT Clamp Meter" : "Sum of Switches";
+      loadBadge.textContent = hasCt ? (isLocalCt ? "⚡ Direct Local CT" : "☁️ Cloud CT Meter") : "Sum of Switches";
     } else {
       bannerEl.className = "live-strip demo-mode";
       bannerLeft.textContent = "🧪 Showcase Demo • Tap to connect home";
@@ -7984,7 +8040,6 @@ function saveOnboardCreds() {
     const clientId = document.getElementById("cfgTuyaClientId").value.trim();
     const clientSecret = document.getElementById("cfgTuyaClientSecret").value.trim();
     const token = cachedTuyaToken;
-    if (!token) return;
 
     const savedCtId = localStorage.getItem("omnia_selected_ct_meter_id") || "auto";
     let allMetersToPoll = [];
@@ -8000,43 +8055,81 @@ function saveOnboardCreds() {
     
     let totalPhaseA = 0.0;
     let totalPhaseB = 0.0;
+    let anyLocalSuccess = false;
 
     allMetersToPoll.forEach(m => {
       try {
-        let pA = 0, pB = 0, pTot = 0;
-        // Priority 1: High-precision shadow properties (Tuya updates this in real-time)
-        const spRaw = window.OmniaNative.tuyaSignedRequest(
-          endpoint, clientId, clientSecret, token, "GET",
-          `/v2.0/cloud/thing/${m.id}/shadow/properties`, ""
-        );
-        const sp = JSON.parse(spRaw);
-        if (sp.success && sp.result && Array.isArray(sp.result.properties)) {
-          sp.result.properties.forEach(p => {
-            if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
-            if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
-            if (p.code === "total_power" || p.dp_id === 115) {
-              const tv = parseFloat(p.value);
-              pTot = tv > 500 ? tv / 10.0 : tv;
+        let pA = 0, pB = 0, pTot = 0, fwdKwh = 0;
+        let gotLocal = false;
+
+        // Step 1: Attempt DIRECT LOCAL LAN TCP socket (<300ms, zero quota)
+        if (m.local_key && m.ip && window.OmniaNative.getTuyaDeviceStatusLocal) {
+          try {
+            const locRaw = window.OmniaNative.getTuyaDeviceStatusLocal(
+              m.id, m.local_key, m.ip, m.version || "3.4", 1200
+            );
+            if (locRaw && !locRaw.includes('"error"')) {
+              const locObj = JSON.parse(locRaw);
+              const dps = locObj.dps || {};
+              if (dps["101"] !== undefined) pA = parseFloat(dps["101"]) / 10.0;
+              if (dps["105"] !== undefined) pB = parseFloat(dps["105"]) / 10.0;
+              if (dps["115"] !== undefined) {
+                const tv = parseFloat(dps["115"]);
+                pTot = tv > 500 ? tv / 10.0 : tv;
+              }
+              if (dps["112"] !== undefined) ctMeterState.voltageVolts = parseFloat(dps["112"]) / 10.0;
+              if (dps["111"] !== undefined) ctMeterState.freqHz = parseFloat(dps["111"]) / 100.0;
+              if (dps["1"] !== undefined) fwdKwh = parseFloat(dps["1"]) / 100.0;
+
+              if (pA > 0 || pB > 0 || pTot > 0) {
+                gotLocal = true;
+                anyLocalSuccess = true;
+              }
             }
-          });
+          } catch (eLocal) {}
         }
 
-        // Priority 2: Fallback to device query if shadow was empty
-        if (pA === 0 && pB === 0 && pTot === 0) {
-          const mDevsRes = window.OmniaNative.tuyaSignedRequest(
+        // Step 2: Fallback to Tuya Cloud if local not available or failed
+        if (!gotLocal && token) {
+          // Priority 2a: High-precision shadow properties (Tuya updates this in real-time)
+          const spRaw = window.OmniaNative.tuyaSignedRequest(
             endpoint, clientId, clientSecret, token, "GET",
-            `/v1.0/devices/${m.id}/status`, ""
+            `/v2.0/cloud/thing/${m.id}/shadow/properties`, ""
           );
-          const stObj = JSON.parse(mDevsRes);
-          if (stObj.success && Array.isArray(stObj.result)) {
-            stObj.result.forEach(p => {
+          const sp = JSON.parse(spRaw);
+          if (sp.success && sp.result && Array.isArray(sp.result.properties)) {
+            sp.result.properties.forEach(p => {
               if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
               if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
               if (p.code === "total_power" || p.dp_id === 115) {
                 const tv = parseFloat(p.value);
                 pTot = tv > 500 ? tv / 10.0 : tv;
               }
+              if (p.code === "voltage_a" || p.dp_id === 112 || p.code === "voltage") {
+                ctMeterState.voltageVolts = parseFloat(p.value) / 10.0;
+              }
+              if (p.code === "freq") ctMeterState.freqHz = parseFloat(p.value) / 100.0;
+              if (p.code === "forward_energy_total") fwdKwh = parseFloat(p.value) / 100.0;
             });
+          }
+
+          // Priority 2b: Fallback to device query if shadow was empty
+          if (pA === 0 && pB === 0 && pTot === 0) {
+            const mDevsRes = window.OmniaNative.tuyaSignedRequest(
+              endpoint, clientId, clientSecret, token, "GET",
+              `/v1.0/devices/${m.id}/status`, ""
+            );
+            const stObj = JSON.parse(mDevsRes);
+            if (stObj.success && Array.isArray(stObj.result)) {
+              stObj.result.forEach(p => {
+                if (p.code === "power_a" || p.dp_id === 101) pA = parseFloat(p.value) / 10.0;
+                if (p.code === "power_b" || p.dp_id === 105) pB = parseFloat(p.value) / 10.0;
+                if (p.code === "total_power" || p.dp_id === 115) {
+                  const tv = parseFloat(p.value);
+                  pTot = tv > 500 ? tv / 10.0 : tv;
+                }
+              });
+            }
           }
         }
 
@@ -8046,12 +8139,21 @@ function saveOnboardCreds() {
         } else if (pTot > 0) {
           totalPhaseA += pTot;
         }
+        if (fwdKwh > 0) ctMeterState.totalForwardKwh = fwdKwh;
+
+        const mWatts = (pA + pB) > 0 ? (pA + pB) : pTot;
+        const meterApp = devices.find(d => d.cid === m.id);
+        if (meterApp) {
+          meterApp.liveWatts = mWatts;
+          if (fwdKwh > 0) meterApp.todayWh = fwdKwh * 1000;
+        }
       } catch(e) {}
     });
 
     if (totalPhaseA > 0 || totalPhaseB > 0) {
       ctMeterState.mainPhaseAWatts = totalPhaseA;
       ctMeterState.mainPhaseBWatts = totalPhaseB;
+      ctMeterState.source = anyLocalSuccess ? "local_lan" : "cloud";
     }
   }
 

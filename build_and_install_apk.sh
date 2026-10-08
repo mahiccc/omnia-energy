@@ -34,6 +34,7 @@ echo "[2/6] Compiling Java sources with javac..."
   -d "$OUT_DIR/classes" \
   "$OUT_DIR/gen/com/omniaenergy/omnia_energy/R.java" \
   "$BUILD_DIR/src/com/omniaenergy/omnia_energy/SqliteLocalDb.java" \
+  "$BUILD_DIR/src/com/omniaenergy/omnia_energy/TuyaLocalClient.java" \
   "$BUILD_DIR/src/com/omniaenergy/omnia_energy/MainActivity.java" \
   "$BUILD_DIR/src/android/webkit/JavascriptInterface.java"
 
@@ -84,10 +85,12 @@ LATEST_APK="$PROJECT_DIR/OmniaEnergy.apk"
 cp "$RELEASE_APK" "$LATEST_APK"
 
 echo "[6/6] Checking connected phone via ADB..."
-if env -u LD_LIBRARY_PATH adb get-state >/dev/null 2>&1; then
-  env -u LD_LIBRARY_PATH adb -s 1C161FDEE0054N install -r "$RELEASE_APK"
-  env -u LD_LIBRARY_PATH adb -s 1C161FDEE0054N shell am start -n com.omniaenergy.omnia_energy/.MainActivity
-  echo "SUCCESS! OmniaEnergy-v${VERSION}.apk installed and launched on connected phone."
+TARGET_DEVICE=$(env -u LD_LIBRARY_PATH adb devices | grep -w "device" | head -n 1 | awk '{print $1}')
+if [ -n "$TARGET_DEVICE" ]; then
+  echo "Found device: $TARGET_DEVICE. Installing..."
+  env -u LD_LIBRARY_PATH adb -s "$TARGET_DEVICE" install -r "$RELEASE_APK"
+  env -u LD_LIBRARY_PATH adb -s "$TARGET_DEVICE" shell am start -n com.omniaenergy.omnia_energy/.MainActivity
+  echo "SUCCESS! OmniaEnergy-v${VERSION}.apk installed and launched on connected phone ($TARGET_DEVICE)."
 else
-  echo "APK built & signed at $RELEASE_APK"
+  echo "No connected ADB device found. APK built & signed at $RELEASE_APK"
 fi
