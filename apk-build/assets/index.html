@@ -2326,7 +2326,10 @@ function doGet(e) {
         </div>
         <div style="display:flex;gap:8px;">
           <button type="button" class="step-btn" style="flex:1;padding:10px;font-size:12px;background:linear-gradient(135deg,#10b981,#059669);color:#021b10;font-weight:800;border:none;" onclick="triggerDirectHardwareLearn()">
-            ⚡ Auto-Learn Device (Hardware Sweep)
+            ⚡ Auto-Learn Device
+          </button>
+          <button type="button" class="step-btn" style="flex:1;padding:10px;font-size:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#ffffff;font-weight:700;border:none;" onclick="triggerGuidedLearnFromEditModal()">
+            🧭 Guided Learning
           </button>
         </div>
         <div id="instantAutoLearnFeedback" style="display:none;margin-top:8px;font-size:11px;padding:6px 8px;border-radius:8px;background:rgba(16,185,129,0.15);color:#34d399;text-align:center;font-weight:600;"></div>
@@ -7593,7 +7596,14 @@ function saveOnboardCreds() {
     if (modal) modal.classList.remove("open");
   }
 
-    function triggerDirectHardwareLearn() {
+      function triggerGuidedLearnFromEditModal() {
+    haptic(20);
+    const idx = parseInt(document.getElementById("editDeviceIdx").value, 10);
+    closeEditDeviceModal();
+    openManualLearnModal(idx);
+  }
+
+  function triggerDirectHardwareLearn() {
     haptic(25);
     const idx = parseInt(document.getElementById("editDeviceIdx").value, 10);
     closeEditDeviceModal();
@@ -8499,13 +8509,33 @@ function saveOnboardCreds() {
   // ===========================================================================
   
   let manualLearnBaseW = 0;
+  function closeManualLearnModal() {
+    haptic(10);
+    const m = document.getElementById("modalManualLearn");
+    if (m) m.classList.remove("open");
+    renderAll();
+    const miscModal = document.getElementById("modalMiscLoads");
+    if (miscModal && miscModal.classList.contains("open")) {
+      renderMiscLoadsModalContent();
+    }
+  }
+
   function openManualLearnModal(idx) {
     haptic(15);
     const d = devices[idx];
     if (!d) return;
     document.getElementById("manualLearnIdx").value = idx;
     document.getElementById("manualLearnSubTitle").textContent = `Calibrating: ${d.name}`;
+    const t1 = document.getElementById("manualLearnTargetName1");
+    if (t1) t1.textContent = `"${d.name}"`;
+    const t2 = document.getElementById("manualLearnTargetName2");
+    if (t2) t2.textContent = `"${d.name}"`;
     
+    const s1Btn = document.querySelector("#manualLearnStep1 button");
+    if (s1Btn) s1Btn.innerHTML = "📸 I Turned It OFF • Record Baseline";
+    const s2Btn = document.querySelector("#manualLearnStep2 button");
+    if (s2Btn) s2Btn.innerHTML = "⚡ I Turned It ON • Measure Active Power";
+
     document.getElementById("manualLearnStep1").style.opacity = "1";
     document.getElementById("manualLearnStep1").style.pointerEvents = "auto";
     document.getElementById("manualLearnStep2").style.opacity = "0.3";
@@ -8598,18 +8628,18 @@ function saveOnboardCreds() {
   });
 </script>
 
-  <!-- MANUAL APPLIANCE HARDWARE LEARNING MODAL -->
+  <!-- GUIDED HARDWARE LEARNING WIZARD MODAL -->
   <div class="modal-backdrop" id="modalManualLearn">
     <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column;padding:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);">
         <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:18px;">🎯</div>
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:18px;">🧭</div>
           <div>
-            <div style="font-size:15px;font-weight:700;">Manual Hardware Calibration</div>
-            <div style="font-size:11px;color:var(--muted);" id="manualLearnSubTitle">Learn wattage for unmonitored devices</div>
+            <div style="font-size:15px;font-weight:700;">Guided Hardware Calibration</div>
+            <div style="font-size:11px;color:var(--muted);" id="manualLearnSubTitle">Manual step-by-step CT measurement</div>
           </div>
         </div>
-        <button class="step-btn" onclick="document.getElementById('modalManualLearn').classList.remove('open')">✕</button>
+        <button class="step-btn" onclick="closeManualLearnModal()">✕</button>
       </div>
 
       <div style="padding:16px 0;display:flex;flex-direction:column;gap:16px;flex:1;overflow-y:auto;">
@@ -8617,31 +8647,42 @@ function saveOnboardCreds() {
         
         <!-- Step 1 -->
         <div id="manualLearnStep1" style="background:var(--surface-soft);padding:14px;border-radius:12px;border:1px solid var(--border);">
-          <div style="font-size:13px;font-weight:700;color:var(--sky);margin-bottom:8px;">Step 1: Prepare Device</div>
-          <div style="font-size:12px;color:var(--text);margin-bottom:14px;">Ensure the appliance is physically <b>TURNED OFF</b> so we can measure the house baseline.</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="background:rgba(56,189,248,0.2);color:var(--sky);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">1</span>
+            <div style="font-size:13px;font-weight:700;color:var(--sky);">Step 1: Turn Switch / Device OFF</div>
+          </div>
+          <div style="font-size:12px;color:var(--text);line-height:1.45;margin-bottom:14px;">
+            Please physically turn <strong id="manualLearnTargetName1" style="color:#fff;">this appliance</strong> <strong>OFF</strong>. Keep other heavy home appliances steady.
+          </div>
           <button class="btn sky" style="width:100%;padding:10px;font-size:13px;" onclick="manualLearnMeasureBaseline()">
-            Measure Baseline
+            📸 I Turned It OFF • Record Baseline
           </button>
         </div>
 
         <!-- Step 2 -->
         <div id="manualLearnStep2" style="background:var(--surface-soft);padding:14px;border-radius:12px;border:1px solid var(--border);opacity:0.3;pointer-events:none;">
-          <div style="font-size:13px;font-weight:700;color:var(--emerald);margin-bottom:8px;">Step 2: Turn Device ON</div>
-          <div style="font-size:12px;color:var(--text);margin-bottom:14px;">Physically turn the appliance <b>ON</b>. Wait 10 seconds for the power jump to register on the main CT clamp.</div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:12px;">
-            <span style="color:var(--muted);">Baseline:</span>
-            <span id="manualLearnBaseWatts" style="font-weight:700;font-family:monospace;">-- W</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="background:rgba(16,185,129,0.2);color:var(--emerald);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">2</span>
+            <div style="font-size:13px;font-weight:700;color:var(--emerald);">Step 2: Turn Switch / Device ON</div>
+          </div>
+          <div style="font-size:12px;color:var(--text);line-height:1.45;margin-bottom:12px;">
+            Now physically turn <strong id="manualLearnTargetName2" style="color:#fff;">this appliance</strong> <strong>ON</strong>. Wait a few seconds for the CT clamp to detect the jump.
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(15,23,42,0.6);padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:12px;">
+            <span style="color:var(--muted);">Locked Baseline CT:</span>
+            <span id="manualLearnBaseWatts" style="font-weight:700;font-family:monospace;color:var(--sky);">-- W</span>
           </div>
           <button class="btn emerald" style="width:100%;padding:10px;font-size:13px;" onclick="manualLearnMeasureActive()">
-            Measure Active Power
+            ⚡ I Turned It ON • Measure Active Power
           </button>
         </div>
         
         <!-- Result -->
         <div id="manualLearnResult" style="display:none;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);padding:14px;border-radius:12px;text-align:center;">
-          <div style="font-size:12px;color:var(--emerald);font-weight:600;margin-bottom:4px;">Successfully Calibrated!</div>
-          <div id="manualLearnDeltaWatts" style="font-size:24px;font-weight:800;color:var(--text);font-family:monospace;">+0.0 W</div>
-          <button class="step-btn" style="margin-top:12px;width:100%;" onclick="document.getElementById('modalManualLearn').classList.remove('open');renderMiscLoadsModalContent();">Done</button>
+          <div style="font-size:12px;color:var(--emerald);font-weight:600;margin-bottom:4px;">✓ Power Calibration Complete!</div>
+          <div id="manualLearnDeltaWatts" style="font-size:26px;font-weight:800;color:var(--text);font-family:monospace;">+0.0 W</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Wattage calibrated and saved to appliance profile.</div>
+          <button class="step-btn" style="margin-top:14px;width:100%;padding:10px;font-weight:700;" onclick="closeManualLearnModal()">Done</button>
         </div>
       </div>
     </div>
