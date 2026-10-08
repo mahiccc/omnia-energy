@@ -1182,6 +1182,24 @@
     </div>
   </header>
 
+  <!-- Persistent Auto-Sweep In-Progress Highlight Banner -->
+  <div id="autoSweepActiveBanner" style="display:none;background:linear-gradient(135deg,#064e3b,#065f46);border-bottom:1px solid #10b981;padding:8px 14px;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 4px 15px rgba(16,185,129,0.3);position:sticky;top:0;z-index:90;">
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer;" onclick="openAutoSweepModal()">
+      <span class="pulse-dot" style="background:#34d399;width:9px;height:9px;flex-shrink:0;"></span>
+      <div style="min-width:0;">
+        <div style="font-size:12px;font-weight:800;color:#ffffff;display:flex;align-items:center;gap:6px;">
+          <span>🤖 Auto-Sweep In Progress</span>
+          <span id="autoSweepBannerProgressBadge" style="background:rgba(255,255,255,0.2);color:#ffffff;font-size:10px;padding:1px 6px;border-radius:10px;">0%</span>
+        </div>
+        <div id="autoSweepBannerSubText" style="font-size:10.5px;color:#a7f3d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Calibrating switches • Tap to view live progress</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <button type="button" class="step-btn" style="width:auto;padding:4px 8px;font-size:11px;background:rgba(255,255,255,0.15);color:#fff;border:none;font-weight:700;" onclick="openAutoSweepModal()">View ➔</button>
+      <button type="button" class="step-btn" style="width:auto;padding:4px 8px;font-size:11px;background:rgba(244,63,94,0.3);color:#fda4af;border:1px solid rgba(244,63,94,0.5);font-weight:700;" onclick="emergencyStopAutoSweep()" title="Stop sweep immediately">🛑 Stop</button>
+    </div>
+  </div>
+
   <!-- Top Banner: Clickable to explore connectors or view status -->
   <div class="live-strip demo-mode" id="liveCloudBanner" onclick="switchTab('connectors')">
     <span id="liveBannerLeft" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🧪 Showcase Demo • Tap to connect home</span>
@@ -2554,7 +2572,10 @@ function doGet(e) {
             <div style="font-size:11px;color:var(--muted);">Sequential switch cycling & physical CT calibration</div>
           </div>
         </div>
-        <button class="step-btn" id="autoSweepCloseBtn" onclick="closeAutoSweepModal()">✕</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button type="button" class="step-btn" style="width:auto;padding:4px 8px;font-size:11px;background:rgba(255,255,255,0.08);color:var(--muted);border:none;" onclick="minimizeAutoSweepModal()" title="Keep running in background">🗕 Minimize</button>
+          <button class="step-btn" id="autoSweepCloseBtn" onclick="closeAutoSweepModal()">✕</button>
+        </div>
       </div>
 
       <!-- State Guard Banner -->
@@ -7794,52 +7815,92 @@ function saveOnboardCreds() {
     houseSnapshot: [] // [{ id, isOn, fanSpeed, tvScreenState }]
   };
 
+  function updateAutoSweepBanner() {
+    const banner = document.getElementById("autoSweepActiveBanner");
+    if (!banner) return;
+    if (autoSweepState.isRunning) {
+      banner.style.display = "flex";
+      const totalCount = autoSweepState.queue.length || 1;
+      const currentNum = autoSweepState.currentIndex + 1;
+      const pct = Math.min(100, Math.round(((currentNum - 1) / totalCount) * 100));
+      const badge = document.getElementById("autoSweepBannerProgressBadge");
+      if (badge) badge.textContent = `${pct}% (${currentNum}/${totalCount})`;
+      const sub = document.getElementById("autoSweepBannerSubText");
+      const curDev = autoSweepState.queue[autoSweepState.currentIndex] !== undefined ? devices[autoSweepState.queue[autoSweepState.currentIndex]] : null;
+      if (sub) {
+        sub.textContent = curDev ? `Calibrating: ${curDev.name} (${curDev.room})` : `Calibrating switches...`;
+      }
+    } else {
+      banner.style.display = "none";
+    }
+  }
+
   function openAutoSweepModal() {
     haptic(15);
     const modal = document.getElementById("modalAutoSweep");
     if (!modal) return;
 
-    // Reset view panels
-    document.getElementById("autoSweepSetupView").style.display = "block";
-    document.getElementById("autoSweepRunningView").style.display = "none";
-    document.getElementById("autoSweepCompleteView").style.display = "none";
-
-    // Update CT power readout
-    const summary = computeHomeSummary();
-    const curCtEl = document.getElementById("autoSweepCurrentCtWatts");
-    if (curCtEl) curCtEl.textContent = `${summary.pCt.toFixed(1)} W`;
-
-    const noCtNotice = document.getElementById("autoSweepNoCtNotice");
-    const startBtn = document.getElementById("autoSweepStartBtn");
-
-    if (!summary.hasCt && appMode === "live") {
-      if (noCtNotice) noCtNotice.style.display = "block";
-      if (startBtn) {
-        startBtn.disabled = true;
-        startBtn.style.opacity = "0.5";
-      }
+    if (autoSweepState.isRunning) {
+      // Keep running view intact! Do not restart or reset to setup view
+      document.getElementById("autoSweepSetupView").style.display = "none";
+      document.getElementById("autoSweepRunningView").style.display = "block";
+      document.getElementById("autoSweepCompleteView").style.display = "none";
+      renderAutoSweepLiveLog();
+    } else if (autoSweepState.results && autoSweepState.results.length > 0 && !autoSweepState.isRunning && document.getElementById("autoSweepCompleteView").style.display === "block") {
+      // Keep complete view if just finished
     } else {
-      if (noCtNotice) noCtNotice.style.display = "none";
-      if (startBtn) {
-        startBtn.disabled = false;
-        startBtn.style.opacity = "1";
+      // Reset view panels to setup
+      document.getElementById("autoSweepSetupView").style.display = "block";
+      document.getElementById("autoSweepRunningView").style.display = "none";
+      document.getElementById("autoSweepCompleteView").style.display = "none";
+
+      // Update CT power readout
+      const summary = computeHomeSummary();
+      const curCtEl = document.getElementById("autoSweepCurrentCtWatts");
+      if (curCtEl) curCtEl.textContent = `${summary.pCt.toFixed(1)} W`;
+
+      const noCtNotice = document.getElementById("autoSweepNoCtNotice");
+      const startBtn = document.getElementById("autoSweepStartBtn");
+
+      if (!summary.hasCt && appMode === "live") {
+        if (noCtNotice) noCtNotice.style.display = "block";
+        if (startBtn) {
+          startBtn.disabled = true;
+          startBtn.style.opacity = "0.5";
+        }
+      } else {
+        if (noCtNotice) noCtNotice.style.display = "none";
+        if (startBtn) {
+          startBtn.disabled = false;
+          startBtn.style.opacity = "1";
+        }
       }
+
+      renderAutoSweepCandidateList();
     }
 
-    renderAutoSweepCandidateList();
     modal.classList.add("open");
+    syncNativeModalOpenState();
+  }
+
+  function minimizeAutoSweepModal() {
+    haptic(10);
+    const modal = document.getElementById("modalAutoSweep");
+    if (modal) modal.classList.remove("open");
+    syncNativeModalOpenState();
+    updateAutoSweepBanner();
+    showToast("🤖 Auto-Sweep running in background. Tap banner to view or stop.");
   }
 
   function closeAutoSweepModal() {
     haptic(10);
     if (autoSweepState.isRunning) {
-      if (!confirm("Auto-sweep is currently running. Stop sweep and restore all house switches to original states?")) {
-        return;
-      }
-      emergencyStopAutoSweep();
+      minimizeAutoSweepModal();
+      return;
     }
     const modal = document.getElementById("modalAutoSweep");
     if (modal) modal.classList.remove("open");
+    syncNativeModalOpenState();
   }
 
   function renderAutoSweepCandidateList() {
@@ -8028,6 +8089,7 @@ function saveOnboardCreds() {
     document.getElementById("autoSweepCompleteView").style.display = "none";
 
     renderAutoSweepLiveLog();
+    updateAutoSweepBanner();
     showToast(`🤖 Starting Whole-Home Auto-Sweep across ${selectedIndices.length} switches...`);
 
     // 4. Begin sequential execution
@@ -8037,6 +8099,8 @@ function saveOnboardCreds() {
   function runAutoSweepNextDevice() {
     if (!autoSweepState.isRunning) return;
     if (autoSweepState.isPaused) return;
+
+    updateAutoSweepBanner();
 
     if (autoSweepState.currentIndex >= autoSweepState.queue.length) {
       // Completed all devices!
@@ -8227,6 +8291,7 @@ function saveOnboardCreds() {
     document.getElementById("autoSweepRunningView").style.display = "none";
     document.getElementById("autoSweepSetupView").style.display = "block";
 
+    updateAutoSweepBanner();
     showToast("🛑 Auto-Sweep Stopped: All switches restored to original states.");
   }
 
@@ -8258,6 +8323,8 @@ function saveOnboardCreds() {
     // Switch UI to Complete View
     document.getElementById("autoSweepRunningView").style.display = "none";
     document.getElementById("autoSweepCompleteView").style.display = "block";
+
+    updateAutoSweepBanner();
 
     // Render results summary
     const container = document.getElementById("autoSweepResultsContainer");
