@@ -5664,51 +5664,87 @@ function saveOnboardCreds() {
   // APPLIANCE CONTROL & SIMULATION
   // ===========================================================================
   function sendTuyaSwitchCommandSync(dev, isOn) {
-    if (!hasNativeBridge() || !dev.cid || !dev.dp_code || dev.dp_code === "atomberg") return null;
+    if (!hasNativeBridge() || !dev.cid || !dev.dp_code || dev.dp_code === "atomberg") return { success: false, msg: "Unsupported or bridge unavailable" };
     const endpoint = document.getElementById("cfgTuyaEndpoint").value.trim() || "https://openapi.tuyain.com";
     const clientId = document.getElementById("cfgTuyaClientId").value.trim();
     const clientSecret = document.getElementById("cfgTuyaClientSecret").value.trim();
     let token = cachedTuyaToken;
-    if (!token) return null;
+    if (!token) return { success: false, msg: "Tuya token not available" };
 
     try {
       const cmdBody = JSON.stringify({
         commands: [{ code: dev.dp_code, value: !!isOn }]
       });
-      const res = window.OmniaNative.tuyaSignedRequest(
+      const resRaw = window.OmniaNative.tuyaSignedRequest(
         endpoint, clientId, clientSecret, token, "POST",
         `/v1.0/iot-03/devices/${dev.cid}/commands`, cmdBody
       );
-      return res;
+      const res = JSON.parse(resRaw);
+      if (res && res.success) {
+        return { success: true, res: res };
+      }
+      return {
+        success: false,
+        code: res ? res.code : 0,
+        msg: res ? (res.msg || "Command rejected by Tuya Cloud") : "Unknown cloud response"
+      };
     } catch (e) {
-      return null;
+      return { success: false, msg: e.message };
     }
   }
 
   function setAppliancePowerState(idx, targetIsOn) {
     const dev = devices[idx];
-    if (!dev || dev.isCtMeter) return;
-    if (dev.isOn === targetIsOn) return;
-    dev.isOn = targetIsOn;
+    if (!dev || dev.isCtMeter) return false;
+    const prevIsOn = dev.isOn;
+    if (prevIsOn === targetIsOn) return true;
 
     if (appMode === "demo") {
+      dev.isOn = targetIsOn;
       recomputeDemoCtMeter();
-    } else if (hasNativeBridge() && dev.cid && dev.dp_code) {
-      sendTuyaSwitchCommandSync(dev, dev.isOn);
+      saveState();
+      autoSaveSnapshotSilently();
+      renderAll();
+      return true;
     }
 
+    if (hasNativeBridge() && dev.cid && dev.dp_code) {
+      const cmdResult = sendTuyaSwitchCommandSync(dev, targetIsOn);
+      if (cmdResult && cmdResult.success) {
+        dev.isOn = targetIsOn;
+        saveState();
+        autoSaveSnapshotSilently();
+        renderAll();
+        return true;
+      } else {
+        // Tuya cloud rejected the command (e.g. quota limit error 60001001)
+        // Keep or revert physical state and inform user immediately
+        dev.isOn = prevIsOn;
+        renderAll();
+        if (cmdResult && cmdResult.code === 60001001) {
+          showToast(`⚠️ Tuya Quota Exceeded (Free Plan limit): Unable to switch ${dev.name}. Check Tuya Cloud project device pool.`);
+        } else {
+          showToast(`❌ Cloud error: ${cmdResult ? cmdResult.msg : "Failed to toggle"}`);
+        }
+        return false;
+      }
+    }
+
+    dev.isOn = targetIsOn;
     saveState();
     autoSaveSnapshotSilently();
     renderAll();
+    return true;
   }
 
   function toggleAppliance(idx) {
     const dev = devices[idx];
     if (!dev || dev.isCtMeter) return;
     haptic(22);
-    setAppliancePowerState(idx, !dev.isOn);
-    if (appMode !== "demo" && hasNativeBridge() && dev.cid && dev.dp_code) {
-      showToast(`⚡ Sent ${dev.isOn ? 'ON' : 'OFF'} to ${dev.name}`);
+    const targetState = !dev.isOn;
+    const ok = setAppliancePowerState(idx, targetState);
+    if (ok && appMode !== "demo" && hasNativeBridge() && dev.cid && dev.dp_code) {
+      showToast(`⚡ Sent ${targetState ? 'ON' : 'OFF'} to ${dev.name}`);
     }
   }
 
