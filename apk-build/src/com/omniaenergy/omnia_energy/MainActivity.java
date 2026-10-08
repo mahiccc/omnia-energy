@@ -101,11 +101,23 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/index.html");
     }
 
+    private boolean isModalOpenInJs = false;
+
+    public void setModalOpen(boolean open) {
+        this.isModalOpenInJs = open;
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && webView != null && webView.canGoBack()) {
-            webView.goBack();
-            return true;
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (isModalOpenInJs && webView != null) {
+                webView.loadUrl("javascript:(function(){ if(window.handleNativeBackPressed) window.handleNativeBackPressed(); })();");
+                return true;
+            }
+            if (webView != null && webView.canGoBack()) {
+                webView.goBack();
+                return true;
+            }
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -119,14 +131,26 @@ public class MainActivity extends Activity {
     }
 
     public static class OmniaNativeBridge {
+        private final MainActivity activity;
         private final Context context;
         private final SqliteLocalDb db;
         private final SharedPreferences prefs;
 
-        public OmniaNativeBridge(Context context, SqliteLocalDb db, SharedPreferences prefs) {
-            this.context = context;
+        public OmniaNativeBridge(MainActivity activity, SqliteLocalDb db, SharedPreferences prefs) {
+            this.activity = activity;
+            this.context = activity;
             this.db = db;
             this.prefs = prefs;
+        }
+
+        @JavascriptInterface
+        public void setModalOpenState(boolean isOpen) {
+            activity.runOnUiThread(() -> activity.setModalOpen(isOpen));
+        }
+
+        @JavascriptInterface
+        public void exitApp() {
+            activity.runOnUiThread(activity::finish);
         }
 
         @JavascriptInterface

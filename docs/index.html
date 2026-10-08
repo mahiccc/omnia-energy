@@ -2208,18 +2208,21 @@ function doGet(e) {
 
       <!-- Light Wattage Presets Section -->
       <div id="lightConfigSection" style="display:none;background:var(--surface-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:12px;">
-        <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          <span>💡</span> Light & Fixture Wattage Presets
+        <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <span>💡</span> Light & Fixture Wattage Preset
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Tap a quick preset to apply rating:</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;" id="lightPresetButtons">
-          <button type="button" class="step-btn" style="width:auto;padding:5px 9px;font-size:11px;" onclick="applyLightPreset(5, this)">5W LED Bulb</button>
-          <button type="button" class="step-btn" style="width:auto;padding:5px 9px;font-size:11px;" onclick="applyLightPreset(9, this)">9W LED Bulb</button>
-          <button type="button" class="step-btn" style="width:auto;padding:5px 9px;font-size:11px;" onclick="applyLightPreset(12, this)">12W LED</button>
-          <button type="button" class="step-btn" style="width:auto;padding:5px 9px;font-size:11px;" onclick="applyLightPreset(18, this)">18W Batten / Tube</button>
-          <button type="button" class="step-btn" style="width:auto;padding:5px 9px;font-size:11px;" onclick="applyLightPreset(25, this)">25W Profile LED</button>
-          <button type="button" class="step-btn" style="width:auto;padding:5px 9px;font-size:11px;" onclick="applyLightPreset(36, this)">36W Chandelier</button>
-          <button type="button" class="step-btn" style="width:auto;padding:5px 9px;font-size:11px;" onclick="applyLightPreset(50, this)">50W Halogen / Spot</button>
+        <div class="field" style="margin-bottom:0;">
+          <select id="editLightPreset" onchange="onLightPresetChange()">
+            <option value="5" data-watts="5">5W LED Night / Small Bulb (5W)</option>
+            <option value="9" data-watts="9">9W LED Standard Bulb (9W)</option>
+            <option value="12" data-watts="12">12W LED Downlight / Ceiling Spot (12W)</option>
+            <option value="18" data-watts="18">18W Batten / Tube Light (18W)</option>
+            <option value="20" data-watts="20">20W Batten / COB Spotlight (20W)</option>
+            <option value="25" data-watts="25">25W Profile LED Strip / Cove (25W)</option>
+            <option value="36" data-watts="36">36W Panel / Chandelier (36W)</option>
+            <option value="50" data-watts="50">50W Halogen / Flood / Focus (50W)</option>
+            <option value="custom">Custom Wattage</option>
+          </select>
         </div>
       </div>
 
@@ -2747,17 +2750,22 @@ function doGet(e) {
         <div style="display:flex;gap:6px;">
           <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;" onclick="selectAllMiscLoads(true)">Select All</button>
           <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;" onclick="selectAllMiscLoads(false)">Deselect</button>
-          <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;background:rgba(168,85,247,0.18);color:#c084fc;border:none;" onclick="openAddManualApplianceModal()">+ Appliance</button>
+          <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;" onclick="resetMiscLoadsToDefault()">↺ Defaults</button>
+          <button class="step-btn" style="width:auto;padding:3px 8px;font-size:10.5px;background:rgba(168,85,247,0.18);color:#c084fc;border:1px solid rgba(168,85,247,0.3);font-weight:700;" onclick="toggleAddCustomMiscDrawer()">＋ Add Load</button>
         </div>
       </div>
 
       <!-- Custom Item Add Drawer (collapsible) -->
       <div id="miscAddCustomDrawer" style="display:none;background:var(--surface);border:1px solid rgba(168,85,247,0.4);border-radius:12px;padding:10px;margin-bottom:10px;">
         <div style="font-size:11.5px;font-weight:700;color:#c084fc;margin-bottom:6px;">Add Custom Misc Load</div>
-        <div style="display:flex;gap:8px;margin-bottom:6px;">
-          <input type="text" id="customMiscName" placeholder="e.g. CCTV NVR / DVR" style="flex:2;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11.5px;color:var(--text);" />
-          <input type="number" id="customMiscWatts" placeholder="Watts" min="1" max="2000" style="width:70px;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11.5px;color:var(--text);" />
-          <input type="text" id="customMiscIcon" value="🔌" style="width:42px;text-align:center;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 4px;font-size:13px;" />
+        <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+          <input type="text" id="customMiscName" placeholder="Load name (e.g. CCTV)" style="flex:2;min-width:110px;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11.5px;color:var(--text);" />
+          <input type="number" id="customMiscWatts" placeholder="Watts/ea" min="0.5" max="2000" step="0.5" style="width:68px;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 6px;font-size:11.5px;color:var(--text);text-align:right;" />
+          <div style="display:flex;align-items:center;gap:3px;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:2px 6px;">
+            <span style="font-size:10.5px;color:var(--muted);font-weight:700;">Qty:</span>
+            <input type="number" id="customMiscQty" value="1" min="1" max="50" style="width:36px;background:transparent;border:none;font-size:12px;font-weight:700;color:var(--text);text-align:center;padding:0;" />
+          </div>
+          <input type="text" id="customMiscIcon" value="🔌" style="width:38px;text-align:center;background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:6px 2px;font-size:13px;" />
         </div>
         <div style="display:flex;justify-content:flex-end;gap:6px;">
           <button class="step-btn" style="width:auto;padding:4px 10px;font-size:10.5px;" onclick="toggleAddCustomMiscDrawer()">Cancel</button>
@@ -3698,21 +3706,32 @@ function saveOnboardCreds() {
   }
 
   function highlightMatchingLightPreset(watts) {
-    const btns = document.querySelectorAll("#lightPresetButtons button");
-    btns.forEach(b => {
-      const match = b.getAttribute("onclick") && b.getAttribute("onclick").includes(`applyLightPreset(${watts},`);
-      if (match) {
-        b.style.borderColor = "var(--amber)";
-        b.style.background = "rgba(245,158,11,0.2)";
-        b.style.color = "#fcd34d";
-        b.style.fontWeight = "800";
-      } else {
-        b.style.borderColor = "var(--border)";
-        b.style.background = "var(--surface-soft)";
-        b.style.color = "var(--text)";
-        b.style.fontWeight = "normal";
+    const sel = document.getElementById("editLightPreset");
+    if (!sel) return;
+    const wNum = parseFloat(watts);
+    let matched = false;
+    for (let i = 0; i < sel.options.length; i++) {
+      const optVal = parseFloat(sel.options[i].getAttribute("data-watts"));
+      if (optVal === wNum) {
+        sel.selectedIndex = i;
+        matched = true;
+        break;
       }
-    });
+    }
+    if (!matched) {
+      sel.value = "custom";
+    }
+  }
+
+  function onLightPresetChange() {
+    haptic(15);
+    const sel = document.getElementById("editLightPreset");
+    if (!sel) return;
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.getAttribute("data-watts")) {
+      const w = parseFloat(opt.getAttribute("data-watts"));
+      if (w) document.getElementById("editDeviceWatts").value = w;
+    }
   }
 
   function applyLightPreset(watts, btn) {
@@ -8276,15 +8295,15 @@ function saveOnboardCreds() {
   // MISCELLANEOUS & BASELOAD LOADS ENGINE
   // ===========================================================================
   const DEFAULT_MISC_LOAD_ITEMS = [
-    { id: "misc_wifi_router", name: "Wi-Fi Router & Fiber ONT", watts: 12.0, icon: "📶", selected: true, note: "Always-on network baseload" },
-    { id: "misc_tv_standby", name: "Smart TV Standby (Living Room)", watts: 4.0, icon: "📺", selected: true, note: "Standby quiescent draw" },
-    { id: "misc_ro_purifier", name: "Water Purifier (RO) Standby", watts: 8.0, icon: "💧", selected: true, note: "UV lamp & booster standby" },
-    { id: "misc_chargers", name: "Phone & Tablet Chargers", watts: 10.0, icon: "🔋", selected: true, note: "Trickle & standby chargers" },
-    { id: "misc_smart_hub", name: "Smart Hub, Doorbell & CCTV", watts: 15.0, icon: "📹", selected: true, note: "Security cameras & smart hub" },
-    { id: "misc_mosquito_rep", name: "Mosquito Vaporizers", watts: 6.0, icon: "🦟", selected: false, note: "Overnight vaporizers" },
-    { id: "misc_microwave_clock", name: "Microwave Clock & Standby", watts: 3.0, icon: "⏲️", selected: true, note: "Kitchen appliance standby" },
-    { id: "misc_settop_box", name: "Set-Top Box Standby", watts: 5.0, icon: "📡", selected: false, note: "DTH / Streaming box idle" },
-    { id: "misc_alexa_google", name: "Smart Speakers (Echo / Nest)", watts: 4.0, icon: "🔊", selected: true, note: "Always-listening smart audio" }
+    { id: "misc_wifi_router", name: "Wi-Fi Router & Fiber ONT", watts: 12.0, qty: 1, icon: "📶", selected: true, note: "Always-on network baseload" },
+    { id: "misc_tv_standby", name: "Smart TV Standby (Living Room)", watts: 4.0, qty: 1, icon: "📺", selected: true, note: "Standby quiescent draw" },
+    { id: "misc_ro_purifier", name: "Water Purifier (RO) Standby", watts: 8.0, qty: 1, icon: "💧", selected: true, note: "UV lamp & booster standby" },
+    { id: "misc_chargers", name: "Phone & Tablet Chargers", watts: 10.0, qty: 1, icon: "🔋", selected: true, note: "Trickle & standby chargers" },
+    { id: "misc_smart_hub", name: "Smart Hub, Doorbell & CCTV", watts: 15.0, qty: 1, icon: "📹", selected: true, note: "Security cameras & smart hub" },
+    { id: "misc_mosquito_rep", name: "Mosquito Vaporizers", watts: 6.0, qty: 1, icon: "🦟", selected: false, note: "Overnight vaporizers" },
+    { id: "misc_microwave_clock", name: "Microwave Clock & Standby", watts: 3.0, qty: 1, icon: "⏲️", selected: true, note: "Kitchen appliance standby" },
+    { id: "misc_settop_box", name: "Set-Top Box Standby", watts: 5.0, qty: 1, icon: "📡", selected: false, note: "DTH / Streaming box idle" },
+    { id: "misc_alexa_google", name: "Smart Speakers (Echo / Nest)", watts: 4.0, qty: 1, icon: "🔊", selected: true, note: "Always-listening smart audio" }
   ];
 
   function getMiscLoadItems() {
@@ -8292,7 +8311,12 @@ function saveOnboardCreds() {
       const raw = localStorage.getItem("omnia_misc_load_items");
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(it => ({
+            ...it,
+            qty: Math.max(1, parseInt(it.qty, 10) || 1)
+          }));
+        }
       }
     } catch (e) {
       console.warn("Failed to load misc load items from storage:", e);
@@ -8316,7 +8340,7 @@ function saveOnboardCreds() {
   function getMiscLoadSummaryText() {
     const items = getMiscLoadItems().filter(it => it.selected);
     if (items.length === 0) return "None selected (0W)";
-    const names = items.slice(0, 2).map(it => it.name.split(" ")[0]);
+    const names = items.slice(0, 2).map(it => `${it.name.split(" ")[0]}${(it.qty || 1) > 1 ? ' (×' + it.qty + ')' : ''}`);
     const rem = items.length - 2;
     if (rem > 0) {
       return `${names.join(", ")} (+${rem} more)`;
@@ -8329,6 +8353,7 @@ function saveOnboardCreds() {
     renderMiscLoadsModalContent();
     const modal = document.getElementById("modalMiscLoads");
     if (modal) modal.classList.add("open");
+    syncNativeModalOpenState();
   }
 
   function closeMiscLoadsModal() {
@@ -8336,6 +8361,7 @@ function saveOnboardCreds() {
     const modal = document.getElementById("modalMiscLoads");
     if (modal) modal.classList.remove("open");
     renderAll();
+    syncNativeModalOpenState();
   }
 
   function renderMiscLoadsModalContent() {
@@ -8349,7 +8375,7 @@ function saveOnboardCreds() {
     const reconcilePct = document.getElementById("miscModalReconcilePct");
 
     const selectedItems = items.filter(it => it.selected);
-    const configuredSum = selectedItems.reduce((acc, it) => acc + (Number(it.watts) || 0), 0);
+    const configuredSum = selectedItems.reduce((acc, it) => acc + ((Number(it.watts) || 0) * (Math.max(1, it.qty || 1))), 0);
     if (configuredWattsEl) configuredWattsEl.textContent = `${configuredSum.toFixed(1)} W`;
 
     // Compute live CT Residual Delta
@@ -8361,7 +8387,8 @@ function saveOnboardCreds() {
     }
 
     if (countLabel) {
-      countLabel.textContent = `Included Loads (${selectedItems.length}/${items.length} selected • ${configuredSum.toFixed(1)} W)`;
+      const totalUnits = selectedItems.reduce((acc, it) => acc + (it.qty || 1), 0);
+      countLabel.textContent = `Included Loads (${selectedItems.length} types • ${totalUnits} units • ${configuredSum.toFixed(1)} W)`;
     }
 
     if (reconcileText && reconcilePct) {
@@ -8387,23 +8414,63 @@ function saveOnboardCreds() {
     }
 
     if (!listEl) return;
-    listEl.innerHTML = items.map(it => `
-      <div style="background:${it.selected ? 'rgba(245,158,11,0.08)' : 'var(--surface)'};border:1px solid ${it.selected ? 'rgba(245,158,11,0.35)' : 'var(--border)'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all 0.15s ease;">
-        <div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;" onclick="toggleMiscLoadItem('${it.id}')">
-          <input type="checkbox" ${it.selected ? 'checked' : ''} style="width:18px;height:18px;accent-color:#f59e0b;cursor:pointer;" onclick="event.stopPropagation(); toggleMiscLoadItem('${it.id}')" />
-          <div style="font-size:20px;line-height:1;">${it.icon || '🔌'}</div>
-          <div>
-            <div style="font-size:12.5px;font-weight:${it.selected ? '700' : '500'};color:${it.selected ? 'var(--text)' : 'var(--muted)'};">${it.name}</div>
-            <div style="font-size:10.5px;color:var(--muted);">${it.note || 'Unmonitored appliance'}</div>
+    listEl.innerHTML = items.map(it => {
+      const qty = Math.max(1, it.qty || 1);
+      const totalItemWatts = Math.round((Number(it.watts) || 0) * qty * 10) / 10;
+      return `
+      <div style="background:${it.selected ? 'rgba(245,158,11,0.08)' : 'var(--surface)'};border:1px solid ${it.selected ? 'rgba(245,158,11,0.35)' : 'var(--border)'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:all 0.15s ease;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;min-width:0;" onclick="toggleMiscLoadItem('${it.id}')">
+          <input type="checkbox" ${it.selected ? 'checked' : ''} style="width:18px;height:18px;accent-color:#f59e0b;cursor:pointer;flex-shrink:0;" onclick="event.stopPropagation(); toggleMiscLoadItem('${it.id}')" />
+          <div style="font-size:20px;line-height:1;flex-shrink:0;">${it.icon || '🔌'}</div>
+          <div style="min-width:0;">
+            <div style="font-size:12.5px;font-weight:${it.selected ? '700' : '500'};color:${it.selected ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${it.name}</div>
+            <div style="font-size:10.5px;color:var(--muted);">${it.note || 'Unmonitored appliance'} ${qty > 1 ? `• <span style="color:#f59e0b;font-weight:700;">${qty} devices (${totalItemWatts}W)</span>` : ''}</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <input type="number" value="${it.watts}" min="1" max="3000" step="0.5" style="width:58px;background:var(--surface-soft);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;font-weight:700;color:#f59e0b;text-align:right;" onchange="updateMiscLoadItemWatts('${it.id}', this.value)" />
-          <span style="font-size:11px;color:var(--muted);font-weight:600;">W</span>
-          ${it.isCustom ? `<button class="step-btn" style="width:24px;height:24px;padding:0;font-size:11px;color:#ef4444;border-color:rgba(239,68,68,0.3);" onclick="deleteMiscLoadItem('${it.id}')" title="Delete custom item">🗑️</button>` : ''}
+        
+        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+          <!-- Qty Stepper / Count -->
+          <div style="display:flex;align-items:center;background:var(--surface-soft);border:1px solid var(--border);border-radius:6px;overflow:hidden;padding:1px 2px;">
+            <button type="button" class="step-btn" style="width:20px;height:22px;padding:0;font-size:11px;font-weight:800;border:none;background:transparent;color:var(--muted);" onclick="stepMiscItemQty('${it.id}', -1)" title="Decrease quantity">−</button>
+            <input type="number" value="${qty}" min="1" max="50" style="width:26px;background:transparent;border:none;font-size:11.5px;font-weight:800;color:var(--text);text-align:center;padding:0;" onchange="updateMiscLoadItemQty('${it.id}', this.value)" />
+            <button type="button" class="step-btn" style="width:20px;height:22px;padding:0;font-size:11px;font-weight:800;border:none;background:transparent;color:#f59e0b;" onclick="stepMiscItemQty('${it.id}', 1)" title="Increase quantity">+</button>
+          </div>
+
+          <!-- Unit Watts Input -->
+          <div style="display:flex;align-items:center;gap:2px;">
+            <input type="number" value="${it.watts}" min="0.5" max="3000" step="0.5" style="width:48px;background:var(--surface-soft);border:1px solid var(--border);border-radius:6px;padding:4px 4px;font-size:11.5px;font-weight:700;color:#f59e0b;text-align:right;" onchange="updateMiscLoadItemWatts('${it.id}', this.value)" title="Watts per device" />
+            <span style="font-size:10.5px;color:var(--muted);font-weight:600;">W</span>
+          </div>
+
+          <button class="step-btn" style="width:26px;height:26px;padding:0;font-size:11px;color:#ef4444;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);border-radius:6px;" onclick="deleteMiscLoadItem('${it.id}')" title="Delete load">🗑️</button>
         </div>
       </div>
-    `).join("");
+      `;
+    }).join("");
+  }
+
+  function stepMiscItemQty(id, delta) {
+    haptic(10);
+    const items = getMiscLoadItems();
+    const idx = items.findIndex(it => it.id === id);
+    if (idx >= 0) {
+      const cur = Math.max(1, items[idx].qty || 1);
+      items[idx].qty = Math.max(1, cur + delta);
+      saveMiscLoadItems(items);
+      renderMiscLoadsModalContent();
+    }
+  }
+
+  function updateMiscLoadItemQty(id, val) {
+    const q = parseInt(val, 10);
+    if (isNaN(q) || q < 1) return;
+    const items = getMiscLoadItems();
+    const idx = items.findIndex(it => it.id === id);
+    if (idx >= 0) {
+      items[idx].qty = q;
+      saveMiscLoadItems(items);
+      renderMiscLoadsModalContent();
+    }
   }
 
   function toggleMiscLoadItem(id) {
@@ -8459,10 +8526,12 @@ function saveOnboardCreds() {
   function addCustomMiscLoadItem() {
     const nameInput = document.getElementById("customMiscName");
     const wattsInput = document.getElementById("customMiscWatts");
+    const qtyInput = document.getElementById("customMiscQty");
     const iconInput = document.getElementById("customMiscIcon");
 
     const name = nameInput.value.trim();
     const watts = parseFloat(wattsInput.value);
+    const qty = Math.max(1, parseInt(qtyInput ? qtyInput.value : "1", 10) || 1);
     const icon = iconInput.value.trim() || "🔌";
 
     if (!name) {
@@ -8480,6 +8549,7 @@ function saveOnboardCreds() {
       id,
       name,
       watts: Math.round(watts * 10) / 10,
+      qty,
       icon,
       selected: true,
       isCustom: true,
@@ -8489,10 +8559,11 @@ function saveOnboardCreds() {
     saveMiscLoadItems(items);
     nameInput.value = "";
     wattsInput.value = "";
+    if (qtyInput) qtyInput.value = "1";
     toggleAddCustomMiscDrawer();
     renderMiscLoadsModalContent();
     haptic(30);
-    showToast(`✅ Added "${name}" (${watts}W) to Misc Loads`);
+    showToast(`✅ Added "${name}" (${qty} × ${watts}W) to Misc Loads`);
   }
 
   function deleteMiscLoadItem(id) {
@@ -8501,7 +8572,7 @@ function saveOnboardCreds() {
     items = items.filter(it => it.id !== id);
     saveMiscLoadItems(items);
     renderMiscLoadsModalContent();
-    showToast("🗑️ Removed custom item from Misc Loads");
+    showToast("🗑️ Removed item from Misc Loads");
   }
 
   // ===========================================================================
@@ -8610,6 +8681,93 @@ function saveOnboardCreds() {
       document.getElementById(`nav-${t}`).classList.toggle("active", t === tabId);
     });
   }
+
+  // Intercept hardware Android back button to dismiss any open modals
+  window.handleNativeBackPressed = function() {
+    // Check manual learn modal
+    const manualLearnModal = document.getElementById("modalManualLearn");
+    if (manualLearnModal && manualLearnModal.classList.contains("open")) {
+      closeManualLearnModal();
+      return true;
+    }
+    // Check edit device modal
+    const editModal = document.getElementById("editDeviceModal");
+    if (editModal && editModal.classList.contains("open")) {
+      closeEditDeviceModal();
+      return true;
+    }
+    // Check misc loads modal
+    const miscModal = document.getElementById("modalMiscLoads");
+    if (miscModal && miscModal.classList.contains("open")) {
+      // If add custom drawer is open, close drawer first
+      const customDrawer = document.getElementById("miscAddCustomDrawer");
+      if (customDrawer && customDrawer.style.display === "block") {
+        toggleAddCustomMiscDrawer();
+        return true;
+      }
+      closeMiscLoadsModal();
+      return true;
+    }
+    // Check add appliance modal
+    const addModal = document.getElementById("addModal");
+    if (addModal && addModal.classList.contains("open")) {
+      closeAddApplianceModal();
+      return true;
+    }
+    // Check CT selector modal
+    const ctSelModal = document.getElementById("modalCtSelector");
+    if (ctSelModal && ctSelModal.classList.contains("open")) {
+      closeCtMeterSelectorModal();
+      return true;
+    }
+    // Check Edge AI modal
+    const edgeModal = document.getElementById("modalEdgeAi");
+    if (edgeModal && edgeModal.classList.contains("open")) {
+      closeEdgeAiModal();
+      return true;
+    }
+    // Check CT Training modal
+    const ctTrainModal = document.getElementById("modalCtTraining");
+    if (ctTrainModal && ctTrainModal.classList.contains("open")) {
+      closeCtTrainingModal();
+      return true;
+    }
+    // Check Auto Sweep modal
+    const autoSweepModal = document.getElementById("modalAutoSweep");
+    if (autoSweepModal && autoSweepModal.classList.contains("open")) {
+      closeAutoSweepModal();
+      return true;
+    }
+
+    // Generic check for any other open modal-backdrop
+    const openModals = document.querySelectorAll(".modal-backdrop.open");
+    if (openModals.length > 0) {
+      openModals.forEach(m => m.classList.remove("open"));
+      syncNativeModalOpenState();
+      return true;
+    }
+
+    return false; // No modal was open; allow default back behavior
+  };
+
+  function syncNativeModalOpenState() {
+    try {
+      const anyOpen = document.querySelectorAll(".modal-backdrop.open").length > 0;
+      if (window.OmniaNative && window.OmniaNative.setModalOpenState) {
+        window.OmniaNative.setModalOpenState(anyOpen);
+      }
+    } catch (e) {}
+  }
+
+  // Observe all modal-backdrops for changes to class 'open'
+  try {
+    const modalObserver = new MutationObserver(() => {
+      syncNativeModalOpenState();
+    });
+    document.querySelectorAll(".modal-backdrop").forEach(el => {
+      modalObserver.observe(el, { attributes: true, attributeFilter: ["class"] });
+    });
+  } catch (e) {}
 
   window.addEventListener("DOMContentLoaded", () => {
     loadState();
